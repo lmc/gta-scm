@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+# ./disassemble vice-city games/vice-city/data/main.scm
+
+puts ARGV.inspect
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+# require_relative '../lib/gta_scm'
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+scm = GtaScm::Scm.load(ARGV[1])
+
+scm.load_opcode_definitions!
+scm.parse!
