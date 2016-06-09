@@ -1434,7 +1434,9 @@
   /* 0599 */ { true,  "REGISTER_FIRE_LEVEL",                  { ARGTYPE_ANY_INT } },
   /* 059A */ { true,  "IS_AUSTRALIAN_GAME" },
   /* 059B */ { true,  "DISARM_CAR_BOMB",                    { ARGTYPE_ANY_INT } },
-  /* 059C */ { true,  "SET_ONSCREEN_COUNTER_FLASH_WHEN_FIRST_DISPLAYED",    { ARGTYPE_VAR_INT,      ARGTYPE_ANY_INT } },
+//  /* 059C */ { true,  "SET_ONSCREEN_COUNTER_FLASH_WHEN_FIRST_DISPLAYED",    { ARGTYPE_VAR_INT,      ARGTYPE_ANY_INT } },
+// wtf, this appears in the steam osx script as a conditional opcode with no args
+  /* 059C */ { true,  "MYSTERY",    {  } },
   /* 059D */ { true,  "SHUFFLE_CARD_DECKS",                 { ARGTYPE_ANY_INT } },
   /* 059E */ { true,  "FETCH_NEXT_CARD",                    { ARGTYPE_VAR_LVAR_INT } },
   /* 059F */ { true,  "GET_OBJECT_VELOCITY",                  { ARGTYPE_ANY_INT,      ARGTYPE_VAR_LVAR_FLOAT,   ARGTYPE_VAR_LVAR_FLOAT,   ARGTYPE_VAR_LVAR_FLOAT } },
