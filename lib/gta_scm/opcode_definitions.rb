@@ -6,6 +6,14 @@ class GtaScm::OpcodeDefinitions < Hash
 
   # FIXME: allow both byte/string lookup
   def [](key)
+    key = key.dup
+    case key
+      when GtaScm::ByteArray
+        # high-bit of opcode == NOT version
+        if key[1] >= 128
+          key[1] = key[1] - 128
+        end
+      end
     super(key)
   end
 
@@ -45,5 +53,11 @@ class GtaScm::OpcodeDefinition
     self.arguments = arg_types.map do |type|
       {_type: type}
     end
+  end
+
+  def var_args?
+    [
+      [79,0] # START_NEW_SCRIPT
+    ].include?(self.opcode)
   end
 end

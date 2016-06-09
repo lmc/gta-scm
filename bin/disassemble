@@ -10,7 +10,13 @@ if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   require 'gta_scm'
 end
 
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+puts "Memory usage: #{mem_use_bytes/1024/1024} MB"
+
 scm = GtaScm::Scm.load(ARGV[1])
 
 scm.load_opcode_definitions!
 scm.parse!
+
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+puts "Memory usage: #{mem_use_bytes/1024/1024} MB"

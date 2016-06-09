@@ -56,10 +56,11 @@ class GtaScm::Scm
 
   # Parse the scm_file, building our internal structures off it
   def parse!
-    # walker = GtaScm::FileWalker.new( self.scm_file, 0 )
-    # self.nodes << GtaScm::Node::Header.new(self)
     parser = GtaScm::Parser.new(self,0)
     parser.parse!
+
+    self.offsets = parser.nodes.map(&:offset)
+    # puts self.offsets.inspect
   end
 
 

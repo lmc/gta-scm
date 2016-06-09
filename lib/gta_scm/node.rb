@@ -26,6 +26,12 @@ class GtaScm::Node::Base < GtaScm::ByteArray
   #   self.scm = scm
   # end
 
+  # ===================
+
+  def end_offset
+    self.offset + self.size
+  end
+
 end
 
 
@@ -121,6 +127,12 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
       self[1][5][idx].eat!(parser,4)
     end
   end
+
+  def mission_offsets
+    self[1][5].map do |node|
+      GtaScm::Types.bin2value(node,:int32)
+    end
+  end
 end
 
 class GtaScm::Node::Raw < GtaScm::Node::Base
@@ -138,16 +150,25 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
 
     self[0] = parser.read(2)
 
-    self[1] = []
+    self[1] = GtaScm::ByteArray.new
     definition = parser.scm.opcodes[ self.opcode ]
     if !definition
-      require 'byebug'; byebug
       raise "No definition for opcode #{self.opcode.inspect}"
     end
-    definition.arguments.each_with_index do |arg_def,arg_idx|
-      argument = GtaScm::Node::Argument.new
-      argument.eat!(parser)
-      self.arguments << argument
+
+    if definition.var_args?
+      loop do
+        argument = GtaScm::Node::Argument.new
+        argument.eat!(parser)
+        self.arguments << argument
+        break if argument.arg_type_id == 0 # end of var_args list
+      end
+    else
+      definition.arguments.each_with_index do |arg_def,arg_idx|
+        argument = GtaScm::Node::Argument.new
+        argument.eat!(parser)
+        self.arguments << argument
+      end
     end
   end
 end
@@ -159,8 +180,10 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
   def eat!(parser)
     self[0] = parser.read(1)
 
-    bytes = GtaScm::Types.bytes4type( self.arg_type_id )
-    self[1] = parser.read(bytes)
+    if self.arg_type_id != 0x00
+      bytes = GtaScm::Types.bytes4type( self.arg_type_id )
+      self[1] = parser.read(bytes)
+    end
   end
 
   def arg_type_id
