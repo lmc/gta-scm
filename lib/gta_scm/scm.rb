@@ -3,6 +3,7 @@ require 'gta_scm/file_walker'
 require 'gta_scm/parser'
 require 'gta_scm/node'
 require 'gta_scm/opcode_definitions'
+require 'gta_scm/disassembler'
 
 class GtaScm::Scm
 
@@ -22,7 +23,7 @@ class GtaScm::Scm
   attr_accessor :offsets
 
   # NodeTypes - Hash of offset => type for Nodes
-  attr_accessor :offsets2types
+  # attr_accessor :offsets2types
 
   # Nodes - Hash of offset => node
   attr_accessor :nodes
@@ -39,7 +40,7 @@ class GtaScm::Scm
 
   def initialize()
     self.offsets = []
-    self.offsets2types = {}
+    # self.offsets2types = {}
     self.nodes = {}
 
     self.opcodes = GtaScm::OpcodeDefinitions.new
@@ -55,12 +56,18 @@ class GtaScm::Scm
 
 
   # Parse the scm_file, building our internal structures off it
-  def parse!
-    parser = GtaScm::Parser.new(self,0)
-    parser.parse!
+  # def parse!
+  #   parser = GtaScm::Parser.new(self,0)
+  #   parser.parse!
+  # end
 
-    self.offsets = parser.nodes.map(&:offset)
-    # puts self.offsets.inspect
+  def load_from_parser(parser)
+    self.offsets = parser.nodes.map(&:offset).sort
+
+    self.nodes = {}
+    parser.nodes.each do |node|
+      self.nodes[ node.offset ] = node
+    end
   end
 
 

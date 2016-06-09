@@ -13,16 +13,13 @@ class GtaScm::ByteArray < Array
       if val.is_a?(GtaScm::ByteArray)
         val.inspect
       else
-        begin
-        (val||0).
-          to_s(16).
-          rjust(2,"0")
-        rescue => ex
-          debugger
-          val
-        end
+        (val||0).to_s(16).rjust(2,"0")
       end
     end
     "[#{values.join(' ')}]"
+  end
+
+  def to_binary
+    self.flatten.map(&:chr).join
   end
 end

@@ -13,11 +13,13 @@ class GtaScm::Node::Base < GtaScm::ByteArray
   attr_accessor :offset
 
   # Length
-  attr_accessor :length
+  # attr_accessor :length
 
   # Children
-  attr_accessor :children
+  # attr_accessor :children
 
+  attr_accessor :jumps_from
+  attr_accessor :jumps_to
 
   # ===================
 
@@ -30,6 +32,14 @@ class GtaScm::Node::Base < GtaScm::ByteArray
 
   def end_offset
     self.offset + self.size
+  end
+
+  def to_ir
+    raise "abstract"
+  end
+
+  def label?
+    self.jumps_from && self.jumps_from.size > 0
   end
 
 end
@@ -71,6 +81,14 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
     self[1][1] = GtaScm::Node::Raw.new
     self[1][1].eat!(parser,header_size - 1)
   end
+
+  def to_ir(scm,dis)
+    [
+      "HeaderVariables",
+      [:int8,self.magic_number[0]],
+      [:zero, self.variable_storage.size]
+    ]
+  end
 end
 
 class GtaScm::Node::Header::Models < GtaScm::Node::Header
@@ -92,6 +110,17 @@ class GtaScm::Node::Header::Models < GtaScm::Node::Header
       self[1][2][idx] = GtaScm::Node::Raw.new
       self[1][2][idx].eat!(parser,24)
     end
+  end
+
+  def to_ir(scm,dis)
+    [
+      "HeaderModels",
+      [:int8, self[1][0].value(:int8)],
+      [:int32, self[1][1].value(:int32)],
+      self[1][2].map.each_with_index do |model_name,idx|
+        [ [:int32,idx] , [:string24, model_name.value(:string24)] ]
+      end
+    ]
   end
 end
 
@@ -133,11 +162,29 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
       GtaScm::Types.bin2value(node,:int32)
     end
   end
+
+  def to_ir(scm,dis)
+    [
+      "HeaderMissions",
+      [:int8,  self[1][0].value(:int8) ],
+      [:int32, self[1][1].value(:int32)],
+      [:int32, self[1][2].value(:int32)],
+      [:int16, self[1][3].value(:int16)],
+      [:int16, self[1][4].value(:int16)],
+      self[1][5].map.each_with_index do |mission_offset,idx|
+        [ [:int32,idx] , [:int32, mission_offset.value(:int32)] ]
+      end
+    ]
+  end
 end
 
 class GtaScm::Node::Raw < GtaScm::Node::Base
   def eat!(parser,bytes_to_eat)
     replace( parser.read(bytes_to_eat) )
+  end
+
+  def value(type)
+    GtaScm::Types.bin2value(self,type)
   end
 end
 
@@ -151,10 +198,9 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
     self[0] = parser.read(2)
 
     self[1] = GtaScm::ByteArray.new
-    definition = parser.scm.opcodes[ self.opcode ]
-    if !definition
-      raise "No definition for opcode #{self.opcode.inspect}"
-    end
+
+    # FIXME: should there be a magic method for a opcode def?
+    definition = parser.scm.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
 
     if definition.var_args?
       loop do
@@ -171,6 +217,42 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
       end
     end
   end
+
+  def to_ir(scm,dis)
+    definition = scm.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
+
+    [
+      definition.name.downcase,
+      self.arguments.map.each_with_index do |argument,idx|
+        if argument.end_var_args?
+          [argument.arg_type_sym]
+        else
+          [argument.arg_type_sym,argument.value]
+        end
+      end
+    ]
+  end
+
+  def jumps
+    case self.opcode
+      when [0x02,0x00] # GOTO
+        [{type: :always,   to: self.arguments[0].value}]
+      when [0x4c,0x00] # GOTO_IF_TRUE
+        [{type: :if_true,  to: self.arguments[0].value}]
+      when [0x4d,0x00] # GOTO_IF_FALSE
+        [{type: :if_false, to: self.arguments[0].value}]
+      when [0x4e,0x00] # TERMINATE_THIS_SCRIPT
+        [{type: :end}]
+      when [0x4f,0x00] # START_NEW_SCRIPT
+        [{type: :new,      to: self.arguments[0].value}]
+      when [0x50,0x00] # GOSUB
+        [{type: :gosub,    to: self.arguments[0].value}]
+      when [0x51,0x00] # RETURN
+        [{type: :return}]
+      else
+        []
+      end
+  end
 end
 
 class GtaScm::Node::Argument < GtaScm::Node::Base
@@ -180,7 +262,7 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
   def eat!(parser)
     self[0] = parser.read(1)
 
-    if self.arg_type_id != 0x00
+    if !self.end_var_args?
       bytes = GtaScm::Types.bytes4type( self.arg_type_id )
       self[1] = parser.read(bytes)
     end
@@ -190,7 +272,25 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     GtaScm::Types.bin2value(self.arg_type,:int8)
   end
 
+  def arg_type_sym
+    if self.end_var_args?
+      :end_var_args
+    else
+      GtaScm::Types.symbol4type(self.arg_type_id)
+    end
+  end
+
+  def end_var_args?
+    self.arg_type_id == 0
+  end
+
   def value
-    GtaScm::Types.bin2value(self.arg_value,self.arg_type_id)
+    if arg_type_id == 0
+      nil
+    else
+      GtaScm::Types.bin2value(self.arg_value,self.arg_type_id)
+    end
+  rescue => ex
+    debugger;ex
   end
 end

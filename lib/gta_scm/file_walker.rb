@@ -19,7 +19,7 @@ class GtaScm::FileWalker
     if as
       GtaScm::Types.bin2value(data,as)
     else
-       data
+      data
     end
   end
 

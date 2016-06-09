@@ -3,8 +3,8 @@ module GtaScm::Types
   # FIXME: only for vice city
   TYPES = {
     0x01 => :int32,
-    0x02 => :pg,
-    0x03 => :pl,
+    0x02 => :var,
+    0x03 => :lvar,
     0x04 => :int8,
     0x05 => :int16,
     0x06 => :float32
@@ -15,30 +15,32 @@ module GtaScm::Types
     :int32   => 4,
     :int16   => 2,
     :int8    => 1,
-    :pg      => 2,
-    :pl      => 2,
+    :var      => 2,
+    :lvar      => 2,
     :float32 => 4,
     :float16 => 2,
 
-    :pg_array=> 6,
-    :pl_array=> 6,
+    :var_array=> 6,
+    :lvar_array=> 6,
 
-    :pg_string8 => 2,
-    :pl_string8 => 2,
+    :var_string8 => 2,
+    :vlar_string8 => 2,
 
-    :pg_string8_array => 6,
-    :pl_string8_array => 6,
+    :var_string8_array => 6,
+    :lvar_string8_array => 6,
 
-    :pg_string16 => 2,
-    :pl_string16 => 2,
+    :var_string16 => 2,
+    :lvar_string16 => 2,
+
+    :string24=>24
   }
 
   TYPE_PACK_CHARS = {
     :int32       => "l<",
     :int16       => "s<",
     :int8        => "c",
-    :pg          => "S<",
-    :pl          => "S<",
+    :var          => "S<",
+    :lvar          => "S<",
     :float32     => "e",
     :float16     => nil, # lol float16 is fucked
     :pg_string8  => "S<",
@@ -53,17 +55,19 @@ module GtaScm::Types
         bin.to_a.map(&:chr).join('')
     end
 
-    type = normalize_type(type)
+    type = self.normalize_type(type)
 
     if char = TYPE_PACK_CHARS[type]
       bin.unpack(char).first
+    elsif type == :string24 || type == :string8
+      bin.split(/\0/)[0]
     else
       raise "??? #{type}"
     end
   end
 
   def self.bytes4type(type)
-    type = normalize_type(type)
+    type = self.normalize_type(type)
     if bytes = TYPE_BYTESIZE[type]
       bytes
     elsif type == :string8
@@ -73,16 +77,20 @@ module GtaScm::Types
     end
   end
 
+  def self.symbol4type(type)
+    if type > MAX_TYPE
+      :string8
+    else
+      TYPES[type]
+    end
+  end
+
   def self.normalize_type(type)
     case type
       when Symbol
         return type
       when Numeric
-        if type > MAX_TYPE
-          :string8
-        else
-          TYPES[ type ]
-        end
+        self.symbol4type(type)
     end
   end
 
