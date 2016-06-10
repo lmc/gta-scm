@@ -15,10 +15,15 @@ class GtaScm::Parser < GtaScm::FileWalker
 
   # ===================
 
-  def initialize(scm, offset = 0)
+  def initialize(scm, offset = 0, end_offset = nil)
     self.scm = scm
-    self.file = scm.scm_file
-    self.offset = offset
+    super(scm.scm_file, offset, end_offset)
+
+    self.nodes = []
+
+    self.offsets = []
+    self.jumps_source2targets = Hash.new {|h,k| h[k] = []}
+    self.jumps_target2sources = Hash.new {|h,k| h[k] = []}
 
     self.use_cache = true
 
@@ -28,23 +33,11 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def parse!
-    self.nodes = []
-
-    self.offsets = []
-    self.jumps_source2targets = Hash.new {|h,k| h[k] = []}
-    self.jumps_target2sources = Hash.new {|h,k| h[k] = []}
-
     eat_header_variables!
-
     eat_header_models!
-
     eat_header_missions!
 
-    while self.node.end_offset < self.first_mission_offset
-      eat_instruction!
-    end
-
-    while self.node.end_offset < self.size
+    while self.node.end_offset < self.end_offset
       eat_instruction!
     end
 
@@ -118,9 +111,9 @@ class GtaScm::Parser < GtaScm::FileWalker
     GtaScm::Types.bin2value( missions_header[1][1] , :int32 )
   end
 
-  # def main_instruction_range
-  #   (self.first_main_instruction_offset..(self.missions_header.mission_offsets.first-1))
-  # end
+  def main_instruction_range
+    (self.first_main_instruction_offset..(self.missions_header.mission_offsets.first))
+  end
 
   def first_main_instruction_offset
     self.missions_header.offset + self.missions_header.size
@@ -131,7 +124,7 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def size
-    self.file.size
+    self.contents.bytesize
   end
 
   def missions_header
@@ -159,3 +152,68 @@ class GtaScm::Parser < GtaScm::FileWalker
   # end
   
 end
+
+class GtaScm::MultithreadParser < GtaScm::Parser
+  attr_accessor :thread_count
+  attr_accessor :threads
+  attr_accessor :parsers
+
+  def initialize(scm,offset,thread_count = 1)
+    super(scm,offset,nil)
+
+    self.thread_count = thread_count
+    self.threads = []
+    self.parsers = []
+  end
+
+  def parse!
+    puts "#{self.class.name} - Parsing headers"
+
+    eat_header_variables!
+    eat_header_models!
+    eat_header_missions!
+
+    mission_offsets = self.missions_header.mission_offsets
+    ranges = mission_offsets.map.each_with_index do |offset,idx|
+      start_offset = offset
+      end_offset = if idx == mission_offsets.size - 1
+        self.size
+      else
+        mission_offsets[idx + 1]
+      end
+      start_offset..end_offset
+    end
+    ranges.unshift( self.main_instruction_range )
+
+    # ranges.in_groups(self.thread_count,false).each do |group|
+    ranges.each_with_index do |range,idx|
+      self.threads << Thread.new do
+        self.parsers[idx] = GtaScm::Parser.new(self.scm,range.begin,range.end)
+        self.parsers[idx].contents = self.contents
+        loop do
+          self.parsers[idx].eat_instruction!
+          break if self.parsers[idx].node.end_offset >= range.end
+        end
+      end
+    end
+
+    puts "#{self.class.name} - Waiting for threads"
+    self.threads.each(&:join)
+    puts "#{self.class.name} - All threads complete"
+
+    puts "#{self.class.name} - Merging parser data"
+    self.parsers.each do |parser|
+      self.offsets.concat(parser.offsets)
+      parser.jumps_source2targets.each_pair do |key,value|
+        self.jumps_source2targets[key].concat(value)
+      end
+      parser.jumps_target2sources.each_pair do |key,value|
+        self.jumps_target2sources[key].concat(value)
+      end
+      self.nodes.concat(parser.nodes)
+    end
+
+    self.add_jumps_to_nodes!(self.nodes)
+  end
+end
+
