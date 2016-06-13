@@ -1,6 +1,7 @@
 class GtaScm::Parser < GtaScm::FileWalker
 
   attr_accessor :scm
+  attr_accessor :opcodes
 
 
   attr_accessor :node
@@ -30,6 +31,10 @@ class GtaScm::Parser < GtaScm::FileWalker
     # if self.use_cache
     #   self.restore_from_cache
     # end
+  end
+
+  def load_opcode_definitions(opcode_definitions)
+    self.opcodes = opcode_definitions
   end
 
   def parse!
@@ -185,7 +190,6 @@ class GtaScm::MultithreadParser < GtaScm::Parser
     end
     ranges.unshift( self.main_instruction_range )
 
-    # ranges.in_groups(self.thread_count,false).each do |group|
     ranges.each_with_index do |range,idx|
       self.threads << Thread.new do
         self.parsers[idx] = GtaScm::Parser.new(self.scm,range.begin,range.end)

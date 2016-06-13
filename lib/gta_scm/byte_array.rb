@@ -1,7 +1,9 @@
 class GtaScm::ByteArray < Array
-  alias_method :_size, :size
+  # alias_method :_size, :size
+  # alias _size size
   def size
-    flatten._size
+    # flatten._size
+    flatten.count
   end
 
   def hex

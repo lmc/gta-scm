@@ -2,6 +2,44 @@ GTA SCM
 =======
 
 
+Features
+--------
+
+
+Next
+----
+  
+  * HashWithSortedIntegerKeys class
+    ? some way to indicate length of final node (@length, @length - last_key = final node length)
+    = Hash[ offset ] => value - where offset is a sorted integer that can be binary searched for
+    # get(offset) - Hash#[] - get value at offset
+    # get_spanning(offset) - Hash#[] - get value at index_spanning(offset)
+    # index_spanning(offset) - returns index of first key that's (key < offset < (key+1))
+    # index(offset) - returns index of given offset in keys array
+
+  * Cache
+    - Scm#nodes to json
+
+  * Rails frontend, resources for:
+    - /scms
+    - /scms/1
+
+    - /nodes ? offset  = 1024
+    - /nodes ? range[] = 1024 & range[] = 2048
+    - /nodes ? offset  = 1024 & range   = 512
+
+    - /opcodes/0002
+
+    - /enums
+    - /enums/objects
+
+
+Executables
+-----------
+
+  * bin/disassemble
+
+
 Terminology
 -----------
 

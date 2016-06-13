@@ -16,22 +16,26 @@ scm = GtaScm::Scm.load(ARGV[1])
 
 scm.load_opcode_definitions!
 
-parser = GtaScm::Parser.new(scm,0)
-# parser = GtaScm::MultithreadParser.new(scm,0)
+# parser = GtaScm::Parser.new(scm,0)
+parser = GtaScm::MultithreadParser.new(scm,0)
 # parser.progress_callback = lambda do |progress,total,calls|
 #   if calls % 1000 == 0
 #     progress = 1 if progress == 0
 #     print "Parser #{((progress.to_f/total)*100.0).round(1)}%\r"
 #   end
 # end
+
+parser.load_opcode_definitions( scm.opcodes )
+
 parser.parse!
 puts "Parser complete"
 
 scm.load_from_parser(parser)
 
-format = ARGV[4].present? ? ARGV[4] : "Sexp"
-dis = GtaScm::Disassembler.const_get(format).new(scm)
-dis.disassemble(ARGV[2])
+# format = ARGV[4].present? ? ARGV[4] : "Sexp"
+# dis = GtaScm::Disassembler.const_get(format).new(scm)
+# dis.disassemble(ARGV[2])
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 puts "Memory usage: #{mem_use_bytes/1024/1024} MB"
+puts "GC stats: #{GC.stat.inspect}"
