@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+# ./bin/performance_test vice-city games/vice-city/data/main.scm
+
+puts ARGV.inspect
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+puts "Memory usage: #{mem_use_bytes/1024/1024} MB"
+
+scm = GtaScm::Scm.load(ARGV[1])
+
+scm.load_opcode_definitions!
+
+parser = GtaScm::Parser.new(scm,0)
+parser.load_opcode_definitions( scm.opcodes )
+
+parser.parse!
+puts "Parser complete"
+
+scm.load_from_parser(parser)
+
+require 'benchmark'
+Benchmark.bm do |bm|
+  bm.report("@keys/@values + binary search") do
+    10000.times do
+      raise "fail" if scm.nodes[ rand(scm.nodes.size-1) ].nil?
+    end
+  end
+  bm.report("@hash with cache-miss search ") do
+    10000.times do
+      raise "fail" if scm.nodes[ rand(scm.nodes.size-1) ].nil?
+    end
+  end
+end

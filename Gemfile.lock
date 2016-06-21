@@ -1,4 +1,11 @@
+GIT
+  remote: git://github.com/tyler/binary_search.git
+  revision: 8994e82dda4d8dd8ac57cbfd03fb8695c50990b1
+  specs:
+    binary_search (0.3.0)
+
 GEM
+  remote: https://rubygems.org/
   specs:
     activesupport (4.2.4)
       i18n (~> 0.7)
@@ -33,6 +40,7 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport
+  binary_search!
   byebug
   rspec
 

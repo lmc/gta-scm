@@ -41,7 +41,7 @@ class GtaScm::Scm
   def initialize()
     self.offsets = []
     # self.offsets2types = {}
-    self.nodes = {}
+    self.nodes = GtaScm::NodeSet.new(0)
 
     self.opcodes = GtaScm::OpcodeDefinitions.new
   end
@@ -64,7 +64,7 @@ class GtaScm::Scm
   def load_from_parser(parser)
     self.offsets = parser.nodes.map(&:offset).sort
 
-    self.nodes = {}
+    self.nodes = GtaScm::NodeSet.new( parser.size )
     parser.nodes.each do |node|
       self.nodes[ node.offset ] = node
     end

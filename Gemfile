@@ -1,6 +1,9 @@
 ruby '2.2.3'
+source 'https://rubygems.org'
 
 gem 'activesupport'
+gem 'binary_search', github: 'tyler/binary_search'
+
 gem 'byebug'
 
 gem 'rspec'

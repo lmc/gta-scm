@@ -3,10 +3,13 @@ module GtaScm
 end
 
 require 'rubygems'
+
 require 'active_support/core_ext/object/blank'
 require 'active_support/core_ext/array/grouping'
-# require 'byebug'
-# alias debugger byebug
+require 'binary_search/pure'
+
+require 'byebug'
+alias debugger byebug
 
 # require 'progress_bar'
 # require 'gta_scm/progress_bar_ext'

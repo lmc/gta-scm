@@ -8,17 +8,12 @@ Features
 
 Next
 ----
-  
-  * HashWithSortedIntegerKeys class
-    ? some way to indicate length of final node (@length, @length - last_key = final node length)
-    = Hash[ offset ] => value - where offset is a sorted integer that can be binary searched for
-    # get(offset) - Hash#[] - get value at offset
-    # get_spanning(offset) - Hash#[] - get value at index_spanning(offset)
-    # index_spanning(offset) - returns index of first key that's (key < offset < (key+1))
-    # index(offset) - returns index of given offset in keys array
+
+  * NodeSet class
+    * Can refer to/return other nodes in the nodeset
 
   * Cache
-    - Scm#nodes to json
+    - Scm#nodes to json - what about binary data?
 
   * Rails frontend, resources for:
     - /scms
@@ -32,6 +27,16 @@ Next
 
     - /enums
     - /enums/objects
+
+  * UI
+    - Serialise scroll positions from the start
+    - Combined code/graph viewer
+    - Workspaces (windows/layout/target window for shortcuts)
+    - Minimap for code view
+
+  * Tests
+    - Headers
+    - Arg types
 
 
 Executables
