@@ -67,14 +67,18 @@ class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
   end
 
   def sexp(exp)
-    inner = exp.map do |el|
-      if el.is_a?(Array)
-        sexp(el)
-      else
-        el.to_s
-      end
-    end.join(" ")
-    "(#{inner})"
+    Elparser::encode(exp)
   end
+
+  # def sexp(exp)
+  #   inner = exp.map do |el|
+  #     if el.is_a?(Array)
+  #       sexp(el)
+  #     else
+  #       el.to_s
+  #     end
+  #   end.join(" ")
+  #   "(#{inner})"
+  # end
 
 end

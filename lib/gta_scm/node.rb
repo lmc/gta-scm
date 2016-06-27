@@ -84,6 +84,12 @@ class GtaScm::NodeSet
     @keys.size
   end
 
+  def each_pair(&block)
+    @keys.each_with_index do |key,idx|
+      yield(key,@values[idx])
+    end
+  end
+
   protected
 
   # gross abuse of a binary search to find the first key where: key < offset < next_key
@@ -157,7 +163,7 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
 
   def to_ir(scm,dis)
     [
-      "HeaderVariables",
+      :HeaderVariables,
       [:int8,self.magic_number[0]],
       [:zero, self.variable_storage.size]
     ]
@@ -187,11 +193,11 @@ class GtaScm::Node::Header::Models < GtaScm::Node::Header
 
   def to_ir(scm,dis)
     [
-      "HeaderModels",
+      :HeaderModels,
       [:int8, self[1][0].value(:int8)],
       [:int32, self[1][1].value(:int32)],
       self[1][2].map.each_with_index do |model_name,idx|
-        [ [:int32,idx] , [:string24, model_name.value(:string24)] ]
+        [ [:int32,idx] , [:string24, model_name.value(:string24) || ""] ]
       end
     ]
   end
@@ -238,7 +244,7 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
 
   def to_ir(scm,dis)
     [
-      "HeaderMissions",
+      :HeaderMissions,
       [:int8,  self[1][0].value(:int8) ],
       [:int32, self[1][1].value(:int32)],
       [:int32, self[1][2].value(:int32)],
@@ -294,16 +300,17 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
   def to_ir(scm,dis)
     definition = scm.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
 
-    [
-      definition.name.downcase,
-      self.arguments.map.each_with_index do |argument,idx|
+    ir = [definition.name]
+    if self.arguments.present?
+      ir[1] = (self.arguments || []).map.each_with_index do |argument,idx|
         if argument.end_var_args?
           [argument.arg_type_sym]
         else
           [argument.arg_type_sym,argument.value]
         end
       end
-    ]
+    end
+    ir
   end
 
   def jumps

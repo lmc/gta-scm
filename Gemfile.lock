@@ -1,4 +1,11 @@
 GIT
+  remote: git://github.com/kiwanami/ruby-elparser.git
+  revision: 7b7edd13d7a3bd1a8a092983950aa5a9cc1cad5d
+  specs:
+    elparser (0.0.7)
+      racc (~> 1)
+
+GIT
   remote: git://github.com/tyler/binary_search.git
   revision: 8994e82dda4d8dd8ac57cbfd03fb8695c50990b1
   specs:
@@ -18,6 +25,7 @@ GEM
     i18n (0.7.0)
     json (1.8.3)
     minitest (5.8.4)
+    racc (1.4.14)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -42,6 +50,7 @@ DEPENDENCIES
   activesupport
   binary_search!
   byebug
+  elparser!
   rspec
 
 BUNDLED WITH

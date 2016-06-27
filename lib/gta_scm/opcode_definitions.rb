@@ -49,7 +49,7 @@ class GtaScm::OpcodeDefinition
 
   def initialize(opcode_bytes,name,arg_types = [])
     self.opcode = opcode_bytes
-    self.name = name
+    self.name = name.downcase.to_sym
     self.arguments = arg_types.map do |type|
       {_type: type}
     end

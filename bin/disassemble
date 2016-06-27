@@ -32,9 +32,9 @@ puts "Parser complete"
 
 scm.load_from_parser(parser)
 
-# format = ARGV[4].present? ? ARGV[4] : "Sexp"
-# dis = GtaScm::Disassembler.const_get(format).new(scm)
-# dis.disassemble(ARGV[2])
+format = ARGV[4].present? ? ARGV[4] : "Sexp"
+dis = GtaScm::Disassembler.const_get(format).new(scm)
+dis.disassemble(ARGV[2])
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 puts "Memory usage: #{mem_use_bytes/1024/1024} MB"
