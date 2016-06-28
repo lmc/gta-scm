@@ -53,6 +53,19 @@ class GtaScm::Scm
 
   def load_opcode_definitions!
     self.opcodes.load_definitions!( self.game_id )
+    self.load_other_definitions!
+  end
+
+  def load_other_definitions!
+    self.definitions = {}
+
+    self.definitions[:objects] = {}
+    File.open("games/#{game_id}/data/default.ide").each_line do |line|
+      next if line.blank? || line[0] == "#"
+      if matches = line.match(/\A(\d+),\s*(\w+)(,|$)/)
+        self.definitions[:objects][ matches[1].to_i ] = matches[2].downcase
+      end
+    end
   end
 
 
@@ -74,10 +87,13 @@ class GtaScm::Scm
 
   # ===================
 
-
-  def arg_count_for_opcode(opcode)
-    
+  def models_header
+    self.nodes.instance_eval("@values").detect { |node| node.is_a?(GtaScm::Node::Header::Models) }
   end
 
+  def objscm_name(object_id)
+    return nil if object_id >= 0 or !models_header
+    GtaScm::Types.bin2value( models_header.model_names[ object_id.abs ] , :string24 )
+  end
 
 end

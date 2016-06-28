@@ -171,6 +171,8 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
 end
 
 class GtaScm::Node::Header::Models < GtaScm::Node::Header
+  def model_names; self[1][2]; end
+
   def header_eat!(parser,header_size)
     self[1] = GtaScm::ByteArray.new
 
@@ -307,12 +309,37 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
           [argument.arg_type_sym]
         elsif self.jump_argument?(idx)
           [:label,dis.label_for_offset(argument.value)]
+        elsif enum = self.enum_argument?(idx)
+          self.enum_argument_ir(scm,dis,enum,argument.value)
         else
           [argument.arg_type_sym,argument.value]
         end
       end
     end
     ir
+  end
+
+  ENUM_ARGUMENT_OPCODES = {
+    [0x9B,0x02] => { 0 => :object },                    # CREATE_OBJECT_NO_OFFSET
+    [0x13,0x02] => { 0 => :object, 1 => :pickup_type }, # CREATE_PICKUP
+  }
+  def enum_argument?(arg_idx)
+    args = ENUM_ARGUMENT_OPCODES[ self.opcode ]
+    return false unless args
+    args[arg_idx]
+  end
+
+  def enum_argument_ir(scm,dis,enum,value)
+    case enum
+    when :object
+      if value >= 0
+        [ :object, scm.definitions[:objects][value] ]
+      else
+        [ :objscm, scm.objscm_name(value) ]
+      end
+    else
+      [enum,value]
+    end
   end
 
   JUMP_ARGUMENT_OPCODES = {

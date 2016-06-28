@@ -49,18 +49,20 @@ module GtaScm::Types
     :pl_string16 => "S<",
   }
 
-  def self.bin2value(bin,type)
+  def self.bin2value(bin,o_type)
     bin = case bin
       when GtaScm::ByteArray
         bin.to_a.map(&:chr).join('')
     end
 
-    type = self.normalize_type(type)
+    type = self.normalize_type(o_type)
 
     if char = TYPE_PACK_CHARS[type]
       bin.unpack(char).first
-    elsif type == :string24 || type == :string8
+    elsif type == :string24
       bin.split(/\0/)[0]
+    elsif type == :string8
+      (o_type.chr + bin).split(/\0/)[0]
     else
       raise "??? #{type}"
     end
