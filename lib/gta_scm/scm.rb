@@ -4,6 +4,7 @@ require 'gta_scm/parser'
 require 'gta_scm/node'
 require 'gta_scm/opcode_definitions'
 require 'gta_scm/disassembler'
+require 'gta_scm/assembler'
 
 class GtaScm::Scm
 

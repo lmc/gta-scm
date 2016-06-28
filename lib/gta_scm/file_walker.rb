@@ -14,6 +14,7 @@ class GtaScm::FileWalker
     self.offset = offset
     self.start_offset = offset
     self.end_offset = end_offset || file.size
+    self.seek(self.offset)
   end
 
   def read(length = 1, as = nil)

@@ -305,12 +305,27 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
       ir[1] = (self.arguments || []).map.each_with_index do |argument,idx|
         if argument.end_var_args?
           [argument.arg_type_sym]
+        elsif self.jump_argument?(idx)
+          [:label,dis.label_for_offset(argument.value)]
         else
           [argument.arg_type_sym,argument.value]
         end
       end
     end
     ir
+  end
+
+  JUMP_ARGUMENT_OPCODES = {
+    [0x02,0x00] => [0], # GOTO
+    [0x4c,0x00] => [0], # GOTO_IF_TRUE
+    [0x4d,0x00] => [0], # GOTO_IF_FALSE
+    [0x4f,0x00] => [0], # START_NEW_SCRIPT
+    [0x50,0x00] => [0], # GOSUB
+  }
+  def jump_argument?(arg_idx)
+    arg_idxs = JUMP_ARGUMENT_OPCODES[ self.opcode ]
+    return false unless arg_idxs
+    arg_idxs.include?(arg_idx)
   end
 
   def jumps

@@ -20,11 +20,12 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
-    byebug (9.0.4)
+    byebug (9.0.5)
     diff-lcs (1.2.5)
     i18n (0.7.0)
     json (1.8.3)
     minitest (5.8.4)
+    parallel (1.9.0)
     racc (1.4.14)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
@@ -51,6 +52,7 @@ DEPENDENCIES
   binary_search!
   byebug
   elparser!
+  parallel
   rspec
 
 BUNDLED WITH

@@ -26,6 +26,10 @@ class GtaScm::Disassembler::Base
     raise "abstract"
   end
 
+  def label_for_offset(offset)
+    :"label_#{offset}"
+  end
+
 
   def file_for_offset(offset)
     self.files["main"]
@@ -54,7 +58,7 @@ class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
 
   def emit_node(offset,node)
     if node.label?
-      label = sexp( [:labeldef,node.offset] )
+      label = sexp( [:labeldef,self.label_for_offset(node.offset)] )
       self.file_for_offset(offset).puts()
       self.file_for_offset(offset).puts(label)
     end

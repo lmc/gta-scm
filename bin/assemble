@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+
+# RUBY_GC_HEAP_INIT_SLOTS=45000
+# ./bin/assemble vice-city _out/vice-city Sexp _out/vice-city/recompiled.scm
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+logger.info ARGV.inspect
+
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
+
+scm = GtaScm::Scm.load(ARGV[1])
+
+scm.load_opcode_definitions!
+
+=begin
+read input file line-by-line
+build nodes without offsets
+jump nodes have label ids
+assembler provides nodes with buffer to write into
+node tells assembler when it needs to provide a named label
+calculate jumps from saved list once all nodes are emitted
+=end
+asm = GtaScm::Assembler::Sexp.new(ARGV[1])
+asm.assemble(ARGV[3])
+
+
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
+# logger.info "GC stats: #{GC.stat.inspect}"

@@ -34,6 +34,7 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def load_opcode_definitions(opcode_definitions)
+    raise "No opcodes def" if !opcode_definitions
     self.opcodes = opcode_definitions
   end
 
@@ -172,7 +173,7 @@ class GtaScm::MultithreadParser < GtaScm::Parser
   end
 
   def parse!
-    puts "#{self.class.name} - Parsing headers"
+    logger.info "#{self.class.name} - Parsing headers"
 
     eat_header_variables!
     eat_header_models!
@@ -190,22 +191,21 @@ class GtaScm::MultithreadParser < GtaScm::Parser
     end
     ranges.unshift( self.main_instruction_range )
 
-    ranges.each_with_index do |range,idx|
-      self.threads << Thread.new do
-        self.parsers[idx] = GtaScm::Parser.new(self.scm,range.begin,range.end)
-        self.parsers[idx].contents = self.contents
-        loop do
-          self.parsers[idx].eat_instruction!
-          break if self.parsers[idx].node.end_offset >= range.end
-        end
+    Parallel.each_with_index(ranges, in_threads: 3) do |range,idx|
+
+      self.parsers[idx] = GtaScm::Parser.new(self.scm,range.begin,range.end)
+      self.parsers[idx].load_opcode_definitions( self.scm.opcodes )
+      self.parsers[idx].contents = self.contents
+      loop do
+        self.parsers[idx].eat_instruction!
+        break if self.parsers[idx].node.end_offset >= range.end
       end
+
     end
 
-    puts "#{self.class.name} - Waiting for threads"
-    self.threads.each(&:join)
-    puts "#{self.class.name} - All threads complete"
+    logger.info "#{self.class.name} - All threads complete"
 
-    puts "#{self.class.name} - Merging parser data"
+    logger.info "#{self.class.name} - Merging parser data"
     self.parsers.each do |parser|
       self.offsets.concat(parser.offsets)
       parser.jumps_source2targets.each_pair do |key,value|
