@@ -1,7 +1,10 @@
 class GtaScm::OpcodeDefinitions < Hash
 
+  attr_accessor :names2opcodes
+
   def initialize
     super()
+    self.names2opcodes = {}
   end
 
   # FIXME: allow both byte/string lookup
@@ -37,6 +40,7 @@ class GtaScm::OpcodeDefinitions < Hash
       arg_types = tokens.reject(&:blank?)
 
       self[opcode_bytes] = GtaScm::OpcodeDefinition.new(opcode_bytes,name,arg_types)
+      self.names2opcodes[name] = opcode_bytes
     end
   end
   

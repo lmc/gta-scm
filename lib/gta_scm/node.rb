@@ -90,6 +90,10 @@ class GtaScm::NodeSet
     end
   end
 
+class GtaScm::UnbuiltNodeSet < Array
+
+end
+
   protected
 
   # gross abuse of a binary search to find the first key where: key < offset < next_key
@@ -270,8 +274,15 @@ class GtaScm::Node::Raw < GtaScm::Node::Base
 end
 
 class GtaScm::Node::Instruction < GtaScm::Node::Base
-  def opcode;    self[0]; end
-  def arguments; self[1]; end
+  def opcode;      self[0];     end
+  def opcode=(_);  self[0] = _; end
+  def arguments;   self[1];     end
+
+  def initialize(*args)
+    super
+    self[0] = GtaScm::ByteArray.new
+    self[1] = GtaScm::ByteArray.new
+  end
 
   def eat!(parser)
     self.offset = parser.offset
@@ -379,7 +390,9 @@ end
 
 class GtaScm::Node::Argument < GtaScm::Node::Base
   def arg_type;  self[0]; end
+  def arg_type=(_); self[0] = _; end
   def arg_value; self[1]; end
+  def arg_value=(_); self[1] = _; end
 
   def eat!(parser)
     self[0] = parser.read(1)

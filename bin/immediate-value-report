@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+
+# RUBY_GC_HEAP_INIT_SLOTS=45000
+# ./bin/immediate-value-report vice-city games/vice-city/data/main.scm
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+logger.info ARGV.inspect
+
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
+
+scm = GtaScm::Scm.load(ARGV[1])
+
+scm.load_opcode_definitions!
+
+# parser = GtaScm::Parser.new(scm,0)
+parser = GtaScm::MultithreadParser.new(scm,0)
+
+parser.load_opcode_definitions( scm.opcodes )
+
+parser.parse!
+logger.info "Parser complete"
+
+scm.load_from_parser(parser)
+
+immediate_values = Hash.new { |h,k| h[k] = Hash.new { |hh,kk| hh[kk] = 0 } }
+strings = []
+scm.nodes.each_pair do |offset,node|
+  if node.is_a?(GtaScm::Node::Instruction)
+    node.arguments.each_with_index do |argument,idx|
+      # puts "#{offset} - #{idx}"
+      # puts argument.arg_type_sym
+      # puts argument.value.inspect
+      # puts 
+      if [:float32].include?(argument.arg_type_sym)
+        immediate_values[:float][argument.value] += 1
+      end
+      if [:int32,:int8,:int16].include?(argument.arg_type_sym)
+        immediate_values[:int][argument.value] += 1
+      end
+      if [:string8].include?(argument.arg_type_sym)
+        strings << argument.value
+      end
+    end
+  end
+end
+
+immediate_values.each_pair do |arg_type_sym,values|
+  puts "#{arg_type_sym}"
+  values.to_a.sort_by{|a| -a[1]}[0..16].each do |a|
+    puts "#{a[0].inspect.rjust(40," ")} - #{a[1]}"
+  end
+end
+
+lowest_ord = strings.map { |str| str[0].ord }.sort[0]
+puts "string8"
+puts lowest_ord
+
+mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
+# logger.info "GC stats: #{GC.stat.inspect}"

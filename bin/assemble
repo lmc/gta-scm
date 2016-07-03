@@ -26,7 +26,7 @@ node tells assembler when it needs to provide a named label
 calculate jumps from saved list once all nodes are emitted
 =end
 asm = GtaScm::Assembler::Sexp.new(ARGV[1])
-asm.assemble(ARGV[3])
+asm.assemble(scm,ARGV[3])
 
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)

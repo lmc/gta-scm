@@ -9,6 +9,7 @@ module GtaScm::Types
     0x05 => :int16,
     0x06 => :float32
   }
+  TYPES_INVERTED = TYPES.invert
   MAX_TYPE = TYPES.keys.sort.last
 
   TYPE_BYTESIZE = {
@@ -43,10 +44,10 @@ module GtaScm::Types
     :lvar          => "S<",
     :float32     => "e",
     :float16     => nil, # lol float16 is fucked
-    :pg_string8  => "S<",
-    :pl_string8  => "S<",
-    :pg_string16 => "S<",
-    :pl_string16 => "S<",
+    :var_string8  => "S<",
+    :lvar_string8  => "S<",
+    :var_string16 => "S<",
+    :lvar_string16 => "S<",
   }
 
   def self.bin2value(bin,o_type)
@@ -66,6 +67,10 @@ module GtaScm::Types
     else
       raise "??? #{type}"
     end
+  end
+
+  def self.type2bin(type_sym)
+    TYPES_INVERTED[type_sym.to_sym]
   end
 
   def self.bytes4type(type)
