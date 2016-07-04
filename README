@@ -12,7 +12,20 @@ Documentation
 * Can access memory outside of Variables space
 * Can kill all running threads with terminate_this_script
 * Some .gxt entries require load_mission_text (OVALRIG/HOTR_05)
-
+* Self-modifying code allowed
+  * Limits? presumably only first 64kb due to int16 var size
+* Integer overflow
+  * Overflows from 2147483647 -> -2147483648
+* Local variables
+  * Per-thread
+  * start_new_script takes (offset,*var_args), each nth arg gets assigned to lvar n-1
+    ie. start_new_script(1000,50,333) sets (lvar 0) = 50, (lvar 1) = 333
+* Out-of-bounds variables
+  * var reads outside of memory appear to return 0
+  * but writing anything out-of-bounds makes subsequent reads return -68
+  * doesn't appear to be wrap-around or shadowing
+  * same for lvars
+  * terrifying
 Next
 ----
 

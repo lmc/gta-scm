@@ -36,7 +36,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     # logger.error "touchup_defines: #{touchup_defines.inspect}"
     # logger.error "touchup_uses #{touchup_uses.inspect}"
 
-    self.define_touchup(:_main_size,331)
+    self.define_touchup(:_main_size,0)
     self.define_touchup(:_largest_mission_size,0)
     self.define_touchup(:_exclusive_mission_count,0)
 

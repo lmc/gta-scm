@@ -4,42 +4,26 @@
 
 (Include "bootstrap")
 
-(start_new_script ((label test) (end_var_args)))
-(start_new_script ((label test2) (end_var_args)))
+(start_new_script ((label test) (int32 666) (int32 999) (end_var_args)))
 
-(wait ((int16 1000)))
-% (load_mission_text ((string8 "OVALRIG")))
-
-% (display_nth_onscreen_counter_with_string ((var 8) (int8 0) (int8 1) (string8 "PL_PLAYR")))
-% (display_nth_onscreen_counter_with_string ((var 12) (int8 0) (int8 2) (string8 "PL_CHR")))
-% (display_nth_onscreen_counter_with_string ((var 16) (int8 0) (int8 3) (string8 "HOTR_05")))
+(wait ((int16 250)))
+(set_var_int ((var 16) (int8 666)))
 
 
-(labeldef label_319)
-(wait ((int16 2000)))
-(goto ((label label_319)))
+(labeldef main)
+(wait ((int16 250)))
+(goto ((label main)))
 
 
 (labeldef test)
 (wait ((int16 1000)))
+% (set_lvar_int ((lvar 1) (int32 420)))
 
-% so we have this opcode here, starting with: 
-% 07 05 04 01
-% (int32 17040647)
-% 07 05 04 00
-% (int32 263431)
-(switch_lift_camera ((int8 1)))
+(labeldef test_loop)
+(wait ((int16 1000)))
+% (set_var_int ((var -24) (int8 444)))
+% (print_with_number_big ((string8 "BONUS") (var 311) (int16 1000) (int8 1)))
+(print_with_number_big ((string8 "BONUS") (lvar -6) (int16 1000) (int8 1)))
+(goto ((label test_loop)))
 
-% we can also replace it with switch_security_camera
-% (switch_security_camera ((int8 1)))
-% c7 04 04 01
-% (int32 17040583)
-% c7 04 04 00
-% (int32 263367)
-
-(goto ((label test)))
-
-(labeldef test2)
-(wait ((int16 2000)))
-(set_var_int ((var 283) (int32 263431)))
-(goto ((label test2)))
+(terminate_this_script)
