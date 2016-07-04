@@ -1,5 +1,6 @@
 require 'gta_scm/scm_file'
 require 'gta_scm/file_walker'
+require 'gta_scm/gxt_file'
 require 'gta_scm/parser'
 require 'gta_scm/node'
 require 'gta_scm/opcode_definitions'
