@@ -6,6 +6,13 @@ Features
 --------
 
 
+Documentation
+-------------
+
+* Can access memory outside of Variables space
+* Can kill all running threads with terminate_this_script
+* Some .gxt entries require load_mission_text (OVALRIG/HOTR_05)
+
 Next
 ----
 

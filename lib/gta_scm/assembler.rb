@@ -27,14 +27,14 @@ class GtaScm::Assembler::Base
 end
 
 class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
-  def assemble(scm,out_path)
+  def assemble(scm,main_name,out_path)
     self.parser = Elparser::Parser.new
-    File.read("#{self.input_dir}/main.sexp.erl").each_line.each_with_index do |line,idx|
-      self.read_line(scm,line)
+    File.read("#{self.input_dir}/#{main_name}.sexp.erl").each_line.each_with_index do |line,idx|
+      self.read_line(scm,line,main_name,idx)
     end
 
-    logger.error "touchup_defines: #{touchup_defines.inspect}"
-    logger.error "touchup_uses #{touchup_uses.inspect}"
+    # logger.error "touchup_defines: #{touchup_defines.inspect}"
+    # logger.error "touchup_uses #{touchup_uses.inspect}"
 
     self.define_touchup(:_main_size,331)
     self.define_touchup(:_largest_mission_size,0)
@@ -60,7 +60,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               arr = arr[array_key]
             end
 
-            touchup_value = self.touchup_defines[touchup_name]
+            touchup_value = o_touchup_value = self.touchup_defines[touchup_name]
+            if !touchup_value
+              raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
+            end
             # logger.error "value: #{touchup_value}"
             case arr.size
             when 4
@@ -71,6 +74,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               raise "dunno how to replace value of size #{arr.size}"
             end
             touchup_value = touchup_value[0...arr.size]
+            logger.info "patching #{offset}#{array_keys.inspect} = #{o_touchup_value} #{touchup_value.inspect} (#{touchup_name})"
 
             # logger.error "replacing :#{arr.inspect} with #{touchup_value}"
             arr.replace(touchup_value)
@@ -87,11 +91,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     end
   end
 
-  def read_line(scm,line)
-    if line.present? and line[0] == "("# and idx < 30
+  def read_line(scm,line,file_name,line_idx)
+    if line.present? and line.strip[0] == "("# and idx < 30
       offset = nodes.next_offset
       tokens = self.parser.parse1(line).to_ruby
-      logger.notice tokens.inspect
+      logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
       # TODO: we can calculate offset + lengths here as we go
       node = case tokens[0]
         when :HeaderVariables
@@ -162,7 +166,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           end
         when :Include
           File.read("#{self.input_dir}/#{tokens[1]}.sexp.erl").each_line.each_with_index do |i_line,i_idx|
-            self.read_line(scm,i_line)
+            self.read_line(scm,i_line,tokens[1],i_idx)
           end
           return
         when :labeldef
@@ -176,9 +180,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       node.offset = offset
       nodes << node
 
-      logger.notice "size: #{nodes.last.size}"
-      logger.notice nodes.last.hex_inspect
-      logger.notice ""
+      # logger.notice "offset: #{offset}  size: #{nodes.last.size}"
+      logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
+      logger.info ""
     end
   end
 
@@ -244,6 +248,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         end
 
         arg.set( :int32, 0xAAAAAAAA )
+      when :labelvar
+        self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1])
+        arg.set( :var, 0xBBBB )
       else
         arg.set( arg_tokens[0] , arg_tokens[1] )
         # puts "#{arg.arg_type_sym} - #{arg_tokens[1].inspect}"

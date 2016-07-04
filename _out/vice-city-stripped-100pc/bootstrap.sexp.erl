@@ -48,3 +48,5 @@
 (set_player_control ((var 8) (int8 1)))
 % 00000251 - b7 01
 (release_weather)
+
+(labeldef label_319)

@@ -15,7 +15,7 @@ class GtaScm::Logger
   end
 
   def log(str,level = :info)
-    puts "#{runtime} - #{level} - #{str}"
+    puts "#{runtime} #{level[0].upcase} - #{str}"
   end
 
   def runtime
