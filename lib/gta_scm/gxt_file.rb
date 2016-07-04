@@ -4,6 +4,8 @@ class GtaScm::GxtFile < GtaScm::FileWalker
   attr_accessor :tkey
 
   attr_accessor :strings
+  attr_accessor :rebuilt
+
   # ===================
 
   def initialize(file)
@@ -90,8 +92,8 @@ class GtaScm::GxtFile < GtaScm::FileWalker
         # return
       end
 
-      require 'pp'
-      pp self.strings
+      # require 'pp'
+      # pp self.strings
     end
 
     def read_string()
@@ -112,6 +114,23 @@ class GtaScm::GxtFile < GtaScm::FileWalker
       size = GtaScm::Types.bin2value( self.read(4) , :int32 )
       logger.info "tdat #{_tdat} #{size}"
     end
+  end
+
+
+  def rebuild!
+    self.rebuilt = "".force_encoding("BINARY")
+    self.rebuilt << "TABL"
+    self.rebuilt << [0,0,0,0].map(&:chr).join
+    self.strings.keys.each do |tabl_name|
+      self.rebuilt << "#{tabl_name}".ljust(8,0.chr)[0..7]
+      self.rebuilt << [0,0,0,0].map(&:chr).join
+      # self.strings[tabl_name].keys.each do |tkey_name|
+      #   self.rebuilt << "#{tkey_name}".ljust(8,0.chr)[0..7]
+      #   self.rebuilt << [0,0,0,0].map(&:chr).join
+      # end
+    end
+    debugger
+    self.rebuilt
   end
 
 

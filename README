@@ -6,7 +6,7 @@ Features
 --------
 
 
-Documentation
+In-game VM Documentation
 -------------
 
 * Can access memory outside of Variables space
@@ -26,6 +26,8 @@ Documentation
   * doesn't appear to be wrap-around or shadowing
   * same for lvars
   * terrifying
+
+
 Next
 ----
 

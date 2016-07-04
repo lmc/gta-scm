@@ -39,6 +39,7 @@ gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))
 gxt.read_tabl!
 gxt.read_tkey!
 gxt.read_tdat!
+gxt.rebuild!
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
