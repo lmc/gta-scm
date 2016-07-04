@@ -430,6 +430,8 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     if type == :string8
       self[0] = GtaScm::ByteArray.new( [value[0].ord] )
       self[1] = GtaScm::ByteArray.new( value[1..7].ljust(7,0.chr).bytes )
+    elsif type == :end_var_args
+      self[0] = GtaScm::ByteArray.new( [0] )
     else
       self[0] = GtaScm::ByteArray.new( [GtaScm::Types.type2bin(type)] )
       self[1] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(value,type).bytes )

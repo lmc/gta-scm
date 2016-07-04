@@ -129,7 +129,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.touchup_uses.each_pair do |touchup_name,uses|
       uses.each do |(offset,array_keys)|
         
-        logger.error "#{touchup_name} - #{offset} #{array_keys.inspect}"
+        # logger.error "#{touchup_name} - #{offset} #{array_keys.inspect}"
         node = nodes.detect{|node| node.offset == offset}
         # logger.error "node: #{node.inspect}"
 
@@ -142,12 +142,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           else
             arr = node
             array_keys.each do |array_key|
-              logger.error " arr: #{array_key} #{arr.inspect}"
+              # logger.error " arr: #{array_key} #{arr.inspect}"
               arr = arr[array_key]
             end
 
             touchup_value = self.touchup_defines[touchup_name]
-            logger.error "value: #{touchup_value}"
+            # logger.error "value: #{touchup_value}"
             case arr.size
             when 4
               touchup_value = GtaScm::Types.value2bin( touchup_value , :int32 ).bytes
@@ -158,11 +158,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             end
             touchup_value = touchup_value[0...arr.size]
 
-            logger.error "replacing :#{arr.inspect} with #{touchup_value}"
+            # logger.error "replacing :#{arr.inspect} with #{touchup_value}"
             arr.replace(touchup_value)
         end
 
-        logger.error ""
+        # logger.error ""
       end
     end
 
@@ -192,8 +192,18 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         node.offset = offset
         node.opcode = GtaScm::ByteArray.new(opcode)
         node.negate! if negated
-        opcode_def.arguments.each_with_index do |arg_def,arg_idx|
-          self.assemble_argument(node,arg_def,arg_idx,tokens)
+
+        if opcode_def.var_args?
+          arg_idx = 0
+          loop do
+            self.assemble_argument(node,nil,arg_idx,tokens)
+            arg_idx += 1
+            break if node.arguments.last.end_var_args?
+          end
+        else
+          opcode_def.arguments.each_with_index do |arg_def,arg_idx|
+            self.assemble_argument(node,arg_def,arg_idx,tokens)
+          end
         end
         # puts "  #{node.hex_inspect}"
       end
@@ -211,7 +221,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       # when :pickup_type
       #   arg.set( :int , arg_tokens[1] )
       when :label
-        puts "label : #{arg_tokens.inspect}"
+        # puts "label : #{arg_tokens.inspect}"
         # TODO:
         # def register_touchup(node_offset,path_to_value,touchup_name,expected_placeholder)
         # self.register_touchup(node.offset,[1,arg_idx,1],"label_#{arg_tokens[1]}",[0xAA,0xAA,0xAA,0xAA])
