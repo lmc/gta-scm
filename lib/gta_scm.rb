@@ -6,6 +6,7 @@ require 'rubygems'
 
 require 'active_support/core_ext/object/blank'
 require 'active_support/core_ext/array/grouping'
+require 'active_support/core_ext/hash/reverse_merge'
 require 'active_support/json'
 require 'binary_search/pure'
 require 'elparser'

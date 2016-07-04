@@ -39,8 +39,11 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def parse!
+    eat_instruction!
     eat_header_variables!
+    eat_instruction!
     eat_header_models!
+    eat_instruction!
     eat_header_missions!
 
     while self.node.end_offset < self.end_offset
@@ -118,7 +121,8 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def main_instruction_range
-    (self.first_main_instruction_offset..(self.missions_header.mission_offsets.first))
+    last = self.missions_header.mission_offsets.first || self.size
+    (self.first_main_instruction_offset..(last))
   end
 
   def first_main_instruction_offset

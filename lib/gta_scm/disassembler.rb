@@ -4,9 +4,14 @@ end
 class GtaScm::Disassembler::Base
   attr_accessor :scm
   attr_accessor :files
+  attr_accessor :options
 
-  def initialize(scm)
+  def initialize(scm, options = {})
     self.scm = scm
+    self.options = options.reverse_merge(
+      # emit_bytecode_comments: false
+      emit_bytecode_comments: true
+    )
   end
 
   def disassemble(destination_path)
@@ -16,6 +21,8 @@ class GtaScm::Disassembler::Base
     scm.nodes.each_pair do |offset,node|
       emit_node(offset,node)
     end
+
+    puts "@largest_line: #{@largest_line}"
   end
 
   def emit_node(offset,node)
@@ -63,11 +70,18 @@ class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
       self.file_for_offset(offset).puts(label)
     end
     line = sexp( node.to_ir(self.scm,self) )
+    if node.is_a?(GtaScm::Node::Instruction)
+      @largest_line ||= 0
+      @largest_line = node.hex.size if node.hex.size > @largest_line
+    end
+    if self.options[:emit_bytecode_comments]
+      self.file_for_offset(offset).puts("% #{offset.to_s.rjust(8,"0")} - #{node.hex}")
+    end
     self.file_for_offset(offset).puts(line)
   end
 
   def extension
-    ".sexp"
+    ".sexp.erl"
   end
 
   def sexp(exp)

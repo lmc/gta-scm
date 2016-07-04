@@ -157,6 +157,12 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
   def magic_number;     self[1][0]; end
   def variable_storage; self[1][1]; end
 
+  def initialize(*args)
+    super
+    self[0] = GtaScm::Node::Instruction.new
+    self[1] = GtaScm::ByteArray.new
+  end
+
   def header_eat!(parser,header_size)
     self[1] = GtaScm::ByteArray.new
     self[1][0] = GtaScm::Node::Raw.new
@@ -320,8 +326,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
           [argument.arg_type_sym]
         elsif self.jump_argument?(idx)
           [:label,dis.label_for_offset(argument.value)]
-        elsif enum = self.enum_argument?(idx)
-          self.enum_argument_ir(scm,dis,enum,argument.value)
+        # elsif enum = self.enum_argument?(idx)
+        #   self.enum_argument_ir(scm,dis,enum,argument.value)
         else
           [argument.arg_type_sym,argument.value]
         end
@@ -400,6 +406,16 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     if !self.end_var_args?
       bytes = GtaScm::Types.bytes4type( self.arg_type_id )
       self[1] = parser.read(bytes)
+    end
+  end
+
+  def set(type,value)
+    if type == :string8
+      self[0] = GtaScm::ByteArray.new( [value[0].ord] )
+      self[1] = GtaScm::ByteArray.new( value[1..7].ljust(8,0.chr).bytes )
+    else
+      self[0] = GtaScm::ByteArray.new( [GtaScm::Types.type2bin(type)] )
+      self[1] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(value,type).bytes )
     end
   end
 
