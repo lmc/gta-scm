@@ -91,7 +91,11 @@ class GtaScm::NodeSet
   end
 
 class GtaScm::UnbuiltNodeSet < Array
-
+  def next_offset(node = nil)
+    ret = self.map(&:size).inject(:+) || 0
+    ret = ret + node.size if node
+    ret
+  end
 end
 
   protected
@@ -136,6 +140,12 @@ class GtaScm::Node::Header < GtaScm::Node::Base
   def jump_instruction; self[0]; end
   def raw_header;       self[1]; end
 
+  def initialize(*args)
+    super
+    self[0] = GtaScm::Node::Instruction.new
+    self[1] = GtaScm::ByteArray.new
+  end
+
   def eat!(parser)
     self.offset = parser.offset
 
@@ -156,12 +166,6 @@ end
 class GtaScm::Node::Header::Variables < GtaScm::Node::Header
   def magic_number;     self[1][0]; end
   def variable_storage; self[1][1]; end
-
-  def initialize(*args)
-    super
-    self[0] = GtaScm::Node::Instruction.new
-    self[1] = GtaScm::ByteArray.new
-  end
 
   def header_eat!(parser,header_size)
     self[1] = GtaScm::ByteArray.new
@@ -316,10 +320,23 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
     end
   end
 
+  def negated?
+    self.opcode != GtaScm::OpcodeDefinitions.normalize_opcode(self.opcode)
+  end
+
+  def negate!
+    if !negated?
+      self.opcode[1] += 128
+    end
+  end
+
   def to_ir(scm,dis)
     definition = scm.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
 
-    ir = [definition.name]
+    ir = []
+    name = definition.name
+    name = :"not_#{name}" if negated?
+    ir << name
     if self.arguments.present?
       ir[1] = (self.arguments || []).map.each_with_index do |argument,idx|
         if argument.end_var_args?
@@ -412,7 +429,7 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
   def set(type,value)
     if type == :string8
       self[0] = GtaScm::ByteArray.new( [value[0].ord] )
-      self[1] = GtaScm::ByteArray.new( value[1..7].ljust(8,0.chr).bytes )
+      self[1] = GtaScm::ByteArray.new( value[1..7].ljust(7,0.chr).bytes )
     else
       self[0] = GtaScm::ByteArray.new( [GtaScm::Types.type2bin(type)] )
       self[1] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(value,type).bytes )

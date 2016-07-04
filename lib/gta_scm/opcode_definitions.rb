@@ -9,6 +9,10 @@ class GtaScm::OpcodeDefinitions < Hash
 
   # FIXME: allow both byte/string lookup
   def [](key)
+    super( GtaScm::OpcodeDefinitions.normalize_opcode(key) )
+  end
+
+  def self.normalize_opcode(key)
     key = key.dup
     case key
       when GtaScm::ByteArray
@@ -16,8 +20,8 @@ class GtaScm::OpcodeDefinitions < Hash
         if key[1] >= 128
           key[1] = key[1] - 128
         end
-      end
-    super(key)
+    end
+    key
   end
 
   def load_definitions!(game_id)
