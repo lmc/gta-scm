@@ -40,7 +40,7 @@ class GtaScm::OpcodeDefinitions < Hash
       hex_opcode = tokens.shift()
       opcode_bytes = hex_opcode.scan(/(..)(..)/).flatten.map{|hex| hex.to_i(16)}.reverse
       _ = tokens.shift()
-      name = tokens.shift().gsub(/[^A-Z_]/,'')
+      name = tokens.shift().gsub(/[^A-Z0-9_]/,'')
       arg_types = tokens.reject(&:blank?)
 
       self[opcode_bytes] = GtaScm::OpcodeDefinition.new(opcode_bytes,name,arg_types)

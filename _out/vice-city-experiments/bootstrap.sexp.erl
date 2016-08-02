@@ -49,4 +49,6 @@
 % 00000251 - b7 01
 (release_weather)
 
+(switch_streaming ((int8 1)))
+
 (labeldef label_319)

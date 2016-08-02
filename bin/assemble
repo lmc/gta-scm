@@ -18,28 +18,25 @@ scm = GtaScm::Scm.load(ARGV[1])
 scm.load_opcode_definitions!
 
 =begin
-read input file line-by-line
-build nodes without offsets
-jump nodes have label ids
-assembler provides nodes with buffer to write into
-node tells assembler when it needs to provide a named label
-calculate jumps from saved list once all nodes are emitted
+NEXT:
+support variable names + auto mem allocation
+support gxt replacement/insertion
 =end
-# asm = GtaScm::Assembler::Sexp.new(ARGV[1])
 
-# path = ARGV[4]
-# if path == "GAME"
-#   GAME_PATH = "/Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - vice city/Grand Theft Auto - Vice City.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/Grand Theft Auto Vice City"
-#   path = "#{GAME_PATH}/data/main.scm"
-#   logger.notice "Compiling into game dir..."
-# end
-# asm.assemble(scm,ARGV[2],path)
+asm = GtaScm::Assembler::Sexp.new(ARGV[1])
+path = ARGV[4]
+if path == "GAME"
+  GAME_PATH = "/Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - vice city/Grand Theft Auto - Vice City.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/Grand Theft Auto Vice City"
+  path = "#{GAME_PATH}/data/main.scm"
+  logger.notice "Compiling into game dir..."
+end
+asm.assemble(scm,ARGV[2],path)
 
-gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))
-gxt.read_tabl!
-gxt.read_tkey!
-gxt.read_tdat!
-gxt.rebuild!
+# gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))
+# gxt.read_tabl!
+# gxt.read_tkey!
+# gxt.read_tdat!
+# gxt.rebuild!
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"

@@ -31,14 +31,14 @@ class GtaScm::GxtFile < GtaScm::FileWalker
       name = self.read(8).map(&:chr).join.strip
       offset = GtaScm::Types.bin2value( self.read(4) , :int32 )
       self.tabl[name] = offset
-      logger.info "#{name.inspect} #{offset}"
+      # logger.info "#{name.inspect} #{offset}"
     end
   end
 
   TKEY_BYTES = 12
   def read_tkey!
     self.tabl.each_pair do |tabl_name,offset|
-      logger.info "reading tkey for #{tabl_name} at #{offset}"
+      # logger.info "reading tkey for #{tabl_name} at #{offset}"
         self.seek(offset)
 
       if tabl_name == "MAIN"
@@ -49,13 +49,13 @@ class GtaScm::GxtFile < GtaScm::FileWalker
       _tkey = self.read(4).map(&:chr).join.strip
       size = GtaScm::Types.bin2value( self.read(4) , :int32 )
 
-      logger.info "  got #{name.inspect} #{_tkey} #{size}"
+      # logger.info "  got #{name.inspect} #{_tkey} #{size}"
 
       (size / TKEY_BYTES).times do |idx|
         tdat_offset = GtaScm::Types.bin2value( self.read(4) , :int32 )
         tdat_name = self.read(8).map(&:chr).join.strip
         self.tkey[tabl_name][tdat_name] = [tdat_offset,size]
-        logger.info "    tdat #{tdat_name} #{tdat_offset}"
+        # logger.info "    tdat #{tdat_name} #{tdat_offset}"
       end
     end
 

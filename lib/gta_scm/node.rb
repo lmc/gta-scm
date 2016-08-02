@@ -301,7 +301,6 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
 
     self[1] = GtaScm::ByteArray.new
 
-    # FIXME: should there be a magic method for a opcode def?
     definition = parser.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
 
     if definition.var_args?

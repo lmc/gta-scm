@@ -74,9 +74,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               raise "dunno how to replace value of size #{arr.size}"
             end
             touchup_value = touchup_value[0...arr.size]
-            logger.info "patching #{offset}#{array_keys.inspect} = #{o_touchup_value} #{touchup_value.inspect} (#{touchup_name})"
+            logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
 
-            # logger.error "replacing :#{arr.inspect} with #{touchup_value}"
             arr.replace(touchup_value)
         end
 
@@ -89,6 +88,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         f << node.to_binary
       end
     end
+
+    logger.info "Complete, final size: #{File.size(out_path)} bytes"
   end
 
   def read_line(scm,line,file_name,line_idx)
