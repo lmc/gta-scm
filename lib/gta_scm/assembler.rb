@@ -106,8 +106,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             node[0] = self.assemble_instruction(scm,offset,[:goto,[[:label,:label__post_header_variables]]])
             self.use_touchup(node.offset,[0,1,0,1],:label__post_header_variables)
 
-            node[1][0] = GtaScm::Node::Raw.new([tokens[1][1]])
-            node[1][1] = GtaScm::Node::Raw.new([0] * tokens[2][1])
+            node.from_ir(tokens)
 
             self.define_touchup(:label__post_header_variables,nodes.next_offset(node))
           end

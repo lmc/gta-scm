@@ -29,6 +29,10 @@ class GtaScm::Node::Base < GtaScm::ByteArray
     self.offset + self.size
   end
 
+  def from_ir(*)
+    raise "abstract"
+  end
+
   def to_ir
     raise "abstract"
   end

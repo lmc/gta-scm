@@ -14,8 +14,16 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
   def to_ir(scm,dis)
     [
       :HeaderVariables,
-      [:int8,self.magic_number[0]],
-      [:zero, self.variable_storage.size]
+      [
+        [:magic, [:int8,self.magic_number[0]]],
+        [:size,  [:zero, self.variable_storage.size]]
+      ]
     ]
+  end
+
+  def from_ir(tokens)
+    data = Hash[tokens[1]]
+    self[1][0] = GtaScm::Node::Raw.new([data[:magic][1]])
+    self[1][1] = GtaScm::Node::Raw.new([0] * data[:size][1])
   end
 end
