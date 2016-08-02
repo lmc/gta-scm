@@ -170,8 +170,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             self.read_line(scm,i_line,tokens[1],i_idx)
           end
           return
+        when :Rawhex
+          GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } )
         when :labeldef
-          # debugger
           self.define_touchup(tokens[1],nodes.next_offset)
           return
         else
