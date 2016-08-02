@@ -41,14 +41,45 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
   def to_ir(scm,dis)
     [
       :HeaderMissions,
-      [:int8,  self[1][0].value(:int8) ],
-      [:int32, self[1][1].value(:int32)],
-      [:int32, self[1][2].value(:int32)],
-      [:int16, self[1][3].value(:int16)],
-      [:int16, self[1][4].value(:int16)],
-      self[1][5].map.each_with_index do |mission_offset,idx|
-        [ [:int32,idx] , [:int32, mission_offset.value(:int32)] ]
-      end
+      [
+        [:padding,                 [:int8,  self[1][0].value(:int8) ]],
+        [:main_size,               [:int32, self[1][1].value(:int32)]],
+        [:largest_mission_size,    [:int32, self[1][2].value(:int32)]],
+        [:total_mission_count,     [:int16, self[1][3].value(:int16)]],
+        [:exclusive_mission_count, [:int16, self[1][4].value(:int16)]],
+        [:mission_offsets, self[1][5].map.each_with_index do |mission_offset,idx|
+          [ [:int32,idx] , [:int32, mission_offset.value(:int32)] ]
+        end]
+      ]
     ]
+  end
+
+  def from_ir(tokens,asm)
+    data = Hash[tokens[1]]
+
+    # padding
+    self[1][0] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:padding][1] , :int8 ).bytes )
+
+    # main size
+    self[1][1] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
+    asm.use_touchup(self.offset,[1,1],:_main_size)
+
+    # largest mission size
+    self[1][2] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
+    asm.use_touchup(self.offset,[1,2],:_largest_mission_size)
+
+    # total missions
+    mission_count = data[:total_mission_count][1]
+    self[1][3] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission_count , :int16 ).bytes )
+    # asm.use_touchup(self.offset,[1,3],:_total_mission_count)
+
+    # exclusive missions
+    self[1][4] = GtaScm::Node::Raw.new( [0xBB,0xBB] )
+    asm.use_touchup(self.offset,[1,4],:_exclusive_mission_count)
+
+    self[1][5] = GtaScm::ByteArray.new
+    (data[:mission_offsets] || []).each do |mission|
+      self[1][5] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission[1][1] , :int32 ).bytes )
+    end
   end
 end

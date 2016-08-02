@@ -39,6 +39,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.define_touchup(:_main_size,0)
     self.define_touchup(:_largest_mission_size,0)
     self.define_touchup(:_exclusive_mission_count,0)
+    # self.define_touchup(:_total_mission_count,0)
+    self.define_touchup(:_exclusive_mission_count,0)
 
     self.touchup_uses.each_pair do |touchup_name,uses|
       uses.each do |(offset,array_keys)|
@@ -117,16 +119,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             node[0] = self.assemble_instruction(scm,offset,[:goto,[[:label,:label__post_header_models]]])
             self.use_touchup(node.offset,[0,1,0,1],:label__post_header_models)
 
-            node[1][0] = GtaScm::Node::Raw.new([tokens[1][1]])
-
-            # model_count = tokens[3].size
-            model_count = tokens[2][1]
-            node[1][1] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin(model_count,:int32).bytes )
-
-            node[1][2] = GtaScm::ByteArray.new
-            tokens[3].each do |model|
-              node[1][2] = GtaScm::Node::Raw.new( (model[1][1].ljust(23,"\000")+"\000")[0..24].bytes )
-            end
+            node.from_ir(tokens)
 
             self.define_touchup(:label__post_header_models,nodes.next_offset(node))
           end
@@ -137,30 +130,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             node[0] = self.assemble_instruction(scm,offset,[:goto,[[:label,:label__post_header_missions]]])
             self.use_touchup(node.offset,[0,1,0,1],:label__post_header_missions)
 
-            # padding
-            node[1][0] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( tokens[1][1] , :int8 ).bytes )
-
-            # main size
-            node[1][1] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
-            self.use_touchup(offset,[1,1],:_main_size)
-
-            # largest mission size
-            node[1][2] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
-            self.use_touchup(offset,[1,2],:_largest_mission_size)
-
-            # total missions
-            mission_count = tokens[4][1]
-            node[1][3] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission_count , :int16 ).bytes )
-            # self.use_touchup(offset,[1,3],:_total_mission_count)
-
-            # exclusive missions
-            node[1][4] = GtaScm::Node::Raw.new( [0xBB,0xBB] )
-            self.use_touchup(offset,[1,4],:_exclusive_mission_count)
-
-            node[1][5] = GtaScm::ByteArray.new
-            (tokens[6] || []).each do |mission|
-              node[1][5] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission[1][1] , :int32 ).bytes )
-            end
+            node.from_ir(tokens,self)
 
             self.define_touchup(:label__post_header_missions,nodes.next_offset(node))
           end
@@ -177,11 +147,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         else
           self.assemble_instruction(scm,offset,tokens)
       end
-      # debugger
+
       node.offset = offset
       nodes << node
 
-      # logger.notice "offset: #{offset}  size: #{nodes.last.size}"
       logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       logger.info ""
     end
