@@ -1,6 +1,6 @@
 
 class GtaScm::Node::Header::Missions < GtaScm::Node::Header
-  def header_eat!(parser,bytes_to_eat)
+  def header_eat!(parser,game_id,bytes_to_eat)
     self[1] = GtaScm::ByteArray.new
 
     # padding (0)
@@ -54,8 +54,11 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
     ]
   end
 
-  def from_ir(tokens,asm)
+  def from_ir(tokens,scm,asm)
     data = Hash[tokens[1]]
+
+    self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_missions]]])
+    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_missions)
 
     # padding
     self[1][0] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:padding][1] , :int8 ).bytes )
@@ -81,5 +84,7 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
     (data[:mission_offsets] || []).each do |mission|
       self[1][5] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission[1][1] , :int32 ).bytes )
     end
+
+    asm.define_touchup(:label__post_header_missions,asm.nodes.next_offset(self))
   end
 end

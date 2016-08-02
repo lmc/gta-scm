@@ -39,18 +39,26 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def parse!
-    eat_instruction!
-    eat_header_variables!
-    eat_instruction!
-    eat_header_models!
-    eat_instruction!
-    eat_header_missions!
+    parse_headers!
 
     while self.node.end_offset < self.end_offset
       eat_instruction!
     end
 
     self.add_jumps_to_nodes!(self.nodes)
+  end
+
+  def parse_headers!
+    case self.scm.game_id
+    when "vice-city"
+      parse_vice_city_headers!
+    end
+  end
+
+  def parse_vice_city_headers!
+    eat_header_variables!
+    eat_header_models!
+    eat_header_missions!
   end
 
   def eat!(type,&block)
@@ -71,19 +79,19 @@ class GtaScm::Parser < GtaScm::FileWalker
 
   def eat_header_variables!
     self.node = GtaScm::Node::Header::Variables.new
-    self.node.eat!(self)
+    self.node.eat!(self,self.scm.game_id)
     self.on_eat_node(self.node)
   end
 
   def eat_header_models!
     self.node = GtaScm::Node::Header::Models.new
-    self.node.eat!(self)
+    self.node.eat!(self,self.scm.game_id)
     self.on_eat_node(self.node)
   end
 
   def eat_header_missions!
     self.node = GtaScm::Node::Header::Missions.new
-    self.node.eat!(self)
+    self.node.eat!(self,self.scm.game_id)
     self.on_eat_node(self.node)
   end
 
@@ -179,9 +187,7 @@ class GtaScm::MultithreadParser < GtaScm::Parser
   def parse!
     logger.info "#{self.class.name} - Parsing headers"
 
-    eat_header_variables!
-    eat_header_models!
-    eat_header_missions!
+    parse_headers!
 
     mission_offsets = self.missions_header.mission_offsets
     ranges = mission_offsets.map.each_with_index do |offset,idx|

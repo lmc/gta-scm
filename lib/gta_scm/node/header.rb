@@ -9,7 +9,7 @@ class GtaScm::Node::Header < GtaScm::Node::Base
     self[1] = GtaScm::ByteArray.new
   end
 
-  def eat!(parser)
+  def eat!(parser,game_id)
     self.offset = parser.offset
 
     self[0] = GtaScm::Node::Instruction.new
@@ -17,7 +17,7 @@ class GtaScm::Node::Header < GtaScm::Node::Base
 
     jump_destination = self[0].arguments.first.value
     header_size = jump_destination - self.offset - self[0].size
-    header_eat!(parser,header_size)
+    header_eat!(parser,game_id,header_size)
   end
 
   def header_eat!(parser,header_size)

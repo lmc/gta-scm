@@ -104,35 +104,17 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         when :HeaderVariables
           GtaScm::Node::Header::Variables.new.tap do |node|
             node.offset = offset
-
-            node[0] = self.assemble_instruction(scm,offset,[:goto,[[:label,:label__post_header_variables]]])
-            self.use_touchup(node.offset,[0,1,0,1],:label__post_header_variables)
-
-            node.from_ir(tokens)
-
-            self.define_touchup(:label__post_header_variables,nodes.next_offset(node))
+            node.from_ir(tokens,scm,self)
           end
         when :HeaderModels
           GtaScm::Node::Header::Models.new.tap do |node|
             node.offset = offset
-
-            node[0] = self.assemble_instruction(scm,offset,[:goto,[[:label,:label__post_header_models]]])
-            self.use_touchup(node.offset,[0,1,0,1],:label__post_header_models)
-
-            node.from_ir(tokens)
-
-            self.define_touchup(:label__post_header_models,nodes.next_offset(node))
+            node.from_ir(tokens,scm,self)
           end
         when :HeaderMissions
           GtaScm::Node::Header::Missions.new.tap do |node|
             node.offset = offset
-
-            node[0] = self.assemble_instruction(scm,offset,[:goto,[[:label,:label__post_header_missions]]])
-            self.use_touchup(node.offset,[0,1,0,1],:label__post_header_missions)
-
-            node.from_ir(tokens,self)
-
-            self.define_touchup(:label__post_header_missions,nodes.next_offset(node))
+            node.from_ir(tokens,scm,self)
           end
         when :Include
           File.read("#{self.input_dir}/#{tokens[1]}.sexp.erl").each_line.each_with_index do |i_line,i_idx|

@@ -1,7 +1,7 @@
 class GtaScm::Node::Header::Models < GtaScm::Node::Header
   def model_names; self[1][2]; end
 
-  def header_eat!(parser,header_size)
+  def header_eat!(parser,game_id,header_size)
     self[1] = GtaScm::ByteArray.new
 
     # padding (0)
@@ -34,8 +34,12 @@ class GtaScm::Node::Header::Models < GtaScm::Node::Header
     ]
   end
 
-  def from_ir(tokens)
+  def from_ir(tokens,scm,asm)
     data = Hash[tokens[1]]
+
+    self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_models]]])
+    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_models)
+
     self[1][0] = GtaScm::Node::Raw.new([data[:padding][1]])
 
     model_count = data[:model_count][1]
@@ -47,5 +51,7 @@ class GtaScm::Node::Header::Models < GtaScm::Node::Header
     data[:model_names].each do |model|
       self[1][2] << GtaScm::Node::Raw.new( (model[1][1].ljust(23,"\000")+"\000")[0..24].bytes )
     end
+
+    asm.define_touchup(:label__post_header_models,asm.nodes.next_offset(self))
   end
 end
