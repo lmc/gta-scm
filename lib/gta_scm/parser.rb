@@ -40,7 +40,7 @@ class GtaScm::Parser < GtaScm::FileWalker
 
   def parse!
     parse_headers!
-
+    
     while self.node.end_offset < self.end_offset
       eat_instruction!
     end
@@ -52,6 +52,8 @@ class GtaScm::Parser < GtaScm::FileWalker
     case self.scm.game_id
     when "vice-city"
       parse_vice_city_headers!
+    when "san-andreas"
+      parse_san_andreas_headers!
     end
   end
 
@@ -59,6 +61,15 @@ class GtaScm::Parser < GtaScm::FileWalker
     eat_header_variables!
     eat_header_models!
     eat_header_missions!
+  end
+
+  def parse_san_andreas_headers!
+    eat_header_variables!
+    eat_header_models!
+    eat_header_missions!
+    eat_header_externals!
+    eat_header_segment_5! # always empty
+    eat_header_segment_6! # just some alloc sizes
   end
 
   def eat!(type,&block)
@@ -95,15 +106,48 @@ class GtaScm::Parser < GtaScm::FileWalker
     self.on_eat_node(self.node)
   end
 
-  def eat_instruction!
-    self.node = GtaScm::Node::Instruction.new
-    self.node.eat!(self)
+  def eat_header_externals!
+    self.node = GtaScm::Node::Header::Externals.new
+    self.node.eat!(self,self.scm.game_id)
     self.on_eat_node(self.node)
-    self.node.jumps.each do |jump|
-      jump[:from] = node.offset
-      self.jumps_source2targets[ jump[:from] ] << jump 
-      self.jumps_target2sources[ jump[:to]   ] << jump 
+  end
+
+  def eat_header_segment_5!
+    self.node = GtaScm::Node::Header::Segment5.new
+    self.node.eat!(self,self.scm.game_id)
+    self.on_eat_node(self.node)
+  end
+
+  def eat_header_segment_6!
+    self.node = GtaScm::Node::Header::Segment6.new
+    self.node.eat!(self,self.scm.game_id)
+    self.on_eat_node(self.node)
+  end
+
+  def eat_instruction!
+    begin
+      self.node = GtaScm::Node::Instruction.new
+      self.node.eat!(self)
+      self.on_eat_node(self.node)
+      self.node.jumps.each do |jump|
+        jump[:from] = node.offset
+        self.jumps_source2targets[ jump[:from] ] << jump 
+        self.jumps_target2sources[ jump[:to]   ] << jump 
+      end
+    rescue => ex
+      generate_internal_fault_node(ex)
+      raise ex
     end
+  end
+
+  def generate_internal_fault_node(exception)
+    fault_node = GtaScm::Node::InternalFault.new
+    fault_node.offset = self.node.offset
+    fault_node.exception = exception
+    fault_node[0] = self.node
+    fault_node[1] = self.read(128)
+    self.node = fault_node
+    self.on_eat_node(self.node)
   end
 
   def on_eat_node(node)

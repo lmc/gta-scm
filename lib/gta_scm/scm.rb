@@ -10,9 +10,12 @@ require 'gta_scm/disassembler'
 require 'gta_scm/assembler'
 
 class GtaScm::Scm
-
-  # GameID (gta3/vice-city/san-andreas)
-  def game_id; "vice-city"; end
+  GAME_IDS = ["vice-city","san-andreas"]
+  def game_id; @game_id; end
+  def game_id=(value)
+    raise ArgumentError, "unknown game id (supported: #{GAME_IDS.inspect})" unless GAME_IDS.include?(value)
+    @game_id = value
+  end
 
   # ScmFile
   attr_accessor :scm_file
@@ -36,8 +39,9 @@ class GtaScm::Scm
   # ===================
 
 
-  def self.load(path)
+  def self.load(game_id,path)
     instance = new
+    instance.game_id = game_id
     instance.scm_file = GtaScm::ScmFile.open(path,'r')
     instance
   end
@@ -56,7 +60,7 @@ class GtaScm::Scm
 
   def load_opcode_definitions!
     self.opcodes.load_definitions!( self.game_id )
-    self.load_other_definitions!
+    # self.load_other_definitions!
   end
 
   def load_other_definitions!

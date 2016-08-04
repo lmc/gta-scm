@@ -1,5 +1,7 @@
 class GtaScm::Node::Header < GtaScm::Node::Base
 
+  attr_accessor :game_id
+
   def jump_instruction; self[0]; end
   def raw_header;       self[1]; end
 
@@ -11,6 +13,7 @@ class GtaScm::Node::Header < GtaScm::Node::Base
 
   def eat!(parser,game_id)
     self.offset = parser.offset
+    self.game_id = game_id
 
     self[0] = GtaScm::Node::Instruction.new
     self[0].eat!(parser)

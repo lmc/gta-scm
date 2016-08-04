@@ -17,19 +17,19 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
 
     self[1] = GtaScm::ByteArray.new
 
-    definition = parser.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
+    definition = parser.opcodes[ self.opcode ]# || raise("No definition for opcode #{self.opcode.inspect}")
 
     if definition.var_args?
       loop do
         argument = GtaScm::Node::Argument.new
-        argument.eat!(parser)
+        argument.eat!(parser,self)
         self.arguments << argument
         break if argument.arg_type_id == 0 # end of var_args list
       end
     else
       definition.arguments.each_with_index do |arg_def,arg_idx|
         argument = GtaScm::Node::Argument.new
-        argument.eat!(parser)
+        argument.eat!(parser,self)
         self.arguments << argument
       end
     end
@@ -56,6 +56,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
       ir[1] = (self.arguments || []).map.each_with_index do |argument,idx|
         if argument.end_var_args?
           [argument.arg_type_sym]
+        elsif argument.string128?
+          [:string128,argument.value]
         elsif self.jump_argument?(idx)
           [:label,dis.label_for_offset(argument.value)]
         # elsif enum = self.enum_argument?(idx)
@@ -102,6 +104,11 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
     arg_idxs = JUMP_ARGUMENT_OPCODES[ self.opcode ]
     return false unless arg_idxs
     arg_idxs.include?(arg_idx)
+  end
+
+  def string128_argument?
+    # self.opcode == [0x62,0x06]
+    self.opcode == [0xB6, 0x05]
   end
 
   def jumps

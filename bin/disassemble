@@ -16,17 +16,23 @@ logger.info ARGV.inspect
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 
-scm = GtaScm::Scm.load(ARGV[1])
+scm = GtaScm::Scm.load(ARGV[0],ARGV[1])
 
 scm.load_opcode_definitions!
 
-# parser = GtaScm::Parser.new(scm,0)
-parser = GtaScm::MultithreadParser.new(scm,0)
+parser = GtaScm::Parser.new(scm,0)
+# parser = GtaScm::MultithreadParser.new(scm,0)
 
 parser.load_opcode_definitions( scm.opcodes )
 
-parser.parse!
-logger.info "Parser complete"
+begin
+  parser.parse!
+  logger.info "Parser complete"
+rescue => ex
+  logger.error "We fucked up: #{ex.message}"
+  ex.backtrace.each {|line| logger.debug line }
+  logger.error "Dumping currently-parsed SCM"
+end
 
 scm.load_from_parser(parser)
 

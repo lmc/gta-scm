@@ -7,13 +7,15 @@ module GtaScm::Types
     0x03 => :lvar,
     0x04 => :int8,
     0x05 => :int16,
-    0x06 => :float32
+    0x06 => :float32,
+    0x09 => :string8,
+    0x0e => :vlstring,
   }
   TYPES_INVERTED = TYPES.invert
   MAX_TYPE = TYPES.keys.sort.last
 
   INTERNAL_TYPES = [
-    :string8,
+    :istring8,
     :int,
     :float,
     
@@ -43,6 +45,7 @@ module GtaScm::Types
     :var_string16 => 2,
     :lvar_string16 => 2,
 
+    :string8=>8,
     :string24=>24
   }
 
@@ -61,7 +64,7 @@ module GtaScm::Types
   }
 
   def self.value2bin(value,o_type)
-    if o_type == :string8
+    if o_type == :istring8
       nil
     else
       if char = TYPE_PACK_CHARS[o_type]
@@ -71,7 +74,7 @@ module GtaScm::Types
       elsif o_type == :float
         
       else
-        raise "??? #{o_type}"
+        raise "value2bin unknown type `#{o_type}`"
       end
     end
   end
@@ -86,38 +89,41 @@ module GtaScm::Types
 
     if char = TYPE_PACK_CHARS[type]
       bin.unpack(char).first
-    elsif type == :string24
+    elsif type == :string24 || type == :string8 || type == :string128
       bin.split(/\0/)[0]
-    elsif type == :string8
+    elsif type == :vlstring
+      debugger
+      bin
+    elsif type == :istring8
       (o_type.chr + bin).split(/\0/)[0]
     else
-      raise "??? #{type}"
+      raise "bin2value unknown type `#{type}|#{o_type}`"
     end
   end
 
   def self.type2bin(type_sym)
     type_sym = self.normalize_type( type_sym.to_sym )
-    if type_sym == :string8
+    if type_sym == :istring8
       nil
     else
       TYPES_INVERTED[type_sym.to_sym]
     end
   end
 
-  def self.bytes4type(type)
-    type = self.normalize_type(type)
+  def self.bytes4type(o_type)
+    type = self.normalize_type(o_type)
     if bytes = TYPE_BYTESIZE[type]
       bytes
-    elsif type == :string8
+    elsif type == :istring8
       7 # immediate string
     else
-      raise "??? #{type.inspect}"
+      raise "bytes4type unknown type `#{type}|#{o_type}`"
     end
   end
 
   def self.symbol4type(type)
     if type > MAX_TYPE
-      :string8
+      :istring8
     else
       TYPES[type]
     end

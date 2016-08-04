@@ -25,6 +25,13 @@ class GtaScm::OpcodeDefinitions < Hash
   end
 
   def load_definitions!(game_id)
+    load_official_definitions!(game_id)
+    if game_id == "san-andreas"
+      load_unofficial_definitions!(game_id)
+    end
+  end
+
+  def load_official_definitions!(game_id)
     path = "games/#{game_id}/opcodes_defines.h"
     File.open(path,"r").readlines.each do |line|
       next if line.match(%r{^\s*\/\/})
@@ -47,6 +54,38 @@ class GtaScm::OpcodeDefinitions < Hash
       self.names2opcodes[name] = opcode_bytes
     end
   end
+
+  def load_unofficial_definitions!(game_id)
+    path = "games/#{game_id}/SASCM.INI"
+    File.open(path,"r").readlines.each do |line|
+      matches = line.strip.match(%r{(....)=([0-9\-]+),(.*)})
+      next if !matches
+
+      hex_opcode = matches[1]
+      opcode_bytes = hex_opcode.scan(/(..)(..)/).flatten.map{|hex| hex.to_i(16)}.reverse
+
+      if line.match(/0442/)
+        # debugger
+        line
+      end
+
+      arg_count = matches[2].to_i
+      arg_types = arg_count.times.map {|i| nil}
+
+      nice_name = matches[3].gsub(/%..%/,'').gsub(%r{\W},'_').gsub(/_+/,'_').gsub(/^_/,'')
+      name = nice_name.present? ? "#{nice_name}_#{hex_opcode}" : "opcode_#{hex_opcode}"
+
+      overwrite_existing = !self[opcode_bytes]
+      if self[opcode_bytes] && self[opcode_bytes].arguments.size != arg_count
+        # differing arity, allow the new def to overwrite the existing
+        overwrite_existing = true
+      end
+      if overwrite_existing
+        self[opcode_bytes] = GtaScm::OpcodeDefinition.new(opcode_bytes,name,arg_types)
+        self.names2opcodes[name] = opcode_bytes
+      end
+    end
+  end
   
 end
 
@@ -65,7 +104,13 @@ class GtaScm::OpcodeDefinition
 
   def var_args?
     [
-      [79,0] # START_NEW_SCRIPT
+      [79,0], # START_NEW_SCRIPT
+      [0x13, 0x09] # run_external_script
+
     ].include?(self.opcode)
+  end
+
+  def string128_args?
+    self.opcode == [0x62,0x06]
   end
 end
