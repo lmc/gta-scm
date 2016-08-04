@@ -85,6 +85,9 @@ class GtaScm::OpcodeDefinitions < Hash
         self.names2opcodes[name] = opcode_bytes
       end
     end
+
+    # we can correctly handle this
+    self[ [0xb6,0x05] ].arguments = [{_type: nil}]
   end
   
 end

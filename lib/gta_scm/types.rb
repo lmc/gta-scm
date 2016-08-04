@@ -8,8 +8,19 @@ module GtaScm::Types
     0x04 => :int8,
     0x05 => :int16,
     0x06 => :float32,
+    0x07 => :var_array,
+    0x08 => :lvar_array,
     0x09 => :string8,
+    0x0a => :var_string8,
+    0x0b => :lvar_string8,
+    0x0c => :var_string8_array,
+    0x0d => :lvar_string8_array,
     0x0e => :vlstring,
+    0x0f => :string16,
+    0x10 => :var_string16,
+    0x11 => :lvar_string16,
+    0x12 => :var_string16_array,
+    0x13 => :lvar_string16_array,
   }
   TYPES_INVERTED = TYPES.invert
   MAX_TYPE = TYPES.keys.sort.last
@@ -21,6 +32,8 @@ module GtaScm::Types
     
     :objscm,
   ]
+
+  ARRAY_TYPES = [0x07,0x08,0x0c,0x0d,0x12,0x13]
 
   ALL_TYPES = TYPES.keys + INTERNAL_TYPES
 
@@ -37,7 +50,7 @@ module GtaScm::Types
     :lvar_array=> 6,
 
     :var_string8 => 2,
-    :vlar_string8 => 2,
+    :lvar_string8 => 2,
 
     :var_string8_array => 6,
     :lvar_string8_array => 6,
@@ -89,6 +102,8 @@ module GtaScm::Types
 
     if char = TYPE_PACK_CHARS[type]
       bin.unpack(char).first
+    elsif [:var_array,:lvar_array,:var_string8_array,:lvar_string8_array,:var_string16_array,:lvar_string16_array].include?(type)
+      "it's an array fool"
     elsif type == :string24 || type == :string8 || type == :string128
       bin.split(/\0/)[0]
     elsif type == :vlstring

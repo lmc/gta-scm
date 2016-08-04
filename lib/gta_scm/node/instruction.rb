@@ -17,20 +17,20 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
 
     self[1] = GtaScm::ByteArray.new
 
-    definition = parser.opcodes[ self.opcode ]# || raise("No definition for opcode #{self.opcode.inspect}")
+    definition = parser.opcodes[ self.opcode ] || raise("No definition for opcode #{self.opcode.inspect}")
 
     if definition.var_args?
       loop do
         argument = GtaScm::Node::Argument.new
-        argument.eat!(parser,self)
         self.arguments << argument
+        argument.eat!(parser,self)
         break if argument.arg_type_id == 0 # end of var_args list
       end
     else
       definition.arguments.each_with_index do |arg_def,arg_idx|
         argument = GtaScm::Node::Argument.new
-        argument.eat!(parser,self)
         self.arguments << argument
+        argument.eat!(parser,self)
       end
     end
   end
@@ -56,6 +56,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
       ir[1] = (self.arguments || []).map.each_with_index do |argument,idx|
         if argument.end_var_args?
           [argument.arg_type_sym]
+        elsif argument.array?
+          [argument.arg_type_sym].concat(argument.array_ir)
         elsif argument.string128?
           [:string128,argument.value]
         elsif self.jump_argument?(idx)

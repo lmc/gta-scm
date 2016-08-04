@@ -14,6 +14,11 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
       self[0] = parser.read(1)
       if self.end_var_args?
         # don't read any more bytes
+      elsif self.array?
+        self[1] = parser.read(2)
+        self[2] = parser.read(2)
+        self[3] = parser.read(1)
+        self[4] = parser.read(1)
       elsif self.vlstring?
         # read one byte for the variable length
         self[1] = parser.read(1)
@@ -62,9 +67,15 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     self.arg_type_id == 0x0e
   end
 
+  def array?
+    GtaScm::Types::ARRAY_TYPES.include?(self.arg_type_id)
+  end
+
   def value
     if arg_type_id == 0
       nil
+    elsif array?
+      array_value
     elsif string128?
       GtaScm::Types.bin2value(self[0],:string128)
     elsif vlstring?
@@ -72,7 +83,20 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     else
       GtaScm::Types.bin2value(self.arg_value,self.arg_type_id)
     end
-  rescue => ex
-    debugger;ex
+  # rescue => ex
+  #   debugger;ex
+  end
+
+  def array_value
+    "???"
+  end
+
+  def array_ir
+    [
+      GtaScm::Types.bin2value(self[1],:int16),
+      GtaScm::Types.bin2value(self[2],:int16),
+      GtaScm::Types.bin2value(self[3],:int8),
+      GtaScm::Types.bin2value(self[4],:int8)
+    ]
   end
 end
