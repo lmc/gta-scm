@@ -33,8 +33,14 @@ class GtaScm::Disassembler::Base
     raise "abstract"
   end
 
-  def label_for_offset(offset)
-    :"label_#{offset}"
+  def label_for_offset(offset,source_offset = nil)
+    if offset < 0
+      mission_id,mission_offset = self.scm.mission_for_offset(source_offset)
+      abs_offset = mission_offset + offset.abs
+      :"label_#{abs_offset}"
+    else
+      :"label_#{offset}"
+    end
   end
 
 

@@ -56,6 +56,14 @@ class GtaScm::OpcodeDefinitions < Hash
   end
 
   def load_unofficial_definitions!(game_id)
+    hex2names = {}
+    path = "games/#{game_id}/opcode_names.txt"
+    File.open(path,"r").readlines.each do |line|
+      matches = line.strip.match(%r{(....) (.*)})
+      hex2names[ matches[1] ] = matches[2]
+    end
+
+
     path = "games/#{game_id}/SASCM.INI"
     File.open(path,"r").readlines.each do |line|
       matches = line.strip.match(%r{(....)=([0-9\-]+),(.*)})
@@ -74,6 +82,10 @@ class GtaScm::OpcodeDefinitions < Hash
 
       nice_name = matches[3].gsub(/%..%/,'').gsub(%r{\W},'_').gsub(/_+/,'_').gsub(/^_/,'')
       name = nice_name.present? ? "#{nice_name}_#{hex_opcode}" : "opcode_#{hex_opcode}"
+
+      if hex2names[hex_opcode]
+        name = hex2names[hex_opcode]
+      end
 
       overwrite_existing = !self[opcode_bytes]
       if self[opcode_bytes] && self[opcode_bytes].arguments.size != arg_count

@@ -61,7 +61,11 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
         elsif argument.string128?
           [:string128,argument.value]
         elsif self.jump_argument?(idx)
-          [:label,dis.label_for_offset(argument.value)]
+          if argument.value < 0
+            [:mission_label,dis.label_for_offset(argument.value,self.offset)]
+          else
+            [:label,dis.label_for_offset(argument.value,self.offset)]
+          end
         # elsif enum = self.enum_argument?(idx)
         #   self.enum_argument_ir(scm,dis,enum,argument.value)
         else
@@ -114,6 +118,7 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
   end
 
   def jumps
+    # TODO: calculate abs offsets here? or further up?
     case self.opcode
       when [0x02,0x00] # GOTO
         [{type: :always,   to: self.arguments[0].value}]
@@ -132,5 +137,9 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
       else
         []
       end
+  end
+
+  def absolute_offset(value)
+    
   end
 end

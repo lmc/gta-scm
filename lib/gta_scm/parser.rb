@@ -131,6 +131,9 @@ class GtaScm::Parser < GtaScm::FileWalker
       self.on_eat_node(self.node)
       self.node.jumps.each do |jump|
         jump[:from] = node.offset
+        # debugger
+        # TODO: fix up negative jump offsets here?
+        jump[:to] = self.absolute_offset(node.offset,jump[:to]) if jump[:to]
         self.jumps_source2targets[ jump[:from] ] << jump 
         self.jumps_target2sources[ jump[:to]   ] << jump 
       end
@@ -138,6 +141,18 @@ class GtaScm::Parser < GtaScm::FileWalker
       generate_internal_fault_node(ex)
       raise ex
     end
+  end
+
+  def absolute_offset(node_offset,jump_offset)
+    if jump_offset < 0
+      mission_id,mission_offset = self.missions_header.mission_for_offset(node_offset)
+      abs_offset = mission_offset + jump_offset.abs
+    else
+      jump_offset
+    end
+  rescue 
+    debugger
+    node_offset
   end
 
   def generate_internal_fault_node(exception)

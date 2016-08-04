@@ -1,5 +1,13 @@
 
 class GtaScm::Node::Header::Missions < GtaScm::Node::Header
+  def mission_offsets
+    if self[1][6]
+      self[1][6]
+    else
+      self[1][5]
+    end
+  end
+
   def header_eat!(parser,game_id,bytes_to_eat)
     self[1] = GtaScm::ByteArray.new
 
@@ -117,4 +125,21 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
 
     asm.define_touchup(:label__post_header_missions,asm.nodes.next_offset(self))
   end
+
+
+  def mission_for_offset(offset)
+    last_result = nil
+    result = self.mission_offsets.binary_search { |key|
+      ufo = offset <=> key
+      if ufo == 1
+        last_result = key
+      end
+      ufo
+    }
+    
+    mission_idx = self.mission_offsets.binary_index( result || last_result )
+    [mission_idx,self.mission_offsets[mission_idx]]
+  end
+
+
 end
