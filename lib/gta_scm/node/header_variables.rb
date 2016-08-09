@@ -27,7 +27,7 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
     data = Hash[tokens[1]]
 
     self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_variables]]])
-    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_variables)
+    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_variables,:jump)
 
     self[1][0] = GtaScm::Node::Raw.new([data[:magic][1]])
     self[1][1] = GtaScm::Node::Raw.new([0] * data[:size][1])

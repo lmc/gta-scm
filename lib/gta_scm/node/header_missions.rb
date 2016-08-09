@@ -96,7 +96,7 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
     data = Hash[tokens[1]]
 
     self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_missions]]])
-    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_missions)
+    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_missions,:jump)
 
     # padding
     self[1][0] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:padding][1] , :int8 ).bytes )

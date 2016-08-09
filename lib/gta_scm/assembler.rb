@@ -11,9 +11,11 @@ class GtaScm::Assembler::Base
 
   attr_accessor :touchup_defines
   attr_accessor :touchup_uses
+  attr_accessor :touchup_types
   attr_accessor :var_touchups
   attr_accessor :dmavar_uses
-  attr_accessor :varspace_size
+
+  attr_accessor :jump_touchups_offset
 
   def initialize(input_dir)
     self.input_dir = input_dir
@@ -21,9 +23,10 @@ class GtaScm::Assembler::Base
 
     self.touchup_defines = {}
     self.touchup_uses = Hash.new { |h,k| h[k] = [] }
+    self.touchup_types = {}
     self.var_touchups = Set.new
-    # self.varspace_size = nil
     self.dmavar_uses = Set.new
+    self.jump_touchups_offset = nil
   end
 
   def assemble(scm,out_path)
@@ -45,72 +48,20 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.define_touchup(:_main_size,0)
     self.define_touchup(:_largest_mission_size,0)
     self.define_touchup(:_exclusive_mission_count,0)
-    # self.define_touchup(:_total_mission_count,0)
     self.define_touchup(:_exclusive_mission_count,0)
 
 
 
     logger.info "Checking variables, #{variables_range.size} bytes allocated at #{variables_range.inspect}"
 
-    self.dmavar_uses.each do |address|
-      if !self.variables_range.include?(address)
-        logger.warn "DMA Variable '#{address}' is outside the variable space"
-      end
-    end
+    check_dma_vars!
 
-    allocated_offset = nil
-    self.var_touchups.each do |var_name|
-      allocated_offset = self.next_var_slot
-      self.define_touchup(var_name,allocated_offset)
-    end
+    allocate_vars_to_dma_addresses!
 
-    if allocated_offset
-      logger.debug "Last allocated variable at #{allocated_offset}"
-      logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
-    end
+    # at this point we know how much memory we need
+    allocate_space_in_variables_header!
 
-    self.touchup_uses.each_pair do |touchup_name,uses|
-      uses.each do |(offset,array_keys)|
-        
-        # logger.error "#{touchup_name} - #{offset} #{array_keys.inspect}"
-        node = nodes.detect{|node| node.offset == offset}
-        # logger.error "node: #{node.inspect}"
-
-
-        case touchup_name
-          # when :_main_size
-          # when :_largest_mission_size
-          # when :_exclusive_mission_count
-          when :_version
-          else
-            arr = node
-            array_keys.each do |array_key|
-              # logger.error " arr: #{array_key} #{arr.inspect}"
-              arr = arr[array_key]
-            end
-
-            touchup_value = o_touchup_value = self.touchup_defines[touchup_name]
-            if !touchup_value
-              raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
-            end
-            # logger.error "value: #{touchup_value}"
-            case arr.size
-            when 4
-              touchup_value = GtaScm::Types.value2bin( touchup_value , :int32 ).bytes
-            when 2
-              touchup_value = GtaScm::Types.value2bin( touchup_value , :int16 ).bytes
-            else
-              raise "dunno how to replace value of size #{arr.size}"
-            end
-            touchup_value = touchup_value[0...arr.size]
-            logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
-
-            arr.replace(touchup_value)
-        end
-
-        # logger.error ""
-      end
-    end
+    install_touchup_values!
 
     File.open("#{out_path}","w") do |f|
       self.nodes.each do |node|
@@ -132,7 +83,6 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           GtaScm::Node::Header::Variables.new.tap do |node|
             node.offset = offset
             node.from_ir(tokens,scm,self)
-            self.varspace_size = node.varspace_size
           end
         when :HeaderModels
           GtaScm::Node::Header::Models.new.tap do |node|
@@ -170,8 +120,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.touchup_defines[touchup_name] = value
   end
 
-  def use_touchup(node_offset,array_keys,touchup_name)
+  def use_touchup(node_offset,array_keys,touchup_name,use_type = nil)
     self.touchup_uses[touchup_name] << [node_offset,array_keys]
+    if use_type
+      self.touchup_types[touchup_name] = use_type
+    end
   end
 
   def assign_var_address(touchup_name,value)
@@ -189,7 +142,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   def next_var_slot
     offset = self.variables_range.begin
-    while offset < self.variables_range.end
+    # while offset < self.variables_range.end
+    while offset < (2**16)
       if !self.dmavar_uses.include?(offset)
         logger.debug "Free var slot free at #{offset}"
         break
@@ -197,11 +151,92 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       offset += 4
     end
 
-    if offset < self.variables_range.end
+    # if offset < self.variables_range.end
+    if true # yolo
       self.notice_dmavar(offset)
       return offset
     else
       raise "No free var slots"
+    end
+  end
+
+  def check_dma_vars!
+    self.dmavar_uses.each do |address|
+      if !self.variables_range.include?(address)
+        logger.warn "DMA Variable '#{address}' is outside the variable space"
+      end
+    end
+  end
+
+  def allocate_vars_to_dma_addresses!
+    allocated_offset = nil
+    self.var_touchups.each do |var_name|
+      allocated_offset = self.next_var_slot
+      self.define_touchup(var_name,allocated_offset)
+    end
+
+    if allocated_offset
+      logger.debug "Last allocated variable at #{allocated_offset}"
+      logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
+      logger.info "Using jump_touchups_offset: #{self.jump_touchups_offset}"
+    end
+  end
+
+  def allocate_space_in_variables_header!
+    highest_dma_var = self.dmavar_uses.max
+    self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
+
+    memspace = (highest_dma_var + 4) - variables_range.begin
+    logger.info "Allocating #{memspace} zeros in variables header"
+    variables_header.variable_storage.replace([0] * memspace)
+  end
+
+  def install_touchup_values!
+    self.touchup_uses.each_pair do |touchup_name,uses|
+      uses.each do |(offset,array_keys)|
+        # FIXME: optimise, O(n) -> O(1)
+        node = nodes.detect{|node| node.offset == offset}
+        case touchup_name
+          # when :_main_size
+          # when :_largest_mission_size
+          # when :_exclusive_mission_count
+          when :_version
+          else
+            arr = node
+            array_keys.each do |array_key|
+              # logger.error " arr: #{array_key} #{arr.inspect}"
+              arr = arr[array_key]
+            end
+
+            touchup_value = self.touchup_defines[touchup_name]
+            if !touchup_value
+              raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
+            end
+
+            # TODO: can we set a base value for touchup values known to be addresses?
+            if self.jump_touchups_offset && self.touchup_types[touchup_name] == :jump
+              logger.debug "Detected jump touchup, adding jump_touchups_offset"
+              touchup_value += self.jump_touchups_offset
+            end
+
+            o_touchup_value = touchup_value
+
+            # logger.error "value: #{touchup_value}"
+            case arr.size
+            when 4
+              touchup_value = GtaScm::Types.value2bin( touchup_value , :int32 ).bytes
+            when 2
+              touchup_value = GtaScm::Types.value2bin( touchup_value , :int16 ).bytes
+            else
+              raise "dunno how to replace value of size #{arr.size}"
+            end
+
+            touchup_value = touchup_value[0...arr.size]
+            logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
+
+            arr.replace(touchup_value)
+        end
+      end
     end
   end
 
@@ -255,7 +290,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
         else
           # debugger
-          self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1])
+          self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1],:jump)
         end
 
         arg.set( :int32, 0xAAAAAAAA )

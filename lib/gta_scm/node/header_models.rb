@@ -38,7 +38,7 @@ class GtaScm::Node::Header::Models < GtaScm::Node::Header
     data = Hash[tokens[1]]
 
     self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_models]]])
-    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_models)
+    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_models,:jump)
 
     self[1][0] = GtaScm::Node::Raw.new([data[:padding][1]])
 
