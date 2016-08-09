@@ -13,7 +13,7 @@ logger.info ARGV.inspect
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 
-scm = GtaScm::Scm.load(ARGV[1])
+scm = GtaScm::Scm.load(ARGV[0],ARGV[1])
 
 scm.load_opcode_definitions!
 

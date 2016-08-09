@@ -11,7 +11,7 @@ if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   require 'gta_scm'
 end
 
-logger.info ARGV.inspect
+logger.info "ARGV: #{ARGV.inspect}"
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
@@ -25,11 +25,21 @@ parser = GtaScm::Parser.new(scm,0)
 
 parser.load_opcode_definitions( scm.opcodes )
 
+# no real-world performance hit if we only update every 1000 nodes
+progress = ProgressBar.new(parser.size)
+parser.progress_callback = lambda do |offset,size,calls|
+  if calls % 200 == 0
+    progress.set!(offset)
+  end
+end
+
 begin
+  logger.info "Beginning parser"
   parser.parse!
+  progress.set!(parser.size)
   logger.info "Parser complete"
 rescue => ex
-  logger.error "We fucked up: #{ex.message}"
+  logger.error "We fucked up at #{parser.nodes.last.offset}: #{ex.message}"
   ex.backtrace.each {|line| logger.debug line }
   logger.error "Dumping currently-parsed SCM"
 end
@@ -40,7 +50,17 @@ format = ARGV[3].present? ? ARGV[3] : nil
 if format
   logger.info "Outputting as #{format}"
   dis = GtaScm::Disassembler.const_get(format).new(scm)
+
+  progress = ProgressBar.new(parser.size)
+  dis.progress_callback = lambda do |offset,size,calls|
+    if calls % 200 == 0
+      progress.set!(offset)
+    end
+  end
+
   dis.disassemble(ARGV[2])
+  progress.set!(parser.size)
+  logger.info "Output to #{ARGV[2]}"
 else
   logger.info "Skipping output (specify format as ARGV[3])"
 end
@@ -48,4 +68,4 @@ end
 
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
-# logger.info "GC stats: #{GC.stat.inspect}"
+logger.debug "GC stats: #{GC.stat.inspect}"

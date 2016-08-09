@@ -11,6 +11,9 @@ class GtaScm::Assembler::Base
 
   attr_accessor :touchup_defines
   attr_accessor :touchup_uses
+  attr_accessor :var_touchups
+  attr_accessor :dmavar_uses
+  attr_accessor :varspace_size
 
   def initialize(input_dir)
     self.input_dir = input_dir
@@ -18,6 +21,9 @@ class GtaScm::Assembler::Base
 
     self.touchup_defines = {}
     self.touchup_uses = Hash.new { |h,k| h[k] = [] }
+    self.var_touchups = Set.new
+    # self.varspace_size = nil
+    self.dmavar_uses = Set.new
   end
 
   def assemble(scm,out_path)
@@ -41,6 +47,27 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.define_touchup(:_exclusive_mission_count,0)
     # self.define_touchup(:_total_mission_count,0)
     self.define_touchup(:_exclusive_mission_count,0)
+
+
+
+    logger.info "Checking variables, #{variables_range.size} bytes allocated at #{variables_range.inspect}"
+
+    self.dmavar_uses.each do |address|
+      if !self.variables_range.include?(address)
+        logger.warn "DMA Variable '#{address}' is outside the variable space"
+      end
+    end
+
+    allocated_offset = nil
+    self.var_touchups.each do |var_name|
+      allocated_offset = self.next_var_slot
+      self.define_touchup(var_name,allocated_offset)
+    end
+
+    if allocated_offset
+      logger.debug "Last allocated variable at #{allocated_offset}"
+      logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
+    end
 
     self.touchup_uses.each_pair do |touchup_name,uses|
       uses.each do |(offset,array_keys)|
@@ -105,6 +132,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           GtaScm::Node::Header::Variables.new.tap do |node|
             node.offset = offset
             node.from_ir(tokens,scm,self)
+            self.varspace_size = node.varspace_size
           end
         when :HeaderModels
           GtaScm::Node::Header::Models.new.tap do |node|
@@ -144,6 +172,37 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   def use_touchup(node_offset,array_keys,touchup_name)
     self.touchup_uses[touchup_name] << [node_offset,array_keys]
+  end
+
+  def assign_var_address(touchup_name,value)
+    self.define_touchup(touchup_name,value)
+  end
+
+  def use_var_address(node_offset,array_keys,touchup_name)
+    self.var_touchups << touchup_name
+    self.use_touchup(node_offset,array_keys,touchup_name)
+  end
+
+  def notice_dmavar(address)
+    self.dmavar_uses << address
+  end
+
+  def next_var_slot
+    offset = self.variables_range.begin
+    while offset < self.variables_range.end
+      if !self.dmavar_uses.include?(offset)
+        logger.debug "Free var slot free at #{offset}"
+        break
+      end
+      offset += 4
+    end
+
+    if offset < self.variables_range.end
+      self.notice_dmavar(offset)
+      return offset
+    else
+      raise "No free var slots"
+    end
   end
 
   def assemble_instruction(scm,offset,tokens)
@@ -203,10 +262,23 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       when :labelvar
         self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1])
         arg.set( :var, 0xBBBB )
+      when :var
+        self.use_var_address(node.offset,[1,arg_idx,1],:"var_#{arg_tokens[1]}")
+        arg.set( arg_tokens[0] , 0xCCCC )
+      when :dmavar
+        self.notice_dmavar( arg_tokens[1] )
+        arg.set( :var , arg_tokens[1] )
       else
         arg.set( arg_tokens[0] , arg_tokens[1] )
-        # puts "#{arg.arg_type_sym} - #{arg_tokens[1].inspect}"
       end
     end
+  end
+
+  def variables_header
+    self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Variables)}
+  end
+
+  def variables_range
+    (variables_header.varspace_offset)...(variables_header.varspace_offset + variables_header.varspace_size)
   end
 end

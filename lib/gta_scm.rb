@@ -15,8 +15,8 @@ require 'parallel'
 require 'byebug'
 alias debugger byebug
 
-# require 'progress_bar'
-# require 'gta_scm/progress_bar_ext'
+require 'progress_bar'
+require 'gta_scm/progress_bar_ext'
 
 require 'gta_scm/logger'
 def GtaScm.logger

@@ -20,9 +20,17 @@ class GtaScm::Disassembler::Base
 
     scm.nodes.each_pair do |offset,node|
       emit_node(offset,node)
+      update_progress(offset)
     end
+  end
 
-    puts "@largest_line: #{@largest_line}"
+  attr_accessor :progress_callback
+  def update_progress(offset)
+    if self.progress_callback
+      @progress_calls ||= 0
+      @progress_calls += 1
+      self.progress_callback.call(offset,nil,@progress_calls)
+    end
   end
 
   def emit_node(offset,node)

@@ -2,6 +2,8 @@
 class GtaScm::Node::Header::Variables < GtaScm::Node::Header
   def magic_number;     self[1][0]; end
   def variable_storage; self[1][1]; end
+  def varspace_offset; self.offset + self[0].size + self[1][0].size; end
+  def varspace_size; self.variable_storage.size; end
 
   def header_eat!(parser,game_id,header_size)
     self[1] = GtaScm::ByteArray.new

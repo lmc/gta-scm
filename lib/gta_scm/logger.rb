@@ -3,6 +3,7 @@ class GtaScm::Logger
     :debug,
     :info,
     :notice,
+    :warn,
     :error
   ]
 
@@ -33,6 +34,10 @@ class GtaScm::Logger
 
   def notice(str)
     log(str,:notice)
+  end
+
+  def warn(str)
+    log(str,:warn)
   end
 
   def error(str)

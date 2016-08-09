@@ -14,6 +14,8 @@ class GtaScm::Parser < GtaScm::FileWalker
   attr_accessor :use_cache
   attr_accessor :progress_callback
 
+  attr_accessor :parent_parser
+
   # ===================
 
   def initialize(scm, offset = 0, end_offset = nil)
@@ -150,7 +152,7 @@ class GtaScm::Parser < GtaScm::FileWalker
     else
       jump_offset
     end
-  rescue 
+  rescue => ex
     debugger
     node_offset
   end
@@ -170,14 +172,14 @@ class GtaScm::Parser < GtaScm::FileWalker
     self.offsets << node.offset
 
     # disabled for now, too expensive (20% slower)
-    # self.update_progress(node.offset)
+    self.update_progress(node.offset)
   end
 
 
   def update_progress(offset)
     if self.progress_callback
       @progress_calls ||= 0
-      @progress_calls += 0
+      @progress_calls += 1
       self.progress_callback.call(offset,self.size,@progress_calls)
     end
   end
@@ -193,7 +195,7 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def first_main_instruction_offset
-    self.missions_header.offset + self.missions_header.size
+    self.last_header.offset + self.last_header.size
   end
 
   def first_mission_offset
@@ -205,7 +207,21 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def missions_header
+    return self.parent_parser.missions_header if self.parent_parser
     self.find_node_by_type(GtaScm::Node::Header::Missions)
+  end
+
+  def segment_6_header
+    return self.parent_parser.segment_6_header if self.parent_parser
+    self.find_node_by_type(GtaScm::Node::Header::Segment6)
+  end
+
+  def last_header
+    if self.scm.game_id == "san-andreas"
+      segment_6_header
+    else
+      missions_header
+    end
   end
 
   def find_node_by_type(type)
@@ -260,9 +276,9 @@ class GtaScm::MultithreadParser < GtaScm::Parser
     end
     ranges.unshift( self.main_instruction_range )
 
-    Parallel.each_with_index(ranges, in_threads: 3) do |range,idx|
-
+    Parallel.each_with_index(ranges, in_threads: 5) do |range,idx|
       self.parsers[idx] = GtaScm::Parser.new(self.scm,range.begin,range.end)
+      self.parsers[idx].parent_parser = self
       self.parsers[idx].load_opcode_definitions( self.scm.opcodes )
       self.parsers[idx].contents = self.contents
       loop do
