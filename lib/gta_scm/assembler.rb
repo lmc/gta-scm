@@ -12,8 +12,6 @@ class GtaScm::Assembler::Base
   attr_accessor :touchup_defines
   attr_accessor :touchup_uses
   attr_accessor :touchup_types
-  attr_accessor :var_touchups
-  attr_accessor :dmavar_uses
 
   attr_accessor :jump_touchups_offset
 
@@ -24,8 +22,6 @@ class GtaScm::Assembler::Base
     self.touchup_defines = {}
     self.touchup_uses = Hash.new { |h,k| h[k] = [] }
     self.touchup_types = {}
-    self.var_touchups = Set.new
-    self.dmavar_uses = Set.new
     self.jump_touchups_offset = nil
   end
 
@@ -33,10 +29,142 @@ class GtaScm::Assembler::Base
     
   end
 
+  def on_feature_init
+  end
+
+  def on_before_touchups
+  end
+
+  def on_after_touchups
+  end
+
 end
+
+module GtaScm::Assembler::Feature
+end
+
+module GtaScm::Assembler::Feature::Base
+end
+
+
+module GtaScm::Assembler::Feature::DmaVariableChecker
+  def on_before_touchups
+    super
+    check_dma_vars!
+  end
+
+  def check_dma_vars!
+    return unless self.respond_to?(:dmavar_uses)
+    self.dmavar_uses.each do |address|
+      if !self.variables_range.include?(address)
+        logger.warn "DMA Variable '#{address}' is outside the variable space"
+      end
+    end
+  end
+end
+
+# Automatically assigns (var my_var) arguments to DMA addresses in the Variables header
+module GtaScm::Assembler::Feature::VariableAllocator
+  def on_feature_init
+    super
+    class << self
+      attr_accessor :var_touchups
+    end
+    self.var_touchups = Set.new
+  end
+
+  def on_before_touchups
+    super
+    allocate_vars_to_dma_addresses!
+  end
+
+  def use_var_address(node_offset,array_keys,touchup_name)
+    self.var_touchups << touchup_name
+    super
+  end
+
+  def allocate_vars_to_dma_addresses!
+    allocated_offset = nil
+    self.var_touchups.each do |var_name|
+      allocated_offset = self.next_var_slot
+      self.define_touchup(var_name,allocated_offset)
+    end
+
+    if allocated_offset
+      logger.debug "Last allocated variable at #{allocated_offset}"
+      logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
+      logger.info "Using jump_touchups_offset: #{self.jump_touchups_offset}"
+    end
+  end
+end
+
+# Automatically allocate sufficient space in Variables header for all the known DMA variables, adjust jump values
+# TODO: register as a before_touchups, adjust all touchup values in the hash, let install_touchup_values! run without hacks for this
+module GtaScm::Assembler::Feature::VariableHeaderAllocator
+  def on_feature_init
+    super
+    class << self
+      attr_accessor :dmavar_uses
+    end
+    self.dmavar_uses = Set.new
+  end
+
+  def on_before_touchups
+    super
+    allocate_space_in_variables_header!
+  end
+
+  def notice_dmavar(address)
+    self.dmavar_uses << address
+  end
+
+  def max_var_slot
+    if true
+      2**16
+    else
+      self.variables_range.end
+    end
+  end
+
+  def next_var_slot
+    offset = self.variables_range.begin
+    while offset < self.max_var_slot
+      if !self.dmavar_uses.include?(offset)
+        logger.debug "Free var slot free at #{offset}"
+        break
+      end
+      offset += 4
+    end
+
+    if offset < self.max_var_slot
+      self.notice_dmavar(offset)
+      return offset
+    else
+      raise "No free var slots"
+    end
+  end
+
+  def allocate_space_in_variables_header!
+    highest_dma_var = self.dmavar_uses.max
+    self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
+
+    memspace = (highest_dma_var + 4) - variables_range.begin
+    logger.info "Allocating #{memspace} zeros in variables header"
+    variables_header.variable_storage.replace([0] * memspace)
+  end
+end
+
 
 class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def assemble(scm,main_name,out_path)
+
+    class << self
+      include GtaScm::Assembler::Feature::VariableAllocator
+      include GtaScm::Assembler::Feature::VariableHeaderAllocator
+      include GtaScm::Assembler::Feature::DmaVariableChecker
+    end
+    self.on_feature_init()
+
     self.parser = Elparser::Parser.new
     File.read("#{self.input_dir}/#{main_name}.sexp.erl").each_line.each_with_index do |line,idx|
       self.read_line(scm,line,main_name,idx)
@@ -54,14 +182,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
     logger.info "Checking variables, #{variables_range.size} bytes allocated at #{variables_range.inspect}"
 
-    check_dma_vars!
-
-    allocate_vars_to_dma_addresses!
-
-    # at this point we know how much memory we need
-    allocate_space_in_variables_header!
+    self.on_before_touchups()
 
     install_touchup_values!
+
+    self.on_after_touchups()
 
     File.open("#{out_path}","w") do |f|
       self.nodes.each do |node|
@@ -132,63 +257,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   end
 
   def use_var_address(node_offset,array_keys,touchup_name)
-    self.var_touchups << touchup_name
     self.use_touchup(node_offset,array_keys,touchup_name)
   end
 
   def notice_dmavar(address)
-    self.dmavar_uses << address
-  end
-
-  def next_var_slot
-    offset = self.variables_range.begin
-    # while offset < self.variables_range.end
-    while offset < (2**16)
-      if !self.dmavar_uses.include?(offset)
-        logger.debug "Free var slot free at #{offset}"
-        break
-      end
-      offset += 4
-    end
-
-    # if offset < self.variables_range.end
-    if true # yolo
-      self.notice_dmavar(offset)
-      return offset
-    else
-      raise "No free var slots"
-    end
-  end
-
-  def check_dma_vars!
-    self.dmavar_uses.each do |address|
-      if !self.variables_range.include?(address)
-        logger.warn "DMA Variable '#{address}' is outside the variable space"
-      end
-    end
-  end
-
-  def allocate_vars_to_dma_addresses!
-    allocated_offset = nil
-    self.var_touchups.each do |var_name|
-      allocated_offset = self.next_var_slot
-      self.define_touchup(var_name,allocated_offset)
-    end
-
-    if allocated_offset
-      logger.debug "Last allocated variable at #{allocated_offset}"
-      logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
-      logger.info "Using jump_touchups_offset: #{self.jump_touchups_offset}"
-    end
-  end
-
-  def allocate_space_in_variables_header!
-    highest_dma_var = self.dmavar_uses.max
-    self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
-
-    memspace = (highest_dma_var + 4) - variables_range.begin
-    logger.info "Allocating #{memspace} zeros in variables header"
-    variables_header.variable_storage.replace([0] * memspace)
+    # no-op
   end
 
   def install_touchup_values!
