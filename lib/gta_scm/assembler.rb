@@ -13,8 +13,6 @@ class GtaScm::Assembler::Base
   attr_accessor :touchup_uses
   attr_accessor :touchup_types
 
-  attr_accessor :jump_touchups_offset
-
   def initialize(input_dir)
     self.input_dir = input_dir
     self.nodes = GtaScm::UnbuiltNodeSet.new
@@ -22,11 +20,20 @@ class GtaScm::Assembler::Base
     self.touchup_defines = {}
     self.touchup_uses = Hash.new { |h,k| h[k] = [] }
     self.touchup_types = {}
-    self.jump_touchups_offset = nil
   end
 
   def assemble(scm,out_path)
     
+  end
+
+
+  def install_features!
+    class << self
+      include GtaScm::Assembler::Feature::VariableAllocator
+      include GtaScm::Assembler::Feature::VariableHeaderAllocator
+      include GtaScm::Assembler::Feature::DmaVariableChecker
+    end
+    self.on_feature_init()
   end
 
   def on_feature_init
@@ -40,152 +47,30 @@ class GtaScm::Assembler::Base
 
 end
 
-module GtaScm::Assembler::Feature
-end
-
-module GtaScm::Assembler::Feature::Base
-end
-
-
-module GtaScm::Assembler::Feature::DmaVariableChecker
-  def on_before_touchups
-    super
-    check_dma_vars!
-  end
-
-  def check_dma_vars!
-    return unless self.respond_to?(:dmavar_uses)
-    self.dmavar_uses.each do |address|
-      if !self.variables_range.include?(address)
-        logger.warn "DMA Variable '#{address}' is outside the variable space"
-      end
-    end
-  end
-end
-
-# Automatically assigns (var my_var) arguments to DMA addresses in the Variables header
-module GtaScm::Assembler::Feature::VariableAllocator
-  def on_feature_init
-    super
-    class << self
-      attr_accessor :var_touchups
-    end
-    self.var_touchups = Set.new
-  end
-
-  def on_before_touchups
-    super
-    allocate_vars_to_dma_addresses!
-  end
-
-  def use_var_address(node_offset,array_keys,touchup_name)
-    self.var_touchups << touchup_name
-    super
-  end
-
-  def allocate_vars_to_dma_addresses!
-    allocated_offset = nil
-    self.var_touchups.each do |var_name|
-      allocated_offset = self.next_var_slot
-      self.define_touchup(var_name,allocated_offset)
-    end
-
-    if allocated_offset
-      logger.debug "Last allocated variable at #{allocated_offset}"
-      logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
-      logger.info "Using jump_touchups_offset: #{self.jump_touchups_offset}"
-    end
-  end
-end
-
-# Automatically allocate sufficient space in Variables header for all the known DMA variables, adjust jump values
-# TODO: register as a before_touchups, adjust all touchup values in the hash, let install_touchup_values! run without hacks for this
-module GtaScm::Assembler::Feature::VariableHeaderAllocator
-  def on_feature_init
-    super
-    class << self
-      attr_accessor :dmavar_uses
-    end
-    self.dmavar_uses = Set.new
-  end
-
-  def on_before_touchups
-    super
-    allocate_space_in_variables_header!
-  end
-
-  def notice_dmavar(address)
-    self.dmavar_uses << address
-  end
-
-  def max_var_slot
-    if true
-      2**16
-    else
-      self.variables_range.end
-    end
-  end
-
-  def next_var_slot
-    offset = self.variables_range.begin
-    while offset < self.max_var_slot
-      if !self.dmavar_uses.include?(offset)
-        logger.debug "Free var slot free at #{offset}"
-        break
-      end
-      offset += 4
-    end
-
-    if offset < self.max_var_slot
-      self.notice_dmavar(offset)
-      return offset
-    else
-      raise "No free var slots"
-    end
-  end
-
-  def allocate_space_in_variables_header!
-    highest_dma_var = self.dmavar_uses.max
-    self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
-
-    memspace = (highest_dma_var + 4) - variables_range.begin
-    logger.info "Allocating #{memspace} zeros in variables header"
-    variables_header.variable_storage.replace([0] * memspace)
-  end
-end
-
+require 'gta_scm/assembler/feature'
+require 'gta_scm/assembler/features/base'
+require 'gta_scm/assembler/features/dma_variable_checker'
+require 'gta_scm/assembler/features/variable_allocator'
+require 'gta_scm/assembler/features/variable_header_allocator'
 
 class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def assemble(scm,main_name,out_path)
-
-    class << self
-      include GtaScm::Assembler::Feature::VariableAllocator
-      include GtaScm::Assembler::Feature::VariableHeaderAllocator
-      include GtaScm::Assembler::Feature::DmaVariableChecker
-    end
-    self.on_feature_init()
+    install_features!
 
     self.parser = Elparser::Parser.new
     File.read("#{self.input_dir}/#{main_name}.sexp.erl").each_line.each_with_index do |line,idx|
       self.read_line(scm,line,main_name,idx)
     end
 
-    # logger.error "touchup_defines: #{touchup_defines.inspect}"
-    # logger.error "touchup_uses #{touchup_uses.inspect}"
-
     self.define_touchup(:_main_size,0)
     self.define_touchup(:_largest_mission_size,0)
     self.define_touchup(:_exclusive_mission_count,0)
     self.define_touchup(:_exclusive_mission_count,0)
 
-
-
     logger.info "Checking variables, #{variables_range.size} bytes allocated at #{variables_range.inspect}"
 
     self.on_before_touchups()
-
     install_touchup_values!
-
     self.on_after_touchups()
 
     File.open("#{out_path}","w") do |f|
@@ -286,15 +171,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 
-            # TODO: can we set a base value for touchup values known to be addresses?
-            if self.jump_touchups_offset && self.touchup_types[touchup_name] == :jump
-              logger.debug "Detected jump touchup, adding jump_touchups_offset"
-              touchup_value += self.jump_touchups_offset
-            end
-
             o_touchup_value = touchup_value
-
-            # logger.error "value: #{touchup_value}"
             case arr.size
             when 4
               touchup_value = GtaScm::Types.value2bin( touchup_value , :int32 ).bytes
