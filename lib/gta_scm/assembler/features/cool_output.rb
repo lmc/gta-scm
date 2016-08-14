@@ -29,9 +29,10 @@ module GtaScm::Assembler::Feature::CoolOutput
 
   def on_node_emit(f,node,bin)
     begin
-      print "\e[4m"
+      # print "\e[4m"
       idx = 0
       if node.is_a?(GtaScm::Node::Instruction)
+
         output_hex(f,node.hex_array[0][0],idx,:opcode)
         idx += 1
         output_hex(f,node.hex_array[0][1],idx,:opcode)
@@ -47,10 +48,12 @@ module GtaScm::Assembler::Feature::CoolOutput
           end
         end
       else
+        # print "\e[1m"
         node.hex_array.flatten.each_with_index do |hex,idx|
           output_hex(f,hex,idx)
           idx += 1
         end
+        # print "\e[0m"
       end
     rescue Exception
       # ensure console output is reset (in case of ctrl-c, etc.)
@@ -65,14 +68,19 @@ module GtaScm::Assembler::Feature::CoolOutput
       self.cool_logger_state[:current_column] = 0
       print "\r\n"
       addr = f.pos + idx
-      addr_str = " #{addr.to_s.rjust(8,"o")} | "
-      print "\e[24m\e[39m"
+      addr_str = " #{addr.to_s.rjust(7,"o")} | "
+      # print "\e[24m\e[39m\e[0m"
+      # print "\e[24m\e[39m"
+      print "\e[39m"
       print addr_str
-      print "\e[4m"
+      # print "\e[4m"
+      # if type == nil
+      #   print "\e[1m"
+      # end
       self.cool_logger_state[:current_column] += addr_str.size
     else
       if idx == 0
-        print "\e[24m"
+        # print "\e[24m"
       end
       if idx == 0
         print " "
@@ -80,17 +88,20 @@ module GtaScm::Assembler::Feature::CoolOutput
         print "_"
       end
       if idx == 0
-        print "\e[4m"
+        # print "\e[4m"
       end
       self.cool_logger_state[:current_column] += 1
     end
 
-    esc_code = "\e[39m"
+    esc_code = "\e[90m"
     if type == :opcode
       esc_code = "\e[95m"
     end
     if type == :arg_type
       esc_code = "\e[36m"
+    end
+    if type == nil
+      esc_code = "\e[34m"
     end
     # if type == :arg_value
     #   esc_code = "\e[34m"
@@ -102,8 +113,9 @@ module GtaScm::Assembler::Feature::CoolOutput
     print "#{hex[1]}"
     sleep 0.01
 
-    if idx == 1 || type == :arg_type
-      print "\e[39m"
+    if (type == :opcode && idx == 1) || type == :arg_type
+    # if type == :arg_type
+      print "\e[90m"
     end
 
     self.cool_logger_state[:current_column] += 2
