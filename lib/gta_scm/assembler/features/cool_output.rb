@@ -28,30 +28,35 @@ module GtaScm::Assembler::Feature::CoolOutput
   end
 
   def on_node_emit(f,node,bin)
-    # debugger
-    print "\e[4m"
-
-    idx = 0
-    if node.is_a?(GtaScm::Node::Instruction)
-      output_hex(f,node.hex_array[0][0],idx,:opcode)
-      idx += 1
-      output_hex(f,node.hex_array[0][1],idx,:opcode)
-      idx += 1
-      node.hex_array[1].each_with_index do |arg,arg_idx|
-        output_hex(f,arg[0],idx,:arg_type)
+    begin
+      print "\e[4m"
+      idx = 0
+      if node.is_a?(GtaScm::Node::Instruction)
+        output_hex(f,node.hex_array[0][0],idx,:opcode)
         idx += 1
-        if arg[1]
-          arg[1].each do |arg_byte|
-            output_hex(f,arg_byte,idx,:arg_value)
-            idx += 1
+        output_hex(f,node.hex_array[0][1],idx,:opcode)
+        idx += 1
+        node.hex_array[1].each_with_index do |arg,arg_idx|
+          output_hex(f,arg[0],idx,:arg_type)
+          idx += 1
+          if arg[1]
+            arg[1].each do |arg_byte|
+              output_hex(f,arg_byte,idx,:arg_value)
+              idx += 1
+            end
           end
         end
+      else
+        node.hex_array.flatten.each_with_index do |hex,idx|
+          output_hex(f,hex,idx)
+          idx += 1
+        end
       end
-    else
-      node.hex_array.flatten.each_with_index do |hex,idx|
-        output_hex(f,hex,idx)
-        idx += 1
-      end
+    rescue Exception
+      # ensure console output is reset (in case of ctrl-c, etc.)
+      print "\e[0m"
+      print "\n"
+      raise
     end
   end
 
@@ -60,7 +65,7 @@ module GtaScm::Assembler::Feature::CoolOutput
       self.cool_logger_state[:current_column] = 0
       print "\r\n"
       addr = f.pos + idx
-      addr_str = " #{addr.to_s.rjust(7,"0")} | "
+      addr_str = " #{addr.to_s.rjust(8,"o")} | "
       print "\e[24m\e[39m"
       print addr_str
       print "\e[4m"
@@ -69,7 +74,11 @@ module GtaScm::Assembler::Feature::CoolOutput
       if idx == 0
         print "\e[24m"
       end
-      print " "
+      if idx == 0
+        print " "
+      else
+        print "_"
+      end
       if idx == 0
         print "\e[4m"
       end
@@ -98,6 +107,10 @@ module GtaScm::Assembler::Feature::CoolOutput
     end
 
     self.cool_logger_state[:current_column] += 2
+  end
+
+  def on_complete
+    print "\n"
   end
 
 end

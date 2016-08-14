@@ -50,6 +50,10 @@ class GtaScm::Assembler::Base
     
   end
 
+  def on_complete
+    
+  end
+
 end
 
 require 'gta_scm/assembler/feature'
@@ -86,6 +90,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         f << bin
       end
     end
+
+    self.on_complete()
 
     logger.info "Complete, final size: #{File.size(out_path)} bytes"
   end
