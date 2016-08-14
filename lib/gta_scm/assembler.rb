@@ -32,6 +32,7 @@ class GtaScm::Assembler::Base
       include GtaScm::Assembler::Feature::VariableAllocator
       include GtaScm::Assembler::Feature::VariableHeaderAllocator
       include GtaScm::Assembler::Feature::DmaVariableChecker
+      include GtaScm::Assembler::Feature::CoolOutput
     end
     self.on_feature_init()
   end
@@ -45,6 +46,10 @@ class GtaScm::Assembler::Base
   def on_after_touchups
   end
 
+  def on_node_emit(f,node,bin)
+    
+  end
+
 end
 
 require 'gta_scm/assembler/feature'
@@ -52,6 +57,7 @@ require 'gta_scm/assembler/features/base'
 require 'gta_scm/assembler/features/dma_variable_checker'
 require 'gta_scm/assembler/features/variable_allocator'
 require 'gta_scm/assembler/features/variable_header_allocator'
+require 'gta_scm/assembler/features/cool_output'
 
 class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def assemble(scm,main_name,out_path)
@@ -75,7 +81,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
     File.open("#{out_path}","w") do |f|
       self.nodes.each do |node|
-        f << node.to_binary
+        bin = node.to_binary
+        self.on_node_emit(f,node,bin)
+        f << bin
       end
     end
 
@@ -119,7 +127,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       end
 
       node.offset = offset
-      nodes << node
+      self.nodes << node
 
       logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       logger.info ""
@@ -153,7 +161,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.touchup_uses.each_pair do |touchup_name,uses|
       uses.each do |(offset,array_keys)|
         # FIXME: optimise, O(n) -> O(1)
-        node = nodes.detect{|node| node.offset == offset}
+        node = self.nodes.detect{|node| node.offset == offset}
         case touchup_name
           # when :_main_size
           # when :_largest_mission_size

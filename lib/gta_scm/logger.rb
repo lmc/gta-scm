@@ -4,24 +4,43 @@ class GtaScm::Logger
     :info,
     :notice,
     :warn,
-    :error
+    :error,
+    :none,
   ]
 
   attr_accessor :level
   attr_accessor :start_time
+  attr_accessor :decorations
 
-  def initialize(level = :debug)
+  def initialize(level = :info)
     self.start_time = Time.now
-    self.level = GtaScm::Logger.level_int(level)
+    self.level = level
+    self.decorations = [:runtime,:level_char]
   end
 
   def log(str,level = :info)
-    puts "#{runtime} #{level[0].upcase} - #{str}"
+    if self.level <= GtaScm::Logger.level_int(level)
+      puts "#{prefix(level)}#{str}"
+    end
   end
 
-  def runtime
+  def prefix(level)
+    return "" if self.decorations.empty?
+    str = self.decorations.map{ |sym| self.send(sym,level) }
+    "#{str.join(' ')} - "
+  end
+
+  def level=(value)
+    @level = GtaScm::Logger.level_int(value)
+  end
+
+  def runtime(level)
     time = (Time.now-start_time).to_f
     ('%.6f' % time).rjust(12," ")
+  end
+
+  def level_char(level)
+    level[0].upcase
   end
 
   def debug(str)
