@@ -1,4 +1,6 @@
 class GtaScm::Node::Header::Models < GtaScm::Node::Header
+  def padding; self[1][0]; end
+  def model_count; self[1][1]; end
   def model_names; self[1][2]; end
 
   def header_eat!(parser,game_id,header_size)

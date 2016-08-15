@@ -31,4 +31,30 @@ module GtaScm::Assembler::Feature::VariableAllocator
       # logger.info "Using jump_touchups_offset: #{self.jump_touchups_offset}"
     end
   end
+
+  def max_var_slot
+    if true
+      2**16
+    else
+      self.variables_range.end
+    end
+  end
+
+  def next_var_slot
+    offset = self.variables_range.begin
+    while offset < self.max_var_slot
+      if !self.dmavar_uses.include?(offset)
+        logger.debug "Free var slot free at #{offset}"
+        break
+      end
+      offset += 4
+    end
+
+    if offset < self.max_var_slot
+      self.notice_dmavar(offset)
+      return offset
+    else
+      raise "No free var slots"
+    end
+  end
 end

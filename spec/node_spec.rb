@@ -3,8 +3,10 @@ require_relative 'spec_helper'
 describe GtaScm::Node::Instruction do
   let(:bytecode){ binary("[[04 00] [[[02] [a4 18]] [[04] [00]]]]") }
   let(:scm_file){ StringIO.new(bytecode) }
+  let(:game_id){ "vice-city" }
   let(:scm) do
     GtaScm::Scm.new().tap do|scm|
+      scm.game_id = game_id
       scm.scm_file = scm_file
       scm.load_opcode_definitions!
     end

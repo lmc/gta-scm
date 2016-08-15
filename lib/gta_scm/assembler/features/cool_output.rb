@@ -109,9 +109,9 @@ module GtaScm::Assembler::Feature::CoolOutput
     print "#{esc_code}"
 
     print "#{hex[0]}"
-    sleep 0.01
+    sleep 0.003
     print "#{hex[1]}"
-    sleep 0.01
+    sleep 0.002
 
     if (type == :opcode && idx == 1) || type == :arg_type
     # if type == :arg_type

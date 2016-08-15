@@ -19,6 +19,8 @@ module RSpec::Support::ObjectFormatter
       obj.inspect
     elsif obj.nil?
       "nil"
+    elsif obj.is_a?(Numeric)
+      obj.to_s
     else
       super(obj)
     end
