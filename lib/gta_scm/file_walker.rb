@@ -9,6 +9,10 @@ class GtaScm::FileWalker
   # ===================
 
   def initialize(file, offset = 0, end_offset = nil)
+    self.init_file(file,offset,end_offset)
+  end
+
+  def init_file(file,offset,end_offset)
     file.seek(0)
     self.contents = file.read(file.size)
     self.offset = offset

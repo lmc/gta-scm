@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 
 # RUBY_GC_HEAP_INIT_SLOTS=45000
-# ./bin/assemble vice-city _out/vice-city/main.sexp.erl Sexp _out/vice-city/recompiled.scm
+# ./bin/assemble vice-city _out/vice-city main Sexp _out/vice-city/recompiled.scm
+# ./bin/assemble san-andreas _out/san-andreas main Sexp _out/san-andreas/recompiled.scm
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"

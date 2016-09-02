@@ -35,6 +35,29 @@ class GtaScm::Parser < GtaScm::FileWalker
     # end
   end
 
+  def marshal_dump
+    [
+      1,                                # dump version
+      self.nodes,
+      self.offsets,
+      Hash[self.jumps_source2targets],  # use Hash[] to keep hash data but not the default procs
+      Hash[self.jumps_target2sources]
+    ]
+  end
+
+  def marshal_load(data)
+    raise ArgumentError, "can't handle this version of data" if data[0] != 1
+    self.nodes = data[1]
+    self.offsets = data[2]
+    self.jumps_source2targets = data[3]
+    self.jumps_target2sources = data[4]
+  end
+
+  def marshal_post_init(scm)
+    self.scm = scm
+    self.init_file(scm.scm_file,0,nil)
+  end
+
   def load_opcode_definitions(opcode_definitions)
     raise "No opcodes def" if !opcode_definitions
     self.opcodes = opcode_definitions

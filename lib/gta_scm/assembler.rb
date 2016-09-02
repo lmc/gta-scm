@@ -32,7 +32,7 @@ class GtaScm::Assembler::Base
       include GtaScm::Assembler::Feature::VariableAllocator
       include GtaScm::Assembler::Feature::VariableHeaderAllocator
       include GtaScm::Assembler::Feature::DmaVariableChecker
-      # include GtaScm::Assembler::Feature::CoolOutput
+      include GtaScm::Assembler::Feature::CoolOutput
     end
     self.on_feature_init()
   end
@@ -67,7 +67,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def assemble(scm,main_name,out_path)
     install_features!
 
-    self.read_lines_from_input!
+    self.read_lines_from_input!(scm,main_name,out_path)
 
     self.define_touchup(:_main_size,0)
     self.define_touchup(:_largest_mission_size,0)
@@ -80,20 +80,20 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     install_touchup_values!
     self.on_after_touchups()
 
-    self.emit_assembly!
+    self.emit_assembly!(scm,main_name,out_path)
 
     self.on_complete()
 
     logger.info "Complete, final size: #{File.size(out_path)} bytes"
   end
 
-  def read_lines_from_input!
+  def read_lines_from_input!(scm,main_name,out_path)
     File.read("#{self.input_dir}/#{main_name}.sexp.erl").each_line.each_with_index do |line,idx|
       self.read_line(scm,line,main_name,idx)
     end
   end
 
-  def emit_assembly!
+  def emit_assembly!(scm,main_name,out_path)
     File.open("#{out_path}","w") do |f|
       self.nodes.each do |node|
         bin = node.to_binary
@@ -123,6 +123,21 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           end
         when :HeaderMissions
           GtaScm::Node::Header::Missions.new.tap do |node|
+            node.offset = offset
+            node.from_ir(tokens,scm,self)
+          end
+        when :HeaderExternals
+          GtaScm::Node::Header::Externals.new.tap do |node|
+            node.offset = offset
+            node.from_ir(tokens,scm,self)
+          end
+        when :HeaderSegment5
+          GtaScm::Node::Header::Segment5.new.tap do |node|
+            node.offset = offset
+            node.from_ir(tokens,scm,self)
+          end
+        when :HeaderSegment6
+          GtaScm::Node::Header::Segment6.new.tap do |node|
             node.offset = offset
             node.from_ir(tokens,scm,self)
           end

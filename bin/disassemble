@@ -6,6 +6,8 @@
 # NEXT:
 # ID integers from .ide files
 
+USE_CACHE = true
+
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
   require 'gta_scm'
@@ -20,28 +22,46 @@ scm = GtaScm::Scm.load(ARGV[0],ARGV[1])
 
 scm.load_opcode_definitions!
 
-parser = GtaScm::Parser.new(scm,0)
-# parser = GtaScm::MultithreadParser.new(scm,0)
+parser = nil
+scm_hash = Digest::SHA256.file(scm.scm_file.path).hexdigest
 
-parser.load_opcode_definitions( scm.opcodes )
-
-# no real-world performance hit if we only update every 1000 nodes
-progress = ProgressBar.new(parser.size)
-parser.progress_callback = lambda do |offset,size,calls|
-  if calls % 200 == 0
-    progress.set!(offset)
+if USE_CACHE
+  path = "parser-#{scm.game_id}-#{scm_hash}.rbmarshall"
+  if File.exist?(path)
+    parser = Marshal.load( File.read(path) )
+    parser.marshal_post_init(scm)
   end
 end
 
-begin
-  logger.info "Beginning parser"
-  parser.parse!
-  progress.set!(parser.size)
-  logger.info "Parser complete"
-rescue => ex
-  logger.error "We fucked up at #{parser.nodes.last.offset}: #{ex.message}"
-  ex.backtrace.each {|line| logger.debug line }
-  logger.error "Dumping currently-parsed SCM"
+if !parser
+  parser = GtaScm::Parser.new(scm,0)
+  # parser = GtaScm::MultithreadParser.new(scm,0)
+
+  parser.load_opcode_definitions( scm.opcodes )
+
+  # no real-world performance hit if we only update every 1000 nodes
+  progress = ProgressBar.new(parser.size)
+  parser.progress_callback = lambda do |offset,size,calls|
+    if calls % 200 == 0
+      progress.set!(offset)
+    end
+  end
+
+  begin
+    logger.info "Beginning parser"
+    parser.parse!
+    progress.set!(parser.size)
+    logger.info "Parser complete"
+  rescue => ex
+    logger.error "We fucked up at #{parser.nodes.last.offset}: #{ex.message}"
+    ex.backtrace.each {|line| logger.debug line }
+    logger.error "Dumping currently-parsed SCM"
+  end
+
+  if USE_CACHE
+    dump = Marshal.dump(parser)
+    File.open("parser-#{scm.game_id}-#{scm_hash}.rbmarshall","w"){|f| f << dump}
+  end
 end
 
 scm.load_from_parser(parser)

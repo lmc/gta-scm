@@ -96,7 +96,17 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
       GtaScm::Types.bin2value(self[1],:int16),
       GtaScm::Types.bin2value(self[2],:int16),
       GtaScm::Types.bin2value(self[3],:int8),
-      GtaScm::Types.bin2value(self[4],:int8)
+      # GtaScm::Types.bin2value(self[4],:int8)
+      array_flag_values
     ]
+  end
+
+  def array_flag_values
+    bin = self[4][0].to_s(2)
+
+    element_type = bin[1..-1].to_i(2)
+    is_index_global_var = bin[0] == "1"
+
+    [element_type,is_index_global_var]
   end
 end
