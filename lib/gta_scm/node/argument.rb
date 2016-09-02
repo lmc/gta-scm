@@ -67,6 +67,22 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     self.arg_type_id == 0x0e
   end
 
+  # Some array bytecode documentation because goddamn this shit is crazy
+  #
+  # (var_array 7396 7448 4 (1 t))
+  # 1st arg is the address of the beginning of the array
+  # 2nd arg is the index - see below
+  # 3rd arg is the number of elements in the array
+  # 4th arg is a packed value of (array_type, index_mode)
+  #
+  # Index mode
+  # when index_mode == true:
+  #   the 2nd arg is the address of a variable that will have it's value used as the index
+  #   this value will be used as an array index - as you'd expect (ie. if the variable value is 1, it reads the 2nd array element)
+  # when index_mode == false:
+  #   the 2nd arg is an immediate value IN BYTES (????!!!!)
+  #   ie. if the 2nd arg is `25`, it's actually reading array element 6 ((25 - 1) / 4)
+
   def array?
     GtaScm::Types::ARRAY_TYPES.include?(self.arg_type_id)
   end
