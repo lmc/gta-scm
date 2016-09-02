@@ -6,7 +6,7 @@
 # NEXT:
 # ID integers from .ide files
 
-USE_CACHE = true
+USE_CACHE = false
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
@@ -34,8 +34,8 @@ if USE_CACHE
 end
 
 if !parser
-  parser = GtaScm::Parser.new(scm,0)
-  # parser = GtaScm::MultithreadParser.new(scm,0)
+  # parser = GtaScm::Parser.new(scm,0)
+  parser = GtaScm::MultithreadParser.new(scm,0)
 
   parser.load_opcode_definitions( scm.opcodes )
 

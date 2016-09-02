@@ -285,8 +285,10 @@ class GtaScm::MultithreadParser < GtaScm::Parser
   def parse!
     logger.info "#{self.class.name} - Parsing headers"
 
+    # we need to parse the headers first, to get the ranges of code for missions
     parse_headers!
 
+    # each mission is self-contained, so we can parse them safely
     mission_offsets = self.missions_header.mission_offsets
     ranges = mission_offsets.map.each_with_index do |offset,idx|
       start_offset = offset
@@ -297,32 +299,68 @@ class GtaScm::MultithreadParser < GtaScm::Parser
       end
       start_offset..end_offset
     end
+    # also send the main instruction range to a worker, of course
     ranges.unshift( self.main_instruction_range )
 
-    Parallel.each_with_index(ranges, in_threads: 5) do |range,idx|
-      self.parsers[idx] = GtaScm::Parser.new(self.scm,range.begin,range.end)
-      self.parsers[idx].parent_parser = self
-      self.parsers[idx].load_opcode_definitions( self.scm.opcodes )
-      self.parsers[idx].contents = self.contents
-      loop do
-        self.parsers[idx].eat_instruction!
-        break if self.parsers[idx].node.end_offset >= range.end
-      end
+    procs = 3
+    port = 42064
+    require 'drb'
+    DRb.config[:load_limit] = 64 * 1024 * 1024
+    DRb::DRbServer.default_load_limit(64 * 1024 * 1024)
 
+    # fork a shared-memory server for our worker processes
+    cid = fork
+    if cid
+      drb_host = {}
+      DRb.start_service("druby://localhost:#{port}",drb_host)
+      at_exit do
+        DRb.stop_service
+      end
+      trap(:TERM) do
+        DRb.stop_service
+      end
+      logger.notice "Forked DRb server"
+      DRb.thread.join
+      exit
+    end
+
+    # now start spawning worker processes, each working on 1 range of code
+    Parallel.each_with_index(ranges, in_processes: procs) do |range,idx|
+      begin
+        parser = GtaScm::Parser.new(self.scm,range.begin,range.end)
+        parser.parent_parser = self
+        parser.load_opcode_definitions( self.scm.opcodes )
+        parser.contents = self.contents
+
+        loop do
+          parser.eat_instruction!
+          break if parser.node.end_offset >= range.end
+        end
+
+        # once this process's range is parsed, write results back to the shared-memory server
+        drb_instance = DRbObject.new_with_uri("druby://localhost:#{port}")
+        drb_instance[range.begin] = {nodes: parser.nodes, offsets: parser.offsets, jumps_target2sources: Hash[parser.jumps_target2sources], jumps_source2targets: Hash[parser.jumps_source2targets]}
+
+        logger.info "Process #{idx} sees #{drb_instance.size} items"
+      end
     end
 
     logger.info "#{self.class.name} - All threads complete"
 
     logger.info "#{self.class.name} - Merging parser data"
-    self.parsers.each do |parser|
-      self.offsets.concat(parser.offsets)
-      parser.jumps_source2targets.each_pair do |key,value|
+    # the master process needs to connect as a client to see changes
+    drb_instance = DRbObject.new_with_uri("druby://localhost:#{port}")
+
+    # grab the worker's results from the shared-memory server and load them back into our master parser
+    drb_instance.to_a.sort_by(&:first).map(&:last).each do |parser|
+      self.offsets.concat(parser[:offsets])
+      parser[:jumps_source2targets].each_pair do |key,value|
         self.jumps_source2targets[key].concat(value)
       end
-      parser.jumps_target2sources.each_pair do |key,value|
+      parser[:jumps_target2sources].each_pair do |key,value|
         self.jumps_target2sources[key].concat(value)
       end
-      self.nodes.concat(parser.nodes)
+      self.nodes.concat(parser[:nodes])
     end
 
     self.add_jumps_to_nodes!(self.nodes)
