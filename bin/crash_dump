@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+
+# ./bin/thread_ripper
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/thread'
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+THREAD_CONTROL_BLOCK_ADDRESS = 8252624
+THREAD_SIZE = 136
+MAX_THREADS = 127
+
+SCM_ADDRESS = 8520328
+SCM_SIZE = 917
+
+pid = nil
+
+if !pid
+  pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+end
+
+process = Ragweed::Debuggerosx.new(pid)
+
+puts "Reading threads"
+
+start = THREAD_CONTROL_BLOCK_ADDRESS
+stop = start + (THREAD_SIZE * MAX_THREADS)
+addr = start
+thread_id = 0
+threads = []
+while addr < stop
+  bytes = Ragweed::Wraposx::vm_read(process.task,addr,THREAD_SIZE)
+  bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
+  thread = GtaScm::Thread.new
+  thread.eat!( bytes )
+  threads << thread
+
+  thread_id += 1
+  addr += THREAD_SIZE
+end
+
+thread = threads.select(&:active?).sort_by(&:wake_time).last
+
+puts "Probably crashed thread: #{thread.name} PC=#{thread.pc} STACK=#{thread.return_stack.reject(&:zero?).inspect}"
+
+puts "Disassembling SCM from memory"
+
+bytes = Ragweed::Wraposx::vm_read(process.task,SCM_ADDRESS,SCM_SIZE)
+
+scm = GtaScm::Scm.load_string("vice-city",bytes)
+scm.load_opcode_definitions!
+
+parser = GtaScm::Parser.new(scm,thread.pc)
+parser.load_opcode_definitions( scm.opcodes )
+parser.eat_instruction!
+
+scm.load_from_parser(parser)
+
+node = scm.nodes[thread.pc]
+
+dis = GtaScm::Disassembler::Sexp.new(scm)
+dis.output = StringIO.new
+dis.emit_node(thread.pc,node)
+
+dis.output.rewind
+puts dis.output.read
+
+if node.opcode == [0x02,0x00]
+  puts "Goto detected, following"
+  goto = node.arguments[0].value
+  puts "  #{goto}"
+  parser = GtaScm::Parser.new(scm,goto)
+  parser.load_opcode_definitions( scm.opcodes )
+  parser.eat_instruction!
+
+  scm.load_from_parser(parser)
+
+  node = scm.nodes[goto]
+
+  dis = GtaScm::Disassembler::Sexp.new(scm)
+  dis.output = StringIO.new
+  dis.emit_node(goto,node)
+
+  dis.output.rewind
+  puts dis.output.read
+
+  puts "Opcode takes a reference, is it valid?"
+  puts "  (var 8)"
+
+end
+
+
+

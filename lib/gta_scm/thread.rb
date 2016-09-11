@@ -106,4 +106,30 @@ class GtaScm::Thread < GtaScm::Node::Base
     GtaScm::Types.bin2value(self[3],:int32)
   end
 
+  def stack_counter
+    GtaScm::Types.bin2value(self[7],:int16)
+  end
+
+  def return_stack
+    self[4].in_groups_of(4).map do |bytes|
+      GtaScm::Types.bin2value(bytes.map(&:chr).join,:int32)
+    end
+  end
+
+  def local_variables_ints
+    self[9].in_groups_of(4).map do |bytes|
+      GtaScm::Types.bin2value(bytes.map(&:chr).join,:int32)
+    end
+  end
+
+  def local_variables_floats
+    self[9].in_groups_of(4).map do |bytes|
+      GtaScm::Types.bin2value(bytes.map(&:chr).join,:float32)
+    end
+  end
+
+  def wake_time
+    GtaScm::Types.bin2value(self[16],:int32)
+  end
+
 end

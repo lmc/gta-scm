@@ -32,7 +32,8 @@ class GtaScm::Assembler::Base
       include GtaScm::Assembler::Feature::VariableAllocator
       include GtaScm::Assembler::Feature::VariableHeaderAllocator
       include GtaScm::Assembler::Feature::DmaVariableChecker
-      include GtaScm::Assembler::Feature::CoolOutput
+      include GtaScm::Assembler::Feature::ExportSymbols
+      # include GtaScm::Assembler::Feature::CoolOutput
     end
     self.on_feature_init()
   end
@@ -62,6 +63,7 @@ require 'gta_scm/assembler/features/dma_variable_checker'
 require 'gta_scm/assembler/features/variable_allocator'
 require 'gta_scm/assembler/features/variable_header_allocator'
 require 'gta_scm/assembler/features/cool_output'
+require 'gta_scm/assembler/features/export_symbols'
 
 class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def assemble(scm,main_name,out_path)

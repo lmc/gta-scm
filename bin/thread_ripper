@@ -35,8 +35,12 @@ while addr < stop
   thread.eat!( bytes )
 
   if thread.active?
-    puts "#{thread_id}: #{thread.name} ACTIVE=#{thread.is_active} PC=#{thread.pc}"
+    puts "#{thread_id}: #{thread.name} PC=#{thread.pc} STACK=#{thread.return_stack.reject(&:zero?)} WAKE=#{thread.wake_time}"
+    # puts "  stack_counter=#{thread.stack_counter} return_stack=#{thread.return_stack.inspect}"
+    # puts "  local_variables_ints=#{thread.local_variables_ints.inspect}"
+    # puts "  local_variables_floats=#{thread.local_variables_floats.inspect}"
     # puts "  #{thread.bytes.inspect}"
+    puts ""
   end
 
   thread_id += 1

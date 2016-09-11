@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby
+
+# ./bin/thread_ripper
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/thread'
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+SCM_ADDRESS = 8520328
+SCM_SIZE = 917
+
+SYMBOLS_PATH = "symbols.gta-scm-symbols"
+
+pid = nil
+
+if !pid
+  pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+end
+
+process = Ragweed::Debuggerosx.new(pid)
+
+bytes = Ragweed::Wraposx::vm_read(process.task,SCM_ADDRESS,SCM_SIZE)
+# bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
+
+puts "Found SCM at #{SCM_ADDRESS}, size #{SCM_SIZE}"
+
+if File.exists?(SYMBOLS_PATH)
+  puts "Detected symbols, dumping vars"
+  data = JSON.parse( File.read(SYMBOLS_PATH) )
+
+  data["variables"].each_pair do |offset,metadata|
+    offset = offset.to_i
+    value = bytes[offset..offset+4]
+    label = metadata[0] || ""
+
+    if metadata[1] == "float"
+      type = :float32
+    else
+      type = :int32
+    end
+
+    value = GtaScm::Types.bin2value(value,type)
+    puts "#{offset} #{label}: (#{type} #{value})"
+  end
+end
+
+# puts GtaScm::ByteArray.new(bytes.bytes).hex_inspect
+# bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
+# thread = GtaScm::Thread.new
+# thread.eat!( bytes )

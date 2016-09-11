@@ -46,6 +46,13 @@ class GtaScm::Scm
     instance
   end
 
+  def self.load_string(game_id,string)
+    instance = new
+    instance.game_id = game_id
+    instance.scm_file = StringIO.new(string)
+    instance
+  end
+
   def initialize()
     self.offsets = []
     # self.offsets2types = {}
@@ -60,7 +67,7 @@ class GtaScm::Scm
 
   def load_opcode_definitions!
     self.opcodes.load_definitions!( self.game_id )
-    self.load_other_definitions!
+    # self.load_other_definitions!
   end
 
   def load_other_definitions!

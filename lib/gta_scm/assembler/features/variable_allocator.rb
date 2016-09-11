@@ -4,8 +4,10 @@ module GtaScm::Assembler::Feature::VariableAllocator
     super
     class << self
       attr_accessor :var_touchups
+      attr_accessor :allocated_vars
     end
     self.var_touchups = Set.new
+    self.allocated_vars = Hash.new
   end
 
   def on_before_touchups
@@ -22,6 +24,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
     allocated_offset = nil
     self.var_touchups.each do |var_name|
       allocated_offset = self.next_var_slot
+      self.allocated_vars[var_name] = allocated_offset
       self.define_touchup(var_name,allocated_offset)
     end
 

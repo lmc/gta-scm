@@ -96,6 +96,8 @@ module GtaScm::Types
     bin = case bin
       when GtaScm::ByteArray
         bin.to_a.map(&:chr).join('')
+      else
+        bin
     end
 
     type = self.normalize_type(o_type)

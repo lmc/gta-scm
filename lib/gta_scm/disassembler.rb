@@ -6,6 +6,8 @@ class GtaScm::Disassembler::Base
   attr_accessor :files
   attr_accessor :options
 
+  attr_accessor :output
+
   def initialize(scm, options = {})
     self.scm = scm
     self.options = options.reverse_merge(
@@ -53,7 +55,11 @@ class GtaScm::Disassembler::Base
 
 
   def file_for_offset(offset)
-    self.files["main"]
+    if self.output
+      self.output
+    else
+      self.files["main"]
+    end
   end
 
   class OutputDir
