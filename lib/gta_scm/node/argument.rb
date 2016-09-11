@@ -12,6 +12,7 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
       self[0] = parser.read(128)
     else
       self[0] = parser.read(1)
+
       if self.end_var_args?
         # don't read any more bytes
       elsif self.array?
@@ -19,6 +20,16 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
         self[2] = parser.read(2)
         self[3] = parser.read(1)
         self[4] = parser.read(1)
+      elsif self.float?
+        if parser.scm.game_id == "gta3"
+          self[1] = parser.read(2)
+        else
+          self[1] = parser.read(4)
+        end
+      # immediate string has no arg id, so if it's out-of-range for an
+      # arg id, just read 7 more bytes (for 8 bytes total)
+      elsif self.istring?
+        self[1] = parser.read(7)
       elsif self.vlstring?
         # read one byte for the variable length
         self[1] = parser.read(1)
@@ -55,6 +66,10 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     end
   end
 
+  def float?
+    self.arg_type_id == 0x06
+  end
+
   def end_var_args?
     self.arg_type_id == 0x00
   end
@@ -65,6 +80,10 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
 
   def vlstring?
     self.arg_type_id == 0x0e
+  end
+
+  def istring?
+    self.arg_type_id > GtaScm::Types::MAX_TYPE
   end
 
   # Some array bytecode documentation because goddamn this shit is crazy
@@ -92,6 +111,9 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
       nil
     elsif array?
       array_value
+    elsif float? && self[1].size == 2
+      # debugger
+      GtaScm::Types.bin2value(self[1],:int16) / 16.0
     elsif string128?
       GtaScm::Types.bin2value(self[0],:string128)
     elsif vlstring?

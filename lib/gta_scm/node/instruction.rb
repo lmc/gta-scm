@@ -66,8 +66,10 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
           else
             [:label,dis.label_for_offset(argument.value,self.offset)]
           end
-        # elsif enum = self.enum_argument?(idx)
-        #   self.enum_argument_ir(scm,dis,enum,argument.value)
+        # elsif argument.float?
+        #   [argument.arg_type_sym,argument.value,'DAADB00B']
+        elsif enum = self.enum_argument?(idx)
+          self.enum_argument_ir(scm,dis,enum,argument.value)
         else
           [argument.arg_type_sym,argument.value]
         end
@@ -79,6 +81,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
   ENUM_ARGUMENT_OPCODES = {
     [0x9B,0x02] => { 0 => :object },                    # CREATE_OBJECT_NO_OFFSET
     [0x13,0x02] => { 0 => :object, 1 => :pickup_type }, # CREATE_PICKUP
+    [0x36,0x02] => { 1 => :object }, # gang_car
+    [0x37,0x02] => { 1 => :weapon_id, 2 => :weapon_id }, # gang_car
   }
   def enum_argument?(arg_idx)
     args = ENUM_ARGUMENT_OPCODES[ self.opcode ]
@@ -95,7 +99,14 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
         [ :objscm, scm.objscm_name(value) ]
       end
     else
-      [enum,value]
+      if enum == :weapon_id
+        # debugger;enum
+      end
+      if ir = scm.definitions[enum.to_sym].andand[value]
+        ir
+      else
+        [enum,value]
+      end
     end
   end
 

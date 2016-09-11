@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+
+# ./bin/thread_ripper
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/thread'
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+THREAD_CONTROL_BLOCK_ADDRESS = 8252624
+THREAD_SIZE = 136
+MAX_THREADS = 127
+
+pid = nil
+
+if !pid
+  pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+end
+
+process = Ragweed::Debuggerosx.new(pid)
+
+start = THREAD_CONTROL_BLOCK_ADDRESS
+stop = start + (THREAD_SIZE * MAX_THREADS)
+addr = start
+thread_id = 0
+while addr < stop
+  bytes = Ragweed::Wraposx::vm_read(process.task,addr,THREAD_SIZE)
+  bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
+  thread = GtaScm::Thread.new
+  thread.eat!( bytes )
+
+  if thread.active?
+    puts "#{thread_id}: #{thread.name} ACTIVE=#{thread.is_active} PC=#{thread.pc}"
+    # puts "  #{thread.bytes.inspect}"
+  end
+
+  thread_id += 1
+  addr += THREAD_SIZE
+end
+

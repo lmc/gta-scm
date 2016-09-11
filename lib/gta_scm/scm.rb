@@ -10,7 +10,7 @@ require 'gta_scm/disassembler'
 require 'gta_scm/assembler'
 
 class GtaScm::Scm
-  GAME_IDS = ["vice-city","san-andreas"]
+  GAME_IDS = ["gta3","vice-city","san-andreas"]
   def game_id; @game_id; end
   def game_id=(value)
     raise ArgumentError, "unknown game id (supported: #{GAME_IDS.inspect})" unless GAME_IDS.include?(value)
@@ -60,7 +60,7 @@ class GtaScm::Scm
 
   def load_opcode_definitions!
     self.opcodes.load_definitions!( self.game_id )
-    # self.load_other_definitions!
+    self.load_other_definitions!
   end
 
   def load_other_definitions!
@@ -72,6 +72,17 @@ class GtaScm::Scm
       if matches = line.match(/\A(\d+),\s*(\w+)(,|$)/)
         self.definitions[:objects][ matches[1].to_i ] = matches[2].downcase
       end
+    end
+
+    self.definitions[:weapon_id] = {}
+    weapon_id = 0
+
+    File.open("games/#{game_id}/data/weapon.dat").each_line do |line|
+      next if line.blank? || line[0] == "#"
+      if matches = line.match(/\A(\w+)\s*(.*)$/)
+        self.definitions[:weapon_id][ weapon_id ] = matches[1]
+      end
+      weapon_id += 1
     end
   end
 

@@ -75,10 +75,12 @@ class GtaScm::Parser < GtaScm::FileWalker
 
   def parse_headers!
     case self.scm.game_id
-    when "vice-city"
+    when "gta3","vice-city"
       parse_vice_city_headers!
     when "san-andreas"
       parse_san_andreas_headers!
+    else
+      raise "unknown game_id"
     end
   end
 
@@ -303,7 +305,7 @@ class GtaScm::MultithreadParser < GtaScm::Parser
     ranges.unshift( self.main_instruction_range )
 
     procs = 3
-    port = 42064
+    port = 42069
     require 'drb'
     DRb.config[:load_limit] = 64 * 1024 * 1024
     DRb::DRbServer.default_load_limit(64 * 1024 * 1024)

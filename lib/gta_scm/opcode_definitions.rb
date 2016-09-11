@@ -26,9 +26,14 @@ class GtaScm::OpcodeDefinitions < Hash
 
   def load_definitions!(game_id)
     load_official_definitions!(game_id)
+    if game_id == "gta3"
+      load_unofficial_definitions!(game_id)
+    end
     if game_id == "san-andreas"
       load_unofficial_definitions!(game_id)
     end
+
+    logger.debug "Loaded #{self.size} opcode definitions"
   end
 
   def load_official_definitions!(game_id)

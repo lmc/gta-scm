@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 # RUBY_GC_HEAP_INIT_SLOTS=45000
+# ./bin/disassemble gta3 games/gta3/data/main.scm _out/gta3 Sexp
 # ./bin/disassemble vice-city games/vice-city/data/main.scm _out/vice-city Sexp
 
 # NEXT:
@@ -34,8 +35,8 @@ if USE_CACHE
 end
 
 if !parser
-  # parser = GtaScm::Parser.new(scm,0)
-  parser = GtaScm::MultithreadParser.new(scm,0)
+  parser = GtaScm::Parser.new(scm,0)
+  # parser = GtaScm::MultithreadParser.new(scm,0)
 
   parser.load_opcode_definitions( scm.opcodes )
 
@@ -53,7 +54,7 @@ if !parser
     progress.set!(parser.size)
     logger.info "Parser complete"
   rescue => ex
-    logger.error "We fucked up at #{parser.nodes.last.offset}: #{ex.message}"
+    logger.error "We fucked up at #{parser.nodes.last.andand.offset}: #{ex.message}"
     ex.backtrace.each {|line| logger.debug line }
     logger.error "Dumping currently-parsed SCM"
   end

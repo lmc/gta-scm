@@ -6,6 +6,14 @@ GIT
       racc (~> 1)
 
 GIT
+  remote: git://github.com/paul/progress_bar.git
+  revision: 6dc27ba612bdf6517ca8e443428066b5b61175d5
+  specs:
+    progress_bar (1.0.5)
+      highline (~> 1.6)
+      options (~> 2.3.0)
+
+GIT
   remote: git://github.com/tyler/binary_search.git
   revision: 8994e82dda4d8dd8ac57cbfd03fb8695c50990b1
   specs:
@@ -49,15 +57,19 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
+    andand (1.3.3)
     arel (6.0.3)
     builder (3.2.2)
     byebug (9.0.5)
     concurrent-ruby (1.0.0)
     diff-lcs (1.2.5)
     erubis (2.7.0)
+    ffi (1.9.14)
     globalid (0.3.6)
       activesupport (>= 4.1.0)
+    highline (1.7.8)
     i18n (0.7.0)
+    iconv (1.0.4)
     json (1.8.3)
     loofah (2.0.3)
       nokogiri (>= 1.5.9)
@@ -68,11 +80,14 @@ GEM
     minitest (5.8.4)
     nokogiri (1.6.7.2)
       mini_portile2 (~> 2.0.0.rc2)
+    options (2.3.2)
     parallel (1.9.0)
     racc (1.4.14)
     rack (1.6.4)
     rack-test (0.6.3)
       rack (>= 1.0)
+    ragweed (0.2.9)
+      ffi (~> 1.0)
     rails (4.2.4)
       actionmailer (= 4.2.4)
       actionpack (= 4.2.4)
@@ -128,13 +143,20 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport
+  andand
   binary_search!
   byebug
   elparser!
+  iconv
   parallel
+  progress_bar!
   rack
+  ragweed
   rails
   rspec
 
+RUBY VERSION
+   ruby 2.3.1p112
+
 BUNDLED WITH
-   1.11.2
+   1.12.5
