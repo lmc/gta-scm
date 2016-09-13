@@ -13,6 +13,11 @@ module GtaScm::Assembler::Feature::ExportSymbols
     export_symbols!
   end
 
+  def on_metadata(file,line_idx,tokens,addr)
+    super
+
+  end
+
   def on_node_emit(f,node,bin)
     super
 

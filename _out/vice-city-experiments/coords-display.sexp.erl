@@ -1,4 +1,9 @@
 (labeldef display_coordinates)
+
+(andor ((int8 0)))
+(is_player_playing ((dmavar 8)))
+(goto_if_false ((label display_coordinates_epilogue)))
+
 (get_player_heading ((dmavar 8) (var player_heading_f)))
 (cset_var_int_to_var_float ((var player_heading_i) (var player_heading_f)))
 
@@ -71,5 +76,6 @@
 (set_text_scale ((float32 0.72) (float32 1.68)))
 (display_text_with_number ((float32 64.0) (float32 50.0) (string8 "NUMBER") (var player_heading_i)))
 
-(wait ((int16 1000)))
+(labeldef display_coordinates_epilogue)
+(wait ((int16 50)))
 (goto ((label display_coordinates)))

@@ -30,7 +30,7 @@ class GtaScm::Assembler::Base
   def install_features!
     class << self
       include GtaScm::Assembler::Feature::VariableAllocator
-      include GtaScm::Assembler::Feature::VariableHeaderAllocator
+      # include GtaScm::Assembler::Feature::VariableHeaderAllocator
       include GtaScm::Assembler::Feature::DmaVariableChecker
       include GtaScm::Assembler::Feature::ExportSymbols
       # include GtaScm::Assembler::Feature::CoolOutput
@@ -52,6 +52,10 @@ class GtaScm::Assembler::Base
   end
 
   def on_complete
+    
+  end
+
+  def on_metadata(file,line_idx,tokens,addr)
     
   end
 
@@ -150,6 +154,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           return
         when :Rawhex
           GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } )
+        when :Metadata
+          logger.info "Metadata node recognised, contents: #{tokens.inspect}"
+          self.on_metadata(file_name,line_idx,tokens,offset)
+          return
         when :labeldef
           self.define_touchup(tokens[1],nodes.next_offset)
           return

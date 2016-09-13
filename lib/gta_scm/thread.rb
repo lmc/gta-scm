@@ -1,5 +1,7 @@
 class GtaScm::Thread < GtaScm::Node::Base
 
+  attr_accessor :offset
+
   def eat!(bytes)
     # prev thread pointer
     self[0] = GtaScm::Node::Raw.new
@@ -96,6 +98,17 @@ class GtaScm::Thread < GtaScm::Node::Base
 
   def active?
     is_active == 1
+  end
+
+  def prev_thread_pointer
+    GtaScm::Types.bin2value(self[0],:int32)
+  end
+  # def prev_thread_pointer=(val)
+  #   val = GtaScm::Types.value2bin(val,:int32)
+  # end
+
+  def next_thread_pointer
+    GtaScm::Types.bin2value(self[1],:int32)
   end
 
   def name
