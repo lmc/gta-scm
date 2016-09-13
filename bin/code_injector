@@ -40,6 +40,7 @@ while addr < stop
   bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
 
   thread = GtaScm::Thread.new
+  thread.thread_id = thread_id
   thread.offset = addr
   thread.eat!( bytes )
 
@@ -48,19 +49,76 @@ while addr < stop
   addr += THREAD_SIZE
 end
 
-target_thread_idx = threads.find_index {|thread| thread.active? && thread.name == "main"}
-target_thread = threads[target_thread_idx]
+def inspect_thread(thread)
+  puts "#{thread.name} active=#{thread.active} addr=#{thread.offset} prev=#{thread.prev_thread_pointer} next=#{thread.next_thread_pointer}"
+  # puts thread.inspect
+end
 
-target_pc = 869
-target_pcb = GtaScm::Types.value2bin(target_pc,:int32)
+target_pc = 397
 
-target_pos = target_thread.offset + 16
+# first_alive_thread = threads.select{|thread| thread.active? }.first
+# last_dead_thread = threads.select{|thread| !thread.active? }.first
+last_active_thread = threads.detect{|thread| thread.active? && thread.next_thread_pointer == 0}
+last_dead_thread = threads.select{|thread| !thread.active?}.first
+# second_last_dead_thread = threads.detect{|thread| thread.next_thread_pointer == last_dead_thread.offset}
 
-puts "Rewriting thread #{target_thread_idx} PC to #{target_pc}"
 
-# Ragweed::Wraposx::vm_write expects that you are writing pointers to strings
-# If you want to write a raw integer value, we have to use the C function directly
-Ragweed::Wraposx::Libc.vm_write(process.task, target_pos, target_pcb, target_pcb.size)
+threads.each{|t| inspect_thread(t)}
+
+puts "last_active_thread"
+inspect_thread(last_active_thread)
+puts "last_dead_thread"
+inspect_thread(last_dead_thread)
+# puts "second_last_dead_thread"
+# inspect_thread(second_last_dead_thread)
+
+new_thread = last_dead_thread
+new_thread.pc = target_pc
+new_thread.active = true
+new_thread.name = "injectd"
+new_thread.wake_time = last_active_thread.wake_time + 100
+
+new_thread.prev_thread_pointer = last_active_thread.offset
+new_thread.next_thread_pointer = 0
+
+last_active_thread.next_thread_pointer = new_thread.offset
+
+# second_last_dead_thread.next_thread_pointer = 0
+
+threads.each{|t| inspect_thread(t)}
+
+# puts Ragweed::Wraposx::vm_read(process.task,THREAD_CONTROL_BLOCK_ADDRESS - 16,16).bytes
+
+
+# val = Ragweed::Wraposx::vm_read(process.task,THREAD_CONTROL_BLOCK_ADDRESS - 4,4)
+# val = GtaScm::Types.bin2value(val,:int32)
+# puts "first active pointer: #{val}"
+# val = Ragweed::Wraposx::vm_read(process.task,THREAD_CONTROL_BLOCK_ADDRESS - 8,4)
+# val = GtaScm::Types.bin2value(val,:int32)
+# puts "first dead pointer: #{val}"
+
+Ragweed::Wraposx::Libc.vm_write(process.task, last_active_thread.offset, last_active_thread.to_binary, THREAD_SIZE)
+Ragweed::Wraposx::Libc.vm_write(process.task, new_thread.offset, new_thread.to_binary, THREAD_SIZE)
+# Ragweed::Wraposx::Libc.vm_write(process.task, second_last_dead_thread.offset, second_last_dead_thread.to_binary, THREAD_SIZE)
+
+
+
+# new_thread = first_alive_thread.dup
+# new_thread.thread_id = 
+
+# target_thread_idx = threads.find_index {|thread| thread.active? && thread.name == "main"}
+# target_thread = threads[target_thread_idx]
+
+# target_pc = 869
+# target_pcb = GtaScm::Types.value2bin(target_pc,:int32)
+
+# target_pos = target_thread.offset + 16
+
+# puts "Rewriting thread #{target_thread_idx} PC to #{target_pc}"
+
+# # Ragweed::Wraposx::vm_write expects that you are writing pointers to strings
+# # If you want to write a raw integer value, we have to use the C function directly
+# Ragweed::Wraposx::Libc.vm_write(process.task, target_pos, target_pcb, target_pcb.size)
 
 Ragweed::Wraposx::task_resume(process.task)
 

@@ -30,7 +30,7 @@ class GtaScm::Assembler::Base
   def install_features!
     class << self
       include GtaScm::Assembler::Feature::VariableAllocator
-      # include GtaScm::Assembler::Feature::VariableHeaderAllocator
+      include GtaScm::Assembler::Feature::VariableHeaderAllocator
       include GtaScm::Assembler::Feature::DmaVariableChecker
       include GtaScm::Assembler::Feature::ExportSymbols
       # include GtaScm::Assembler::Feature::CoolOutput

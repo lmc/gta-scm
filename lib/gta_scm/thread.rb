@@ -1,5 +1,6 @@
 class GtaScm::Thread < GtaScm::Node::Base
 
+  attr_accessor :thread_id
   attr_accessor :offset
 
   def eat!(bytes)
@@ -92,31 +93,48 @@ class GtaScm::Thread < GtaScm::Node::Base
     self[21].eat!(bytes,1)
   end
 
-  def is_active
+  def active
     self[12][0]
+  end
+  def active=(val)
+    val = !!val ? 1 : 0
+    self[12][0] = val
   end
 
   def active?
-    is_active == 1
+    active == 1
   end
 
   def prev_thread_pointer
     GtaScm::Types.bin2value(self[0],:int32)
   end
-  # def prev_thread_pointer=(val)
-  #   val = GtaScm::Types.value2bin(val,:int32)
-  # end
+  def prev_thread_pointer=(val)
+    val = GtaScm::Types.value2bin(val,:int32)
+    self[0] = GtaScm::Node::Raw.new(val.bytes)
+  end
 
   def next_thread_pointer
     GtaScm::Types.bin2value(self[1],:int32)
+  end
+  def next_thread_pointer=(val)
+    val = GtaScm::Types.value2bin(val,:int32)
+    self[1] = GtaScm::Node::Raw.new(val.bytes)
   end
 
   def name
     GtaScm::Types.bin2value(self[2],:string128)
   end
+  def name=(val)
+    val = GtaScm::Types.value2bin(val,:istring8)
+    self[2] = GtaScm::Node::Raw.new(val.bytes)
+  end
 
   def pc
     GtaScm::Types.bin2value(self[3],:int32)
+  end
+  def pc=(val)
+    val = GtaScm::Types.value2bin(val,:int32)
+    self[3] = GtaScm::Node::Raw.new(val.bytes)
   end
 
   def stack_counter
@@ -143,6 +161,10 @@ class GtaScm::Thread < GtaScm::Node::Base
 
   def wake_time
     GtaScm::Types.bin2value(self[16],:int32)
+  end
+  def wake_time=(val)
+    val = GtaScm::Types.value2bin(val,:int32)
+    self[16] = GtaScm::Node::Raw.new(val.bytes)
   end
 
 end

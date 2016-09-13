@@ -78,7 +78,8 @@ module GtaScm::Types
 
   def self.value2bin(value,o_type)
     if o_type == :istring8
-      nil
+      # return nil #FIXME? why nil??
+      value[0...7]+"\x00"
     else
       if char = TYPE_PACK_CHARS[o_type]
         [value].pack(char)
