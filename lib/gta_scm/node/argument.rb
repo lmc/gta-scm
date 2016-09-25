@@ -46,7 +46,7 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     # TODO: flag and handle string8 (arg type 0x09) from istring8 (no arg type)
     if type == :string8
       self[0] = GtaScm::ByteArray.new( [0x09] )
-      self[1] = GtaScm::ByteArray.new( value[1..8].ljust(8,0.chr).bytes )
+      self[1] = GtaScm::ByteArray.new( value[0..7].ljust(8,0.chr).bytes )
     elsif type == :istring8
       self[0] = GtaScm::ByteArray.new( [value[0].ord] )
       self[1] = GtaScm::ByteArray.new( value[1..7].ljust(7,0.chr).bytes )

@@ -17,29 +17,46 @@
 (set_deatharrest_state ((int8 0)))
 
 (set_time_of_day ((int8 22) (int8 0)))
+% (load_mission_text ((string8 "INTRO1")))
 
 (request_collision ((float32 2485.219970703125) (float32 -1672.9410400390625)))
 (load_scene ((float32 2485.219970703125) (float32 -1672.9410400390625) (float32 13.729999542236328)))
 
-(create_player ((int8 0) (float32 2485.219970703125) (float32 -1672.9410400390625) (float32 13.729999542236328) (var 8)))
-(get_player_group ((var 8) (var 44)))
-(get_player_char ((var 8) (var 12)))
+(create_player ((int8 0) (float32 2485.219970703125) (float32 -1672.9410400390625) (float32 13.729999542236328) (dmavar 8)))
+(get_player_group ((dmavar 8) (dmavar 44)))
+(get_player_char ((dmavar 8) (dmavar 12)))
 
-(give_player_clothes_outside_shop ((var 8) (vlstring "VEST") (vlstring "VEST") (int8 0)))
-(give_player_clothes_outside_shop ((var 8) (vlstring "JEANSDENIM") (vlstring "JEANS") (int8 2)))
-(give_player_clothes_outside_shop ((var 8) (vlstring "SNEAKERBINCBLK") (vlstring "SNEAKER") (int8 3)))
-(give_player_clothes_outside_shop ((var 8) (vlstring "PLAYER_FACE") (vlstring "HEAD") (int8 1)))
-(build_player_model ((var 8)))
+(give_player_clothes_outside_shop ((dmavar 8) (vlstring "VEST") (vlstring "VEST") (int8 0)))
+(give_player_clothes_outside_shop ((dmavar 8) (vlstring "JEANSDENIM") (vlstring "JEANS") (int8 2)))
+(give_player_clothes_outside_shop ((dmavar 8) (vlstring "SNEAKERBINCBLK") (vlstring "SNEAKER") (int8 3)))
+(give_player_clothes_outside_shop ((dmavar 8) (vlstring "PLAYER_FACE") (vlstring "HEAD") (int8 1)))
+(build_player_model ((dmavar 8)))
 (store_clothes_state)
 
 (add_hospital_restart ((float32 2027.77001953125) (float32 -1420.52001953125) (float32 15.989999771118164) (float32 137.0) (int8 0)))
 (add_police_restart ((float32 1550.6800537109375) (float32 -1675.489990234375) (float32 14.510000228881836) (float32 90.0) (int8 0)))
 
 (do_fade ((int16 1000) (int8 1)))
+(start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
 
 (labeldef idle_loop)
 (wait ((int8 100)))
 (goto ((label idle_loop)))
+
+(labeldef display_coordinates_bootstrap)
+(script_name ((string8 "coords")))
+% (load_mission_text ((string8 "MAIN")))
+% (print_big ((string8 "M_FAIL") (int16 6000) (int8 1)))
+
+(wait ((int32 7000)))
+% (set_time_scale ((float32 0.0)))
+% (display_onscreen_timer_with_string ((dmavar 36) (int8 0) (string8 "NUMBER")))
+% (display_onscreen_timer_with_string ((dmavar 40) (int8 1) (string8 "NUMBER")))
+(display_nth_onscreen_counter_with_string ((dmavar 36) (int8 0) (int8 1) (string8 "NUMBER")))
+(display_nth_onscreen_counter_with_string ((dmavar 40) (int8 0) (int8 2) (string8 "NUMBER")))
+(display_nth_onscreen_counter_with_string ((dmavar 44) (int8 0) (int8 3) (string8 "NUMBER")))
+
+(Include "coords-display")
 
 % 3079744 - scm size
 % 3079744 - 56257
