@@ -83,6 +83,10 @@ module GtaScm::Types
     else
       if char = TYPE_PACK_CHARS[o_type]
         [value].pack(char)
+      elsif o_type == :uint32
+        debugger
+        value.pack("l<")
+        value.pack("L<")
       elsif o_type == :int
 
       elsif o_type == :float

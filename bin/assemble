@@ -27,8 +27,10 @@ support gxt replacement/insertion
 asm = GtaScm::Assembler::Sexp.new(ARGV[1])
 path = ARGV[4]
 if path == "GAME"
-  GAME_PATH = "/Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - vice city/Grand Theft Auto - Vice City.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/Grand Theft Auto Vice City"
-  path = "#{GAME_PATH}/data/main.scm"
+  # GAME_PATH = "/Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - vice city/Grand Theft Auto - Vice City.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/Grand Theft Auto Vice City"
+  GAME_PATH = "/Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - san andreas/Grand Theft Auto - San Andreas.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/GTA San Andreas"
+  # path = "#{GAME_PATH}/data/main.scm"
+  path = "#{GAME_PATH}/data/script/main.scm"
   logger.notice "Compiling into game dir..."
 end
 asm.assemble(scm,ARGV[2],path)

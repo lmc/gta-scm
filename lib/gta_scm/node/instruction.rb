@@ -60,6 +60,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
           [argument.arg_type_sym].concat(argument.array_ir)
         elsif argument.string128?
           [:string128,argument.value]
+        elsif argument.istring?
+          [:istring8,argument.value]
         elsif self.jump_argument?(idx)
           if argument.value < 0
             [:mission_label,dis.label_for_offset(argument.value,self.offset)]

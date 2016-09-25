@@ -102,6 +102,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def emit_assembly!(scm,main_name,out_path)
     File.open("#{out_path}","w") do |f|
       self.nodes.each do |node|
+        puts node.offset
         bin = node.to_binary
         self.on_node_emit(f,node,bin)
         f << bin
@@ -154,6 +155,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           return
         when :Rawhex
           GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } )
+        when :Padding
+          GtaScm::Node::Raw.new( [0] * tokens[1][0] )
+        when :PadUntil
+          zeros = tokens[1][0] - self.nodes.next_offset
+          GtaScm::Node::Raw.new( [0] * zeros )
         when :Metadata
           logger.info "Metadata node recognised, contents: #{tokens.inspect}"
           self.on_metadata(file_name,line_idx,tokens,offset)
@@ -168,7 +174,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       node.offset = offset
       self.nodes << node
 
-      logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
+      if node.is_a?(GtaScm::Node::Instruction)
+        logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
+      end
       logger.info ""
     end
   end
@@ -202,8 +210,20 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         # FIXME: optimise, O(n) -> O(1)
         node = self.nodes.detect{|node| node.offset == offset}
         case touchup_name
-          # when :_main_size
-          # when :_largest_mission_size
+          when :_main_size
+            main_size = self.missions_header.mission_offsets.first
+            touchup_value = GtaScm::Types.value2bin( main_size , :int32 ).bytes
+            self.missions_header[1][1].replace(touchup_value)
+
+          when :_largest_mission_size
+            ranges = self.missions_header.mission_offsets + [self.nodes.next_offset]
+            ranges = ranges.map.each_with_index {|_,i| ranges[i+1] && [ranges[i],ranges[i+1]] }.compact
+            ranges = ranges.map { |r| Range.new(r[0],r[1],true) }
+            largest_mission_size = ranges.sort_by(&:size).last.size
+
+            touchup_value = GtaScm::Types.value2bin( largest_mission_size , :int32 ).bytes
+            self.missions_header[1][2].replace(touchup_value)
+
           # when :_exclusive_mission_count
           when :_version
           else
@@ -313,4 +333,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def variables_range
     (variables_header.varspace_offset)...(variables_header.varspace_offset + variables_header.varspace_size)
   end
+
+  def missions_header
+    self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Missions)}
+  end
+
 end
