@@ -23,12 +23,15 @@ module GtaScm::Assembler::Feature::VariableHeaderAllocator
   end
 
   def allocate_space_in_variables_header!
-    highest_dma_var = self.dmavar_uses.max
-    self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
-
-    memspace = (highest_dma_var + 4) - variables_range.begin
-    logger.info "Allocating #{memspace} zeros in variables header"
-    variables_header.variable_storage.replace([0] * memspace)
+    if variables_header.variable_storage.size == 0
+      highest_dma_var = self.dmavar_uses.max
+      self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
+      memspace = (highest_dma_var + 4) - variables_range.begin
+      logger.info "Allocating #{memspace} zeros in variables header"
+      variables_header.variable_storage.replace([0] * memspace)
+    else
+      logger.info "Already found #{variables_header.variable_storage.size} zeros allocated, ignoring"
+    end
   end
 
   def adjust_jump_touchups!

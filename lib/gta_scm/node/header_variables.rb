@@ -32,6 +32,7 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
     self[1][0] = GtaScm::Node::Raw.new([data[:magic][1]])
     self[1][1] = GtaScm::Node::Raw.new([0] * data[:size][1])
 
-    asm.define_touchup(:label__post_header_variables,asm.nodes.next_offset(self))
+    next_offset = asm.nodes.next_offset(self)
+    asm.define_touchup(:label__post_header_variables,next_offset)
   end
 end

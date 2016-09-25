@@ -98,30 +98,46 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
     self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_missions]]])
     asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_missions,:jump)
 
+    i = 0
+
     # padding
-    self[1][0] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:padding][1] , :int8 ).bytes )
+    self[1][i] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:padding][1] , :int8 ).bytes )
+    i += 1
 
     # main size
-    self[1][1] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
+    self[1][i] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
     asm.use_touchup(self.offset,[1,1],:_main_size)
+    i += 1
 
     # largest mission size
-    self[1][2] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
+    self[1][i] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
     asm.use_touchup(self.offset,[1,2],:_largest_mission_size)
+    i += 1
 
     # total missions
     mission_count = data[:total_mission_count][1]
-    self[1][3] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission_count , :int16 ).bytes )
+    self[1][i] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission_count , :int16 ).bytes )
     # asm.use_touchup(self.offset,[1,3],:_total_mission_count)
+    i += 1
 
     # exclusive missions
-    self[1][4] = GtaScm::Node::Raw.new( [0xBB,0xBB] )
+    self[1][i] = GtaScm::Node::Raw.new( [0xBB,0xBB] )
     asm.use_touchup(self.offset,[1,4],:_exclusive_mission_count)
+    i += 1
 
-    self[1][5] = GtaScm::ByteArray.new
-    (data[:mission_offsets] || []).each do |mission|
-      self[1][5] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission[1][1] , :int32 ).bytes )
+    if scm.game_id == "san-andreas"
+      # largest local variable count
+      largest_lvar_count = data[:largest_lvar_count][1]
+      self[1][i] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( largest_lvar_count , :int32 ).bytes )
+      # asm.use_touchup(self.offset,[1,i],:_largest_lvar_count)
+      i += 1
     end
+
+    self[1][i] = GtaScm::ByteArray.new
+    (data[:mission_offsets] || []).each do |mission|
+      self[1][i] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission[1][1] , :int32 ).bytes )
+    end
+    i += 1
 
     asm.define_touchup(:label__post_header_missions,asm.nodes.next_offset(self))
   end

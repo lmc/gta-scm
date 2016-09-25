@@ -3,6 +3,7 @@
 # RUBY_GC_HEAP_INIT_SLOTS=45000
 # ./bin/disassemble gta3 games/gta3/data/main.scm _out/gta3 Sexp
 # ./bin/disassemble vice-city games/vice-city/data/main.scm _out/vice-city Sexp
+# ./bin/disassemble san-andreas games/san-andreas/data/main.scm _out/san-andreas Sexp
 
 # NEXT:
 # ID integers from .ide files

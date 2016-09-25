@@ -86,7 +86,10 @@ module GtaScm::Types
       elsif o_type == :int
 
       elsif o_type == :float
-        
+
+      elsif o_type == :vlstring
+        length = value.size.chr
+        length+value
       else
         raise "value2bin unknown type `#{o_type}`"
       end

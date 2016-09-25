@@ -53,4 +53,35 @@ class GtaScm::Node::Header::Externals < GtaScm::Node::Header
     ]
   end
 
+  def from_ir(tokens,scm,asm)
+    data = Hash[tokens[1]]
+
+    self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_externals]]])
+    asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_externals,:jump)
+
+    # padding
+    self[1][0] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:padding][1] , :int8 ).bytes )
+
+    # largest_external_size
+    self[1][1] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:largest_external_size][1] , :int32 ).bytes )
+    # self[1][1] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
+    # asm.use_touchup(self.offset,[1,1],:_main_size)
+
+    # external_count
+    self[1][2] = GtaScm::Node::Raw.new( GtaScm::Types.value2bin( data[:external_count][1] , :int32 ).bytes )
+    # self[1][2] = GtaScm::Node::Raw.new( [0xBB,0xBB,0xBB,0xBB] )
+    # asm.use_touchup(self.offset,[1,2],:_largest_mission_size)
+
+    # externals names
+    self[1][3] = GtaScm::ByteArray.new
+    data[:externals].each do |external|
+      self[1][3] << GtaScm::Node::Raw.new( (external[0][1].ljust(19,"\000")+"\000")[0..20].bytes )
+      self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[1][1] , :int32 ).bytes )
+      self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[2][1] , :int32 ).bytes )
+    end
+
+    asm.define_touchup(:label__post_header_externals,asm.nodes.next_offset(self))
+  end
+
+
 end

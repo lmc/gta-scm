@@ -68,7 +68,7 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
           end
         # elsif argument.float?
         #   [argument.arg_type_sym,argument.value,'DAADB00B']
-        elsif enum = self.enum_argument?(idx)
+        elsif enum = self.enum_argument?(idx) && dis.options[:use_enum_arguments]
           self.enum_argument_ir(scm,dis,enum,argument.value)
         else
           [argument.arg_type_sym,argument.value]

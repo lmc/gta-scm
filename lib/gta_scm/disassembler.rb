@@ -12,7 +12,9 @@ class GtaScm::Disassembler::Base
     self.scm = scm
     self.options = options.reverse_merge(
       # emit_bytecode_comments: false
-      emit_bytecode_comments: true
+      emit_bytecode_comments: true,
+      emit_multiline_headers: true,
+      use_enum_arguments: false
     )
   end
 
