@@ -1,13 +1,24 @@
-(labeldef display_coordinates)
-% (play_mission_passed_tune ((int8 2)))
-(wait ((int16 40)))
+% TODO: NEXT
+% fix var allocator, rewrite using vars
+% print current zone, opcode below
+% is there a way to inspect a given global variable? need to accept var offset as lvar, then read memory offset of lvar value
+% generate code to copy value to known pool of inspectable variables?
+% parse .gxt file for custom labels
+
+(labeldef display_coordinates_bootstrap_inner)
+(start_new_script ((label display_coordinates_worker) (end_var_args)))
+(start_new_script ((label display_coordinates_viewer) (end_var_args)))
+(terminate_this_script)
+
+(labeldef display_coordinates_worker)
+(wait ((int16 100)))
 
 (andor ((int8 0)))
 (is_player_playing ((dmavar 8)))
-(goto_if_false ((label display_coordinates_epilogue)))
+(goto_if_false ((label display_coordinates_worker)))
 
-(get_player_heading ((dmavar 8) (var player_heading_f)))
-(cset_var_int_to_var_float ((var player_heading_i) (var player_heading_f)))
+(get_char_heading ((dmavar 12) (dmavar 16)))
+(cset_var_int_to_var_float ((dmavar 20) (dmavar 16)))
 
 (get_char_coordinates ((dmavar 12) (dmavar 24) (dmavar 28) (dmavar 32)))
 
@@ -44,56 +55,74 @@
 (abs_var_int ((dmavar 64)))
 (abs_var_int ((dmavar 68)))
 
-% (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1052)))
+(goto ((label display_coordinates_worker)))
 
-% seems to be if you print text more than every 50ms, it will hang when displaying some vehicle/zone text
-% make it so you need to press a button to display coords (+ with timeout)
-(use_text_commands ((int8 1)))
-(set_text_draw_before_fade ((int8 1)))
 
-% (wait ((int16 50)))
+(labeldef display_coordinates_viewer)
+(wait ((int16 30)))
 
-% (use_text_commands ((int8 0)))
-% (wait ((int16 50)))
-
-% (set_text_font ((int8 0)))
-% (set_text_background ((int8 1)))
-% (set_text_colour ((int8 127) (int8 127) (int8 127) (int8 127)))
-
-% (set_text_scale ((float32 1.0) (float32 2.0)))
-% (set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
-
+(use_text_commands ((int8 0)))
 
 % print left part of xyz coords
 (set_text_right_justify ((int8 1)))
 (set_text_colour ((int8 255) (int8 127) (int8 127) (int8 255)))
-(set_text_scale ((float32 0.72) (float32 1.68)))
-(display_text_with_number ((float32 64.0) (float32 5.0) (string8 "NUMBER") (dmavar 36)))
+(set_text_scale ((float32 0.48) (float32 1.68)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 60.0) (float32 5.0) (string8 "NUMBER") (dmavar 36)))
 (set_text_right_justify ((int8 1)))
 (set_text_colour ((int8 127) (int8 255) (int8 127) (int8 255)))
-(set_text_scale ((float32 0.72) (float32 1.68)))
-(display_text_with_number ((float32 64.0) (float32 20.0) (string8 "NUMBER") (dmavar 40)))
+(set_text_scale ((float32 0.48) (float32 1.68)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 60.0) (float32 22.0) (string8 "NUMBER") (dmavar 40)))
 (set_text_right_justify ((int8 1)))
 (set_text_colour ((int8 127) (int8 127) (int8 255) (int8 255)))
-(set_text_scale ((float32 0.72) (float32 1.68)))
-(display_text_with_number ((float32 64.0) (float32 35.0) (string8 "NUMBER") (dmavar 44)))
+(set_text_scale ((float32 0.48) (float32 1.68)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 60.0) (float32 39.0) (string8 "NUMBER") (dmavar 44)))
 
 % print right part of xyz coords
 (set_text_right_justify ((int8 0)))
 (set_text_colour ((int8 255) (int8 127) (int8 127) (int8 255)))
-(display_text_with_number ((float32 72.0) (float32 10.0) (string8 "NUMBER") (dmavar 60)))
+(set_text_scale ((float32 0.24) (float32 1.1)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 64.0) (float32 10.0) (string8 "NUMBER") (dmavar 60)))
 (set_text_right_justify ((int8 0)))
 (set_text_colour ((int8 127) (int8 255) (int8 127) (int8 255)))
-(display_text_with_number ((float32 72.0) (float32 25.0) (string8 "NUMBER") (dmavar 64)))
+(set_text_scale ((float32 0.24) (float32 1.1)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 64.0) (float32 27.0) (string8 "NUMBER") (dmavar 64)))
 (set_text_right_justify ((int8 0)))
 (set_text_colour ((int8 127) (int8 127) (int8 255) (int8 255)))
-(display_text_with_number ((float32 72.0) (float32 40.0) (string8 "NUMBER") (dmavar 68)))
+(set_text_scale ((float32 0.24) (float32 1.1)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 64.0) (float32 44.0) (string8 "NUMBER") (dmavar 68)))
 
 % heading
 (set_text_right_justify ((int8 1)))
-(set_text_scale ((float32 0.72) (float32 1.68)))
-(display_text_with_number ((float32 64.0) (float32 50.0) (string8 "NUMBER") (var player_heading_i)))
+(set_text_scale ((float32 0.48) (float32 1.68)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(set_text_proportional ((int8 0)))
+(display_text_with_number ((float32 60.0) (float32 56.0) (string8 "NUMBER") (dmavar 20)))
+
+% (get_name_of_zone ((lvar 146) (lvar 147) (lvar 148) (var_string8 32864)))
+% (print_string_in_string_now ((string8 "F_START") (var_string8 32864) (int16 5000) (int8 1)))
+
+% (get_active_camera_point_at ((var 292) (var 296) (var 300)))
+% (get_active_camera_coordinates ((var 292) (var 296) (var 300)))
+% (get_city_from_coords ((lvar 83) (lvar 84) (lvar 85) (lvar 58)))
 
 
-(labeldef display_coordinates_epilogue)
-(goto ((label display_coordinates)))
+(goto ((label display_coordinates_viewer)))

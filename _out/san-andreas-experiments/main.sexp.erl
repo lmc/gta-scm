@@ -45,17 +45,7 @@
 
 (labeldef display_coordinates_bootstrap)
 (script_name ((string8 "coords")))
-% (load_mission_text ((string8 "MAIN")))
-% (print_big ((string8 "M_FAIL") (int16 6000) (int8 1)))
-
-(wait ((int32 7000)))
-% (set_time_scale ((float32 0.0)))
-% (display_onscreen_timer_with_string ((dmavar 36) (int8 0) (string8 "NUMBER")))
-% (display_onscreen_timer_with_string ((dmavar 40) (int8 1) (string8 "NUMBER")))
-(display_nth_onscreen_counter_with_string ((dmavar 36) (int8 0) (int8 1) (string8 "NUMBER")))
-(display_nth_onscreen_counter_with_string ((dmavar 40) (int8 0) (int8 2) (string8 "NUMBER")))
-(display_nth_onscreen_counter_with_string ((dmavar 44) (int8 0) (int8 3) (string8 "NUMBER")))
-
+(wait ((int32 1000)))
 (Include "coords-display")
 
 % 3079744 - scm size
