@@ -58,6 +58,15 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     end
   end
 
+  def set_array(array_offset,index_offset,size,flags)
+    self[0] = GtaScm::ByteArray.new( [0x07] )
+    self[1] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(array_offset,:int16).bytes )
+    self[2] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(index_offset,:int16).bytes )
+    self[3] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(size,:int8).bytes )
+    self[4] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(0x80,:int8).bytes )
+
+  end
+
   def arg_type_id
     GtaScm::Types.bin2value(self.arg_type,:int8)
   end

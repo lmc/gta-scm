@@ -102,7 +102,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def emit_assembly!(scm,main_name,out_path)
     File.open("#{out_path}","w") do |f|
       self.nodes.each do |node|
-        puts node.offset
+        # puts node.offset
         bin = node.to_binary
         self.on_node_emit(f,node,bin)
         f << bin
@@ -331,6 +331,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         else
           arg.set( arg_tokens[0] , arg_tokens[1] )
         end
+      when :var_array
+        arg.set_array(arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       else
         arg.set( arg_tokens[0] , arg_tokens[1] )
       end
