@@ -3,7 +3,8 @@
 (HeaderMissions ((padding (int8 1)) (main_size (int32 194146)) (largest_mission_size (int32 68439)) (total_mission_count (int16 135)) (exclusive_mission_count (int16 0)) (largest_lvar_count (int32 964)) (mission_offsets (((int32 0) (int32 194146)) ((int32 1) (int32 252360)) ((int32 2) (int32 274916)) ((int32 3) (int32 285598)) ((int32 4) (int32 298085)) ((int32 5) (int32 313808)) ((int32 6) (int32 331916)) ((int32 7) (int32 348093)) ((int32 8) (int32 362567)) ((int32 9) (int32 425321)) ((int32 10) (int32 453153)) ((int32 11) (int32 455277)) ((int32 12) (int32 477884)) ((int32 13) (int32 494644)) ((int32 14) (int32 510787)) ((int32 15) (int32 529174)) ((int32 16) (int32 545603)) ((int32 17) (int32 568601)) ((int32 18) (int32 593277)) ((int32 19) (int32 609139)) ((int32 20) (int32 645924)) ((int32 21) (int32 678916)) ((int32 22) (int32 685832)) ((int32 23) (int32 727976)) ((int32 24) (int32 747936)) ((int32 25) (int32 789095)) ((int32 26) (int32 809304)) ((int32 27) (int32 851580)) ((int32 28) (int32 884081)) ((int32 29) (int32 895946)) ((int32 30) (int32 916820)) ((int32 31) (int32 969727)) ((int32 32) (int32 985685)) ((int32 33) (int32 996500)) ((int32 34) (int32 1023442)) ((int32 35) (int32 1042174)) ((int32 36) (int32 1094428)) ((int32 37) (int32 1099948)) ((int32 38) (int32 1168387)) ((int32 39) (int32 1190716)) ((int32 40) (int32 1204811)) ((int32 41) (int32 1212415)) ((int32 42) (int32 1245226)) ((int32 43) (int32 1279725)) ((int32 44) (int32 1298552)) ((int32 45) (int32 1317599)) ((int32 46) (int32 1318737)) ((int32 47) (int32 1335364)) ((int32 48) (int32 1353996)) ((int32 49) (int32 1356803)) ((int32 50) (int32 1381856)) ((int32 51) (int32 1403170)) ((int32 52) (int32 1421826)) ((int32 53) (int32 1443667)) ((int32 54) (int32 1472209)) ((int32 55) (int32 1481826)) ((int32 56) (int32 1494835)) ((int32 57) (int32 1522101)) ((int32 58) (int32 1550806)) ((int32 59) (int32 1567228)) ((int32 60) (int32 1599040)) ((int32 61) (int32 1618674)) ((int32 62) (int32 1632480)) ((int32 63) (int32 1641831)) ((int32 64) (int32 1658891)) ((int32 65) (int32 1692605)) ((int32 66) (int32 1705942)) ((int32 67) (int32 1722285)) ((int32 68) (int32 1732001)) ((int32 69) (int32 1764514)) ((int32 70) (int32 1800485)) ((int32 71) (int32 1809747)) ((int32 72) (int32 1856395)) ((int32 73) (int32 1874353)) ((int32 74) (int32 1884031)) ((int32 75) (int32 1911371)) ((int32 76) (int32 1925994)) ((int32 77) (int32 1942848)) ((int32 78) (int32 1970164)) ((int32 79) (int32 1970609)) ((int32 80) (int32 1981423)) ((int32 81) (int32 2004112)) ((int32 82) (int32 2034833)) ((int32 83) (int32 2039436)) ((int32 84) (int32 2070077)) ((int32 85) (int32 2089852)) ((int32 86) (int32 2110357)) ((int32 87) (int32 2124903)) ((int32 88) (int32 2125279)) ((int32 89) (int32 2171554)) ((int32 90) (int32 2184758)) ((int32 91) (int32 2217561)) ((int32 92) (int32 2230296)) ((int32 93) (int32 2251128)) ((int32 94) (int32 2259362)) ((int32 95) (int32 2264565)) ((int32 96) (int32 2279555)) ((int32 97) (int32 2303759)) ((int32 98) (int32 2327086)) ((int32 99) (int32 2346453)) ((int32 100) (int32 2359853)) ((int32 101) (int32 2381194)) ((int32 102) (int32 2431945)) ((int32 103) (int32 2471398)) ((int32 104) (int32 2524909)) ((int32 105) (int32 2532825)) ((int32 106) (int32 2546670)) ((int32 107) (int32 2568145)) ((int32 108) (int32 2573631)) ((int32 109) (int32 2579594)) ((int32 110) (int32 2623148)) ((int32 111) (int32 2656434)) ((int32 112) (int32 2675349)) ((int32 113) (int32 2733295)) ((int32 114) (int32 2750522)) ((int32 115) (int32 2756769)) ((int32 116) (int32 2762472)) ((int32 117) (int32 2768049)) ((int32 118) (int32 2784927)) ((int32 119) (int32 2813261)) ((int32 120) (int32 2851804)) ((int32 121) (int32 2875890)) ((int32 122) (int32 2895147)) ((int32 123) (int32 2910227)) ((int32 124) (int32 2921621)) ((int32 125) (int32 2940982)) ((int32 126) (int32 2949548)) ((int32 127) (int32 2953085)) ((int32 128) (int32 2991161)) ((int32 129) (int32 3008840)) ((int32 130) (int32 3017281)) ((int32 131) (int32 3040400)) ((int32 132) (int32 3056863)) ((int32 133) (int32 3071820)) ((int32 134) (int32 3075272))))))
 (HeaderExternals ((padding (int8 2)) (largest_external_size (int32 35122)) (external_count (int32 79)) (externals (((string20 "PLAYER_PARACHUTE") (int32 3079599) (int32 5631)) ((string20 "PARACHUTE") (int32 3085230) (int32 7354)) ((string20 "BCESAR2") (int32 3092584) (int32 6383)) ((string20 "BCESAR3") (int32 3098967) (int32 7720)) ((string20 "SLOT_MACHINE") (int32 3106687) (int32 3583)) ((string20 "ROULETTE") (int32 3110270) (int32 18246)) ((string20 "OTB_SCRIPT") (int32 3128516) (int32 663)) ((string20 "ARCADE") (int32 3129179) (int32 787)) ((string20 "VENDING_MACHINE") (int32 3129966) (int32 1676)) ((string20 "FOOD_VENDOR") (int32 3131642) (int32 1187)) ((string20 "GATES_SCRIPT") (int32 3132829) (int32 1008)) ((string20 "GYMBIKE") (int32 3133837) (int32 6341)) ((string20 "GYMBENCH") (int32 3140178) (int32 8102)) ((string20 "GYMTREAD") (int32 3148280) (int32 5909)) ((string20 "GYMDUMB") (int32 3154189) (int32 7926)) ((string20 "BASKETB") (int32 3162115) (int32 21589)) ((string20 "VIDPOK") (int32 3183704) (int32 35122)) ((string20 "BLACKJ") (int32 3218826) (int32 34802)) ((string20 "WHEELO") (int32 3253628) (int32 16507)) ((string20 "DEALER") (int32 3270135) (int32 4043)) ((string20 "HOME_BRAINS") (int32 3274178) (int32 3703)) ((string20 "POOL_SCRIPT") (int32 3277881) (int32 2196)) ((string20 "LOWR_CONT") (int32 3280077) (int32 1833)) ((string20 "BURG_BRAINS") (int32 3281910) (int32 5675)) ((string20 "GF_MEETING") (int32 3287585) (int32 6171)) ((string20 "GF_DATE") (int32 3293756) (int32 33719)) ((string20 "GF_SEX") (int32 3327475) (int32 14242)) ((string20 "CASINO_AMBIENCE") (int32 3341717) (int32 3185)) ((string20 "BAR_AMBIENCE") (int32 3344902) (int32 2367)) ((string20 "FOODBRAINS") (int32 3347269) (int32 946)) ((string20 "OTB_AMBIENCE") (int32 3348215) (int32 739)) ((string20 "STRIP_AMBIENCE") (int32 3348954) (int32 5881)) ((string20 "PLANES") (int32 3354835) (int32 8106)) ((string20 "TRAINS") (int32 3362941) (int32 790)) ((string20 "ZERO_AMBIENCE") (int32 3363731) (int32 556)) ((string20 "DANCE") (int32 3364287) (int32 17372)) ((string20 "SHOPKEEPER") (int32 3381659) (int32 1852)) ((string20 "CUSTOMER_PANIC") (int32 3383511) (int32 337)) ((string20 "BAR_STAFF") (int32 3383848) (int32 2379)) ((string20 "BOUNCER") (int32 3386227) (int32 954)) ((string20 "OTB_STAFF") (int32 3387181) (int32 1008)) ((string20 "PCHAIR") (int32 3388189) (int32 3456)) ((string20 "PCUSTOM") (int32 3391645) (int32 980)) ((string20 "OTBWTCH") (int32 3392625) (int32 1282)) ((string20 "OTBSLP") (int32 3393907) (int32 1062)) ((string20 "OTBTILL") (int32 3394969) (int32 815)) ((string20 "FBOOTHR") (int32 3395784) (int32 3444)) ((string20 "FBOOTHL") (int32 3399228) (int32 3444)) ((string20 "BARGUY") (int32 3402672) (int32 1227)) ((string20 "PEDROUL") (int32 3403899) (int32 1158)) ((string20 "PEDCARD") (int32 3405057) (int32 1495)) ((string20 "PEDSLOT") (int32 3406552) (int32 1202)) ((string20 "DANCER") (int32 3407754) (int32 1584)) ((string20 "STRIPW") (int32 3409338) (int32 3675)) ((string20 "STRIPM") (int32 3413013) (int32 1248)) ((string20 "BROWSE") (int32 3414261) (int32 1327)) ((string20 "COPSIT") (int32 3415588) (int32 2715)) ((string20 "COPLOOK") (int32 3418303) (int32 1480)) ((string20 "TICKET") (int32 3419783) (int32 965)) ((string20 "SHOPPER") (int32 3420748) (int32 1233)) ((string20 "AMMU") (int32 3421981) (int32 12663)) ((string20 "TATTOO") (int32 3434644) (int32 15539)) ((string20 "BARBER") (int32 3450183) (int32 9366)) ((string20 "WARDROBE") (int32 3459549) (int32 12534)) ((string20 "CLOTHES") (int32 3472083) (int32 10619)) ((string20 "JUNKFUD") (int32 3482702) (int32 13002)) ((string20 "CARMOD1") (int32 3495704) (int32 24477)) ((string20 "CRANE1") (int32 3520181) (int32 3078)) ((string20 "CRANE2") (int32 3523259) (int32 5734)) ((string20 "CRANE3") (int32 3528993) (int32 1773)) ((string20 "CARPARK1") (int32 3530766) (int32 2778)) ((string20 "IMPOUND") (int32 3533544) (int32 22357)) ((string20 "VALET") (int32 3555901) (int32 17471)) ((string20 "PHOTO") (int32 3573372) (int32 2601)) ((string20 "PRISONR") (int32 3575973) (int32 1446)) ((string20 "CAMERA") (int32 3577419) (int32 3792)) ((string20 "DEBT") (int32 3581211) (int32 4054)) ((string20 "HOTDOG") (int32 3585265) (int32 725)) ((string20 "AAA") (int32 0) (int32 8))))))
 (HeaderSegment5 ((padding (int8 3)) (mystery (int32 0))))
-(HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 43800)) (allocated_external_count (int8 62)) (unused_external_count (int8 2)) (padding2 (int16 0))))
+% (HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 43800)) (allocated_external_count (int8 62)) (unused_external_count (int8 2)) (padding2 (int16 0))))
+(HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 58000)) (allocated_external_count (int8 62)) (unused_external_count (int8 2)) (padding2 (int16 0))))
 
 (script_name ((string8 "MAIN")))
 
@@ -23,7 +24,7 @@
 (load_scene ((float32 2485.219970703125) (float32 -1672.9410400390625) (float32 13.729999542236328)))
 
 (create_player ((int8 0) (float32 2485.219970703125) (float32 -1672.9410400390625) (float32 13.729999542236328) (dmavar 8)))
-(get_player_group ((dmavar 8) (dmavar 44)))
+% (get_player_group ((dmavar 8) (dmavar 44)))
 (get_player_char ((dmavar 8) (dmavar 12)))
 
 (give_player_clothes_outside_shop ((dmavar 8) (vlstring "VEST") (vlstring "VEST") (int8 0)))
@@ -51,3 +52,41 @@
 % 3079744 - scm size
 % 3079744 - 56257
 (PadUntil (3079744))
+
+% check how gang zones work re: percentage captured
+% max gang strength = 40
+% (set_zone_gang_strength ((string8 "GAN1") (int8 1) (int8 25)))
+
+% can you keep territory and turn off wars?
+% (set_gang_wars_active ((int8 0)))
+% (set_specific_zone_to_trigger_gang_war ((string8 "GLN1")))
+% (clear_specific_zones_to_trigger_gang_war)
+
+
+%(update_pickup_money_per_day ((var 2840) (var 2848)))
+% (create_protection_pickup ((float32 2502.10009765625) (float32 -1686.3800048828125) (float32 13.0) (int16 10000) (var 2848) (var 2840)))
+
+
+% (find_number_tags_tagged ((var 3204)))
+%photos
+% (get_int_stat ((int16 231) (var 3200)))
+% horseshoes
+% (get_int_stat ((int16 241) (var 3196)))
+% oyster
+% (get_int_stat ((int16 243) (var 3192)))
+
+% int stats get set when missions are complete
+% starting at (set_int_stat ((int16 302) (int8 1)))
+
+% get float day counter with 
+% int stat 134
+% + (hours) * 40 (= 960 max)
+
+% have assets/gangs pay out guns/ammo/vehicles?
+
+% radar blip : 55 SA radar impound.png  radar_impound LG_57 Car impound
+
+% auto-rollover detection/fixer
+
+
+

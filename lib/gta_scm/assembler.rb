@@ -196,7 +196,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.define_touchup(touchup_name,value)
   end
 
-  def use_var_address(node_offset,array_keys,touchup_name)
+  def use_var_address(node_offset,array_keys,touchup_name,type = nil)
     self.use_touchup(node_offset,array_keys,touchup_name)
   end
 
@@ -240,6 +240,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
             o_touchup_value = touchup_value
             case arr.size
+            when 8
+              debugger
+              arr
             when 4
               touchup_value = GtaScm::Types.value2bin( touchup_value , :int32 ).bytes
             when 2
@@ -320,6 +323,14 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       when :dmavar
         self.notice_dmavar( arg_tokens[1] )
         arg.set( :var , arg_tokens[1] )
+      when :var_string8
+        if arg_tokens[1].is_a?(Symbol)
+          self.use_var_address(node.offset,[1,arg_idx,1],:"var_#{arg_tokens[1]}",:var_string8)
+          # self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1],:jump)
+          arg.set( arg_tokens[0] , 0xDDDDDDDDDDDDDDDD )
+        else
+          arg.set( arg_tokens[0] , arg_tokens[1] )
+        end
       else
         arg.set( arg_tokens[0] , arg_tokens[1] )
       end
