@@ -57,15 +57,15 @@ module GtaScm::Assembler::Feature::VariableAllocator
         logger.debug "Free var slot free at #{offset}"
         break
       end
-      offset += 4
+      offset += self.dmavar_sizes[offset] || 4
     end
 
     if offset < self.max_var_slot
-      self.notice_dmavar(offset)
+      self.notice_dmavar(offset,type)
       # leave space for an 8 byte var by reserving another slot
-      if size == 8
-        self.notice_dmavar(offset + 4)
-      end
+      # if size == 8
+      #   self.notice_dmavar(offset + 4)
+      # end
       return offset
     else
       raise "No free var slots"

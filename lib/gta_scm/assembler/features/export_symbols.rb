@@ -32,6 +32,9 @@ module GtaScm::Assembler::Feature::ExportSymbols
         self.var_types[ node.arguments[1].value ] = :int
         self.var_types[ node.arguments[1].value ] = :float
       end
+      if node.opcode == [0x3e,0x03]
+        self.var_types[ node.arguments[2].value ] = :string
+      end
     end
 
   end

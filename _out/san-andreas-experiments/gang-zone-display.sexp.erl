@@ -120,8 +120,8 @@
 (display_text_with_number ((float32 10.0) (float32 226.0) (string8 "NUMBER") (var_array 0 1024 4 (1 t))))
 
 % dereferencing works
-(set_var_int ((dmavar 1024) (int32 257)))
 (set_var_int ((dmavar 1028) (int32 666)))
+(set_var_int ((dmavar 1024) (int32 257)))
 (set_var_int ((var_array 0 1024 4 (1 t)) (int32 420)))
 (display_text_with_number ((float32 10.0) (float32 246.0) (string8 "NUMBER") (dmavar 1028)))
 

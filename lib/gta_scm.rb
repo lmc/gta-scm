@@ -27,6 +27,10 @@ end
 def logger
   GtaScm.logger
 end
+def hex(input)
+  input = input.bytes if input.is_a?(String)
+  input.map{|val| (val||0).to_s(16).rjust(2,"0")}.join(" ")
+end
 
 require 'gta_scm/byte_array'
 require 'gta_scm/types'

@@ -200,7 +200,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.use_touchup(node_offset,array_keys,touchup_name)
   end
 
-  def notice_dmavar(address)
+  def notice_dmavar(address,type = nil)
     # no-op
   end
 

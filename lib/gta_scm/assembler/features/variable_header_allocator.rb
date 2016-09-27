@@ -6,9 +6,11 @@ module GtaScm::Assembler::Feature::VariableHeaderAllocator
     class << self
       attr_accessor :jump_touchups_offset
       attr_accessor :dmavar_uses
+      attr_accessor :dmavar_sizes
     end
     self.jump_touchups_offset = nil
     self.dmavar_uses = Set.new
+    self.dmavar_sizes = Hash.new
   end
 
   def on_before_touchups
@@ -17,8 +19,12 @@ module GtaScm::Assembler::Feature::VariableHeaderAllocator
     adjust_jump_touchups!
   end
 
-  def notice_dmavar(address)
+  def notice_dmavar(address,type = nil)
     self.dmavar_uses << address
+    if type
+      size = type == :var_string8 ? 8 : 4
+      self.dmavar_sizes[address] = size
+    end
     super
   end
 
