@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# sudo ./bin/search_process_memory 69 69 69 69
+# sudo ./bin/write_process_memory 1234555 69 69 69 69
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
@@ -17,8 +17,12 @@ if !pid
   pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
 end
 
+args = ARGV.dup
+
+address = args.shift.to_i
+
 needle = ""
-ARGV.each do |arg|
+args.each do |arg|
   if arg.match(/=/)
     raise ArgumentError
   else
@@ -28,15 +32,9 @@ end
 
 process = Ragweed::Debuggerosx.new(pid)
 
-start_addr = 0x400000
-# start_addr = 0xA00000
-end_addr =   0x1000000
-addr = start_addr
-while addr < 0xB00000
-  bytes = Ragweed::Wraposx::vm_read(process.task,addr,needle.size)
-  if bytes == needle
-    puts "#{addr}: #{hex(bytes)}"
-  end
-  print "#{addr}\r"
-  addr += 1
+
+loop do
+  Ragweed::Wraposx::Libc.vm_write(process.task, address, needle, needle.size)
+
+  # sleep (1000.0/60)
 end

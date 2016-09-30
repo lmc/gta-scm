@@ -42,9 +42,12 @@ if File.exists?(SYMBOLS_PATH)
   puts "Detected symbols, dumping vars"
   data = JSON.parse( File.read(SYMBOLS_PATH) )
 
+  largest_label = data["variables"].map{|k,v| v[0]}.compact.sort_by(&:size).last.size
+  largest_label += 2
+
   data["variables"].each_pair do |offset,metadata|
     offset = offset.to_i
-    label = metadata[0] || ""
+    label = metadata[0] || "?"
 
     # if data["variables"][offset-4].andand[1] == "string"
     #   # skip second half of string var
@@ -65,7 +68,7 @@ if File.exists?(SYMBOLS_PATH)
       value = GtaScm::Types.bin2value(value,type)
     end
 
-    puts "#{offset} #{label}: (#{type} #{value})"
+    puts "#{offset.to_s.rjust(5)} #{"#{label}:".ljust(largest_label)} #{type.to_s.ljust(12)} #{value}"
   end
 end
 
