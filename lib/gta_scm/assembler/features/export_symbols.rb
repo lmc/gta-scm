@@ -4,8 +4,10 @@ module GtaScm::Assembler::Feature::ExportSymbols
     super
     class << self
       attr_accessor :var_types
+      attr_accessor :label_map
     end
     self.var_types = Hash.new
+    self.label_map = Hash.new
   end
 
   def on_complete
@@ -16,6 +18,11 @@ module GtaScm::Assembler::Feature::ExportSymbols
   def on_metadata(file,line_idx,tokens,addr)
     super
 
+  end
+
+  def on_labeldef(label,offset)
+    super
+    self.label_map[label] = offset
   end
 
   def on_node_emit(f,node,bin)
@@ -56,6 +63,9 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
         data[:variables][offset] = [ offset2name[offset], self.var_types[offset] ]
       end
+
+      data[:labels] = self.label_map
+
 
       f << data.to_json
 

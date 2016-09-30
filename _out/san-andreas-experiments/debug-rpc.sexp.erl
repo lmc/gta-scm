@@ -27,6 +27,7 @@
 
 % load args then set this to do a debug rpc call
 (set_var_int ((var debug_rpc_syscall) (int32 0)))
+(set_var_int ((var debug_rpc_syscall_result) (int32 0)))
 
 (terminate_this_script)
 
@@ -53,7 +54,7 @@
   (is_int_var_greater_than_number ((var debug_rpc_syscall) (int32 0)))
 (goto_if_false ((label debug_rpc_worker_top)))
 
-% syscall 1 = create thread (0 = thread PC, 1-2 = thread name, 3 = thread complete)
+% syscall 1 = create thread (0 = thread offset, 1-2 = thread name, 3 = thread created)
 (andor ((int8 0)))
   (is_int_var_equal_to_number ((var debug_rpc_syscall) (int32 1)))
 (goto_if_false ((label debug_rpc_worker_create_thread_after)))
@@ -63,6 +64,7 @@
   (andor ((int8 0)))
     (is_int_var_greater_than_number ((var debug_rpc_int_arg_3) (int32 0)))
   (goto_if_false ((label debug_rpc_worker_create_thread_complete_loop)))
+  (set_var_int ((var debug_rpc_syscall_result) (int32 0)))
 (labeldef debug_rpc_worker_create_thread_after)
 
 (set_var_int ((var debug_rpc_int_arg_0) (int32 0)))

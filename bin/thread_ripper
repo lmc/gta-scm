@@ -58,8 +58,7 @@ while addr < stop
   thread.eat!( bytes )
   # debugger
 
-  # if thread.active?
-  if thread.pc > 0 || true
+  if thread.active? && thread.pc > 0
     puts "#{thread_id}: #{thread.active? ? "o" : "-"} #{thread.name.ljust(8," ")} PC=#{thread.pc - SAN_ANDREAS_3_0_SCM_ADDRESS} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
     # puts "#{thread_id}: #{thread.name} PC=#{thread.pc} WAKE=#{thread.wake_time} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
     # puts thread.inspect

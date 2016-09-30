@@ -24,18 +24,25 @@ process = Ragweed::Debuggerosx.new(pid)
 
 data = JSON.parse( File.read(SYMBOLS_PATH) )
 
+LABEL_OFFSETS = {}
 VARIABLE_OFFSETS = {}
 VARIABLE_TYPES = {}
+RPCS = {}
+
+RPCS[  1 ] = [ "create_thread", { 0=>:thread_offset, 1=>:thread_name,2=>:thread_name, 3=>:thread_created } ]
 
 data["variables"].each_pair do |offset,(name,type)|
   VARIABLE_OFFSETS[name] = offset.to_i
   VARIABLE_TYPES[offset.to_i] = type
 end
+LABEL_OFFSETS = data["labels"]
 
 MAX_VAR_OFFSET = VARIABLE_OFFSETS.values.max
 
-def read_var(bytes,var_name,type = nil)
+def read_var(process,var_name,type = nil)
+  bytes = Ragweed::Wraposx::vm_read(process.task,SAN_ANDREAS_3_0_SCM_ADDRESS,MAX_VAR_OFFSET)
   offset = VARIABLE_OFFSETS[var_name.to_s]
+  raise "no offset for #{var_name}" if !offset
   type ||= VARIABLE_TYPES[offset]
   type = :float32 if type == :float
   type = :int32 if type == :int
@@ -45,20 +52,55 @@ end
 def write_var(process,var_name,type,value)
   offset = VARIABLE_OFFSETS[var_name.to_s]
   offset += SAN_ANDREAS_3_0_SCM_ADDRESS
-  value = GtaScm::Types.value2bin(value,type)
+  value = GtaScm::Types.value2bin(value,type) if !type.nil?
   Ragweed::Wraposx::Libc.vm_write(process.task, offset, value, value.size)
+  puts "write #{value.bytes} to #{offset}"
 end
 
 puts ARGV.inspect
 
 args = ARGV.dup
 syscall_id = args.shift.to_i
-syscall_args = args
+syscall_args = []
+args.each do |arg|
+  case arg
+  when /label:(\w+)/
+    value = LABEL_OFFSETS[$1]
+    value = GtaScm::Types.value2bin(value,:int32)
+    syscall_args << value
+  when/[a-z_]/i
+    value = GtaScm::Types.value2bin(arg,:istring8)
+    syscall_args << value
+  when /\./
+    value = GtaScm::Types.value2bin(arg.to_f,:float32)
+    syscall_args << value
+  else
+    value = GtaScm::Types.value2bin(arg.to_i,:int32)
+    syscall_args << value
+  end
+end
 
-# args.each do |arg|
-  
-# end
+puts syscall_args.inspect
 
-write_var process , :"var_debug_rpc_int_arg_0" , :int32 , 56737
-write_var process , :"var_debug_rpc_int_arg_1" , :istring8 , "test"
-write_var process , :"var_debug_rpc_syscall" , :int32 , syscall_id
+
+if read_var( process , :"var_debug_rpc_syscall" , :int32 ) != 0
+  puts "syscall is already set (execution in progress?)"
+else
+
+  puts "making syscall #{syscall_id} with args #{syscall_args.inspect}"
+  syscall_args.each_with_index do |arg,idx|
+    write_var( process , :"var_debug_rpc_int_arg_#{idx}" , nil , arg )
+  end
+  write_var( process , :"var_debug_rpc_syscall" , :int32 , syscall_id )
+
+  # puts "waiting for result"
+
+  # until read_var( process , :"var_debug_rpc_syscall" , :int32 ) == 0
+  #   sleep 1.0 / 30
+  # end
+
+  # result = read_var( process , :"var_debug_rpc_syscall_result" , :int32 )
+
+  # puts "result: #{result.inspect}"
+
+end

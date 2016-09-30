@@ -51,6 +51,10 @@ class GtaScm::Assembler::Base
     
   end
 
+  def on_labeldef(label,offset)
+    
+  end
+
   def on_complete
     
   end
@@ -167,6 +171,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           self.on_metadata(file_name,line_idx,tokens,offset)
           return
         when :labeldef
+          self.on_labeldef(tokens[1],nodes.next_offset)
           self.define_touchup(tokens[1],nodes.next_offset)
           return
         else
