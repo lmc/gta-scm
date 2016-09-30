@@ -13,6 +13,8 @@ class GtaScm::Assembler::Base
   attr_accessor :touchup_uses
   attr_accessor :touchup_types
 
+  attr_accessor :code_offset
+
   def initialize(input_dir)
     self.input_dir = input_dir
     self.nodes = GtaScm::UnbuiltNodeSet.new
@@ -94,7 +96,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
     self.on_complete()
 
-    logger.info "Complete, final size: #{File.size(out_path)} bytes"
+    # logger.info "Complete, final size: #{File.size(out_path)} bytes"
   end
 
   def read_lines_from_input!(scm,main_name,out_path)
@@ -105,13 +107,18 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   end
 
   def emit_assembly!(scm,main_name,out_path)
-    File.open("#{out_path}","w") do |f|
+    if out_path.is_a?(String)
+      out_path = File.open("#{out_path}","w")
+    end
+    begin
       self.nodes.each do |node|
         # puts node.offset
         bin = node.to_binary
-        self.on_node_emit(f,node,bin)
-        f << bin
+        self.on_node_emit(out_path,node,bin)
+        out_path << bin
       end
+    ensure
+      out_path.close if out_path.is_a?(File)
     end
   end
 
@@ -121,7 +128,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     if line.present? and line.strip[0] == "("# and idx < 30
       offset = nodes.next_offset
       tokens = self.parser.parse1(line).to_ruby
-      # logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
+      logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
       # TODO: we can calculate offset + lengths here as we go
       node = case tokens[0]
         when :HeaderVariables
@@ -172,7 +179,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           return
         when :labeldef
           self.on_labeldef(tokens[1],nodes.next_offset)
-          self.define_touchup(tokens[1],nodes.next_offset)
+          self.define_touchup(:"label_#{tokens[1]}",nodes.next_offset)
           return
         else
           self.assemble_instruction(scm,offset,tokens)
@@ -182,7 +189,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       self.nodes << node
 
       if node.is_a?(GtaScm::Node::Instruction)
-        # logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
+        logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       end
       # logger.info ""
     end
@@ -245,7 +252,15 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 
+
+            if touchup_name.to_s.match(/^label_/)
+              if self.code_offset
+                touchup_value += self.code_offset
+              end
+            end
+
             o_touchup_value = touchup_value
+
             case arr.size
             when 8
               debugger
@@ -259,7 +274,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             end
 
             touchup_value = touchup_value[0...arr.size]
-            # logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
+            logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
 
             arr.replace(touchup_value)
         end
@@ -329,7 +344,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
         else
           # debugger
-          self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1],:jump)
+          self.use_touchup(node.offset,[1,arg_idx,1],:"label_#{arg_tokens[1]}",:jump)
         end
 
         arg.set( :int32, 0xAAAAAAAA )

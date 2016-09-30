@@ -29,7 +29,9 @@ module GtaScm::Assembler::Feature::VariableHeaderAllocator
   end
 
   def allocate_space_in_variables_header!
-    if variables_header.variable_storage.size == 0
+    if !variables_header
+      logger.info "No variables header, skipping"
+    elsif variables_header.variable_storage.size == 0
       highest_dma_var = self.dmavar_uses.max
       self.jump_touchups_offset = highest_dma_var + 4 - variables_range.begin
       memspace = (highest_dma_var + 4) - variables_range.begin

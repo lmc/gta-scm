@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/inject_code _out/san-andreas-experiments/ _inject 2000 30000
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+pid = nil
+
+if !pid
+  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+end
+
+SYMBOLS_PATH = "symbols.gta-scm-symbols"
+SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
+
+process = Ragweed::Debuggerosx.new(pid)
+
+args = ARGV.dup
+dir = args[0]
+filename = args[1]
+VARS_OFFSET = args[2].to_i
+CODE_OFFSET = args[3].to_i
+
+puts "ARGV: #{args.inspect}"
+
+scm = GtaScm::Scm.load_string("san-andreas","")
+scm.load_opcode_definitions!
+
+asm = GtaScm::Assembler::Sexp.new(dir)
+asm.code_offset = CODE_OFFSET
+
+def asm.install_features!
+  class << self
+    include GtaScm::Assembler::Feature::VariableAllocator
+    include GtaScm::Assembler::Feature::VariableHeaderAllocator
+  end
+  self.on_feature_init()
+end
+
+def asm.variables_range
+  (VARS_OFFSET..(VARS_OFFSET+1024))
+end
+
+output = StringIO.new
+asm.assemble(scm,filename,output)
+
+output.rewind
+code = output.read
+
+puts hex( code.bytes )
+
+puts "writing code to #{SAN_ANDREAS_3_0_SCM_ADDRESS + CODE_OFFSET}"
+Ragweed::Wraposx::Libc.vm_write(process.task, SAN_ANDREAS_3_0_SCM_ADDRESS + CODE_OFFSET, code, code.size)
+
+puts "sending RPC to run new thread at #{CODE_OFFSET}"
+
+puts "sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd"
+
