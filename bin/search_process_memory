@@ -28,8 +28,10 @@ end
 
 process = Ragweed::Debuggerosx.new(pid)
 
+puts "searching for needle: #{needle.inspect} #{hex(needle)}"
+
 start_addr = 0x400000
-# start_addr = 0xA00000
+start_addr = 10933576
 end_addr =   0x1000000
 addr = start_addr
 while addr < 0xB00000

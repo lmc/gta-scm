@@ -18,6 +18,14 @@ require 'ragweed/debuggerosx'
 # SCM_ADDRESS -= 8096
 # SCM_ADDRESS = 0xA00000
 SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
+# =>                          10787168
+
+
+# =>                          11056176
+# =>                          10954856
+DIFF_TO_1_0 = +122600
+
+
 
 SCM_ADDRESS = SAN_ANDREAS_3_0_SCM_ADDRESS
 SCM_SIZE = 64_000

@@ -266,6 +266,13 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
     if opcode = scm.opcodes.names2opcodes[name]
       opcode_def = scm.opcodes[opcode]
+
+      if tokens[1] && !opcode_def.var_args?
+        if tokens[1].size != opcode_def.arguments.size
+          raise "Wrong number of args for #{tokens[0]} (expects #{opcode_def.arguments.size}, got #{tokens[1].size})"
+        end
+      end
+
       # puts "#{tokens.inspect}"
       return GtaScm::Node::Instruction.new.tap do |node|
         node.offset = offset
