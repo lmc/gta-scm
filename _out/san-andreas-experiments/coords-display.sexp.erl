@@ -6,11 +6,13 @@
 % parse .gxt file for custom labels
 
 (labeldef display_coordinates_bootstrap_inner)
+(script_name ((string8 "coordsi")))
 (start_new_script ((label display_coordinates_worker) (end_var_args)))
 (start_new_script ((label display_coordinates_viewer) (end_var_args)))
 (terminate_this_script)
 
 (labeldef display_coordinates_worker)
+(script_name ((string8 "coordsw")))
 (wait ((int16 10)))
 
 (andor ((int8 0)))
@@ -64,6 +66,7 @@
 
 
 (labeldef display_coordinates_viewer)
+(script_name ((string8 "coordsv")))
 (wait ((int16 30)))
 
 (use_text_commands ((int8 0)))

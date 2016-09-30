@@ -1,5 +1,6 @@
 
 (labeldef display_gang_zones_bootstrap_inner)
+(script_name ((string8 "ganzoni")))
 (start_new_script ((label display_gang_zones_init) (end_var_args)))
 (start_new_script ((label display_gang_zones_worker) (end_var_args)))
 (start_new_script ((label display_gang_zones_viewer) (end_var_args)))
@@ -26,6 +27,7 @@
 
 
 (labeldef display_gang_zones_worker)
+(script_name ((string8 "ganzonw")))
 (wait ((int16 10)))
 
 (andor ((int8 0)))
@@ -50,6 +52,7 @@
 
 
 (labeldef display_gang_zones_viewer)
+(script_name ((string8 "ganzonv")))
 (wait ((int16 30)))
 
 (use_text_commands ((int8 0)))
