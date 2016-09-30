@@ -8,7 +8,7 @@
 # NEXT:
 # ID integers from .ide files
 
-USE_CACHE = false
+USE_CACHE = true
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
@@ -21,6 +21,8 @@ mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 
 scm = GtaScm::Scm.load(ARGV[0],ARGV[1])
+
+scm.img_file = GtaScm::ImgFile.open(File.dirname(ARGV[1])+"/script.img","r")
 
 scm.load_opcode_definitions!
 
@@ -66,7 +68,26 @@ if !parser
   end
 end
 
-scm.load_from_parser(parser)
+img_parsers = []
+if scm.img_file
+  scm.img_file.parse!
+  scm.img_file.entry_count.times do |i|
+    puts "parsing entry #{i}"
+    img_scm = GtaScm::Scm.load_string(ARGV[0],scm.img_file.data(i))
+    img_parser = GtaScm::Parser.new(img_scm,0)
+    img_parser.load_opcode_definitions( scm.opcodes )
+    if i == 0
+      # img_parser.parse_bare_instructions!(true)
+    else
+      img_parser.parse_bare_instructions!
+    end
+    img_parsers << img_parser
+  end
+  scm.load_from_parser(parser,img_parsers)
+else
+  scm.load_from_parser(parser)
+end
+
 
 format = ARGV[3].present? ? ARGV[3] : nil
 if format

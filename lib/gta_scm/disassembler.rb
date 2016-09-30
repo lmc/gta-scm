@@ -22,10 +22,28 @@ class GtaScm::Disassembler::Base
     `mkdir -p #{destination_path}`
     self.files = OutputDir.new(destination_path,self.extension)
 
-    scm.nodes.each_pair do |offset,node|
+    # debugger
+    
+    self.scm.nodes.each_pair do |offset,node|
       emit_node(offset,node)
       update_progress(offset)
     end
+
+    # debugger
+
+    if self.scm.img_scms
+      self.scm.img_scms.each_with_index do |img_scm,i|
+        name = self.scm.img_file.entries[i][:name].gsub(/\.scm/,'')
+        scm_img_name = "external_#{i.to_s.rjust(2,"0")}_#{name}"
+        # puts "disassembling #{scm_img_name}"
+        img_scm.nodes.each_pair do |offset,node|
+          # debugger
+          emit_node(offset,node,scm_img_name)
+        end
+      end
+    end
+
+    self.files.close_all
   end
 
   attr_accessor :progress_callback
@@ -47,7 +65,11 @@ class GtaScm::Disassembler::Base
 
   def label_for_offset(offset,source_offset = nil)
     if offset < 0
-      mission_id,mission_offset = self.scm.mission_for_offset(source_offset)
+      if mission = self.scm.mission_for_offset(source_offset)
+        mission_id,mission_offset = mission[0],mission[1]
+      else
+        mission_offset = 0
+      end
       abs_offset = mission_offset + offset.abs
       :"label_#{abs_offset}"
     else
@@ -55,12 +77,45 @@ class GtaScm::Disassembler::Base
     end
   end
 
-
-  def file_for_offset(offset)
+  attr_accessor :current_mission_id
+  attr_accessor :next_mission_offset
+  def file_for_offset(offset,scm_img_name = nil)
+    begin
     if self.output
       self.output
+    elsif scm_img_name
+      self.files[scm_img_name]
+    # elsif mission = self.scm.mission_for_offset(offset)
+    #   self.files["mission_#{mission[0]}"]
     else
-      self.files["main"]
+
+      if offset == 194046
+        # $debug = true
+      end
+
+      if $debug
+        debugger
+        $debug
+      end
+
+      if !self.current_mission_id && scm.missions_header && scm.missions_header.mission_offsets.size > 0
+        self.current_mission_id = -1
+        self.next_mission_offset = self.scm.missions_header.mission_offsets.first
+      end
+      if offset == self.next_mission_offset
+        # debugger
+        self.current_mission_id += 1
+        self.next_mission_offset = self.scm.missions_header.mission_offsets[self.current_mission_id + 1] || self.scm.size
+      end
+      if self.current_mission_id >= 0
+        self.files["mission_#{current_mission_id.to_s.rjust(3,"0")}"]
+      else
+        self.files["main"]
+      end
+    end
+    rescue => ex
+      debugger
+      ex
     end
   end
 
@@ -80,16 +135,21 @@ class GtaScm::Disassembler::Base
         self.hash[key] = File.open(File.join(self.dir,"#{key}#{self.extension}"),"w")
       end
     end
+
+    def close_all
+      self.hash.values.each(&:close)
+    end
   end
 end
 
 class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
 
-  def emit_node(offset,node)
+  def emit_node(offset,node,file = nil)
+    output = self.file_for_offset(offset,file)
     if node.label?
       label = sexp( [:labeldef,self.label_for_offset(node.offset)] )
-      self.file_for_offset(offset).puts()
-      self.file_for_offset(offset).puts(label)
+      output.puts()
+      output.puts(label)
     end
     line = sexp( node.to_ir(self.scm,self) )
     if node.is_a?(GtaScm::Node::Instruction)
@@ -97,9 +157,9 @@ class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
       @largest_line = node.hex.size if node.hex.size > @largest_line
     end
     if self.options[:emit_bytecode_comments]
-      self.file_for_offset(offset).puts("% #{offset.to_s.rjust(8,"0")} - #{node.hex}")
+      output.puts("% #{offset.to_s.rjust(8,"0")} - #{node.hex}")
     end
-    self.file_for_offset(offset).puts(line)
+    output.puts(line)
   end
 
   def extension

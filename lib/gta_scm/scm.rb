@@ -1,4 +1,5 @@
 require 'gta_scm/scm_file'
+require 'gta_scm/img_file'
 require 'gta_scm/file_walker'
 require 'gta_scm/gxt_file'
 require 'gta_scm/parser'
@@ -19,6 +20,8 @@ class GtaScm::Scm
 
   # ScmFile
   attr_accessor :scm_file
+  attr_accessor :img_file
+  attr_accessor :img_scms
 
   # Definitions - opcodes
   attr_accessor :opcodes
@@ -61,6 +64,10 @@ class GtaScm::Scm
     self.opcodes = GtaScm::OpcodeDefinitions.new
   end
 
+  def size
+    self.nodes.max_offset
+  end
+
 
   # ===================
 
@@ -100,12 +107,24 @@ class GtaScm::Scm
   #   parser.parse!
   # end
 
-  def load_from_parser(parser)
+  def load_from_parser(parser,img_parsers = nil)
     self.offsets = parser.nodes.map(&:offset).sort
 
     self.nodes = GtaScm::NodeSet.new( parser.size )
     parser.nodes.each do |node|
       self.nodes[ node.offset ] = node
+    end
+
+    # debugger
+
+    if img_parsers
+      self.img_scms = []
+      img_parsers.each_with_index do |img_parser,i|
+        img_scm = self.class.load_string( self.game_id , self.img_file.data(i) )
+        img_scm.load_opcode_definitions!
+        img_scm.load_from_parser(img_parser)
+        self.img_scms << img_scm
+      end
     end
   end
 
@@ -126,6 +145,7 @@ class GtaScm::Scm
   end
 
   def mission_for_offset(offset)
+    return nil if !missions_header
     missions_header.mission_for_offset(offset)
   end
 

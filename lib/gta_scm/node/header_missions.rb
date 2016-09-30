@@ -144,6 +144,11 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
 
 
   def mission_for_offset(offset)
+
+    if !self.mission_offsets.first || offset < self.mission_offsets.first
+      return nil
+    end
+
     last_result = nil
     result = self.mission_offsets.binary_search { |key|
       ufo = offset <=> key

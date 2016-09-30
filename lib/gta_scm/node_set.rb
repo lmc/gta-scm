@@ -1,6 +1,8 @@
 
 class GtaScm::NodeSet
 
+  attr_reader :max_offset
+
   def initialize(max_offset)
     @max_offset = max_offset
     @keys = []

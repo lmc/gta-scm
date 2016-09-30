@@ -40,4 +40,8 @@ class GtaScm::ByteArray < Array
   def to_binary
     self.flatten.map(&:chr).join
   end
+
+  def to_s
+    to_binary
+  end
 end

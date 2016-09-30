@@ -66,11 +66,28 @@ class GtaScm::Parser < GtaScm::FileWalker
   def parse!
     parse_headers!
     
-    while self.node.end_offset < self.end_offset
-      eat_instruction!
-    end
+    parse_instructions!
 
     self.add_jumps_to_nodes!(self.nodes)
+  end
+
+  def parse_instructions!
+    while !self.node || self.node.end_offset < self.end_offset
+      eat_instruction!
+    end
+  end
+
+  def parse_bare_instructions!
+    while !self.node || self.node.end_offset < self.end_offset
+      was_nop = self.node && self.node.opcode == [0x00,0x00]
+      eat_instruction!
+      # logger.info self.node.inspect
+      if was_nop && self.node.opcode == [0x00,0x00]
+        # pop last 2 no-ops
+        self.nodes.pop && self.nodes.pop
+        break
+      end
+    end
   end
 
   def parse_headers!
@@ -171,15 +188,16 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def absolute_offset(node_offset,jump_offset)
+    return jump_offset.abs if !self.missions_header
     if jump_offset < 0
       mission_id,mission_offset = self.missions_header.mission_for_offset(node_offset)
       abs_offset = mission_offset + jump_offset.abs
     else
       jump_offset
     end
-  rescue => ex
-    debugger
-    node_offset
+  # rescue => ex
+  #   debugger
+  #   node_offset
   end
 
   def generate_internal_fault_node(exception)
