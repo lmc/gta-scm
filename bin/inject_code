@@ -2,6 +2,8 @@
 
 # sudo ./bin/inject_code _out/san-andreas-experiments/ _inject 2000 30000
 
+# can write + execute to anywhere in scm memory (including missions)
+
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
   require 'gta_scm'
@@ -62,4 +64,4 @@ Ragweed::Wraposx::Libc.vm_write(process.task, SAN_ANDREAS_3_0_SCM_ADDRESS + CODE
 puts "sending RPC to run new thread at #{CODE_OFFSET}"
 
 puts "sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd"
-
+# system({"PWD" => ENV["PWD"]} , "PWD=#{ENV["PWD"]} sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd")
