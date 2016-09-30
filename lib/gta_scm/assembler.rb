@@ -95,6 +95,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   def read_lines_from_input!(scm,main_name,out_path)
     File.read("#{self.input_dir}/#{main_name}.sexp.erl").each_line.each_with_index do |line,idx|
+      line.strip!
       self.read_line(scm,line,main_name,idx)
     end
   end

@@ -1,0 +1,120 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/write_gps_route
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+pid = nil
+
+if !pid
+  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+end
+
+SYMBOLS_PATH = "symbols.gta-scm-symbols"
+SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
+
+# PLAYER_COORDS_VARS = %w(var_checkpoint_test_player_x var_checkpoint_test_player_y var_checkpoint_test_player_z)
+
+# SCRAPE_VARS = PLAYER_COORDS_VARS
+
+process = Ragweed::Debuggerosx.new(pid)
+
+data = JSON.parse( File.read(SYMBOLS_PATH) )
+
+VARIABLE_OFFSETS = {}
+VARIABLE_TYPES = {}
+
+data["variables"].each_pair do |offset,(name,type)|
+  VARIABLE_OFFSETS[name] = offset.to_i
+  VARIABLE_TYPES[offset.to_i] = type
+end
+
+MAX_VAR_OFFSET = VARIABLE_OFFSETS.values.max
+
+# print "press enter to save coords"
+# loop do
+#   gets
+#   bytes = Ragweed::Wraposx::vm_read(process.task,SAN_ANDREAS_3_0_SCM_ADDRESS,MAX_VAR_OFFSET)
+#   values = []
+#   SCRAPE_VARS.each_with_index do |var,idx|
+#     offset = VARIABLE_OFFSETS[var]
+#     type = VARIABLE_TYPES[offset]
+#     value = GtaScm::Types.bin2value(bytes[offset...(offset+4)],:float32)
+#     values << value
+#   end
+#   print "[#{values.map{|f| f.round(3).to_s.rjust(9," ") }.join(",") }],"
+# end
+
+
+ROUTE = [
+
+  [2461.073,-1659.276,13.379],
+  [2344.513,-1659.909,13.494],
+  [2342.365,-1730.073,13.455],
+  [2410.479,-1733.078,13.509],
+  [2413.73,-1751.927,13.473],
+  [2318.214,-1750.528,13.467],
+  [2317.927,-1732.882,13.468],
+  [2429.685,-1732.297,13.627],
+  [2430.979,-1654.024,26.621],
+  [2430.551,-1526.884,23.915],
+  [2345.265,-1523.892,23.937],
+  [2342.91,-1562.762,23.932],
+  [2342.069,-1656.358,13.46 ],
+  [2231.982,-1652.352,15.384],
+  [2215.985,-1726.803,13.488],
+  [2338.314,-1732.909,13.468],
+
+]
+
+def read_var(bytes,var_name,type = nil)
+  offset = VARIABLE_OFFSETS[var_name.to_s]
+  type ||= VARIABLE_TYPES[offset]
+  type = :float32 if type == :float
+  type = :int32 if type == :int
+  GtaScm::Types.bin2value(bytes[offset...(offset+4)],type)
+end
+
+def write_var(process,var_name,type,value)
+  offset = VARIABLE_OFFSETS[var_name.to_s]
+  offset += SAN_ANDREAS_3_0_SCM_ADDRESS
+  value = GtaScm::Types.value2bin(value,type)
+  Ragweed::Wraposx::Libc.vm_write(process.task, offset, value, value.size)
+end
+
+route_idx = -1
+puts "looping for gps route"
+loop do
+  bytes = Ragweed::Wraposx::vm_read(process.task,SAN_ANDREAS_3_0_SCM_ADDRESS,MAX_VAR_OFFSET)
+  
+  if read_var(bytes,:var_checkpoint_test_pop_route,:int32) == 1
+    puts "popping!"
+    route_idx += 1
+
+    write_var(process,:var_checkpoint_test_x1,:float32,ROUTE[route_idx][0])
+    write_var(process,:var_checkpoint_test_y1,:float32,ROUTE[route_idx][1])
+    write_var(process,:var_checkpoint_test_z1,:float32,ROUTE[route_idx][2])
+
+    write_var(process,:var_checkpoint_test_x2,:float32,ROUTE[route_idx + 1][0])
+    write_var(process,:var_checkpoint_test_y2,:float32,ROUTE[route_idx + 1][1])
+    write_var(process,:var_checkpoint_test_z2,:float32,ROUTE[route_idx + 1][2])
+
+    write_var(process,:var_checkpoint_test_x3,:float32,ROUTE[route_idx + 2][0])
+    write_var(process,:var_checkpoint_test_y3,:float32,ROUTE[route_idx + 2][1])
+    write_var(process,:var_checkpoint_test_z3,:float32,ROUTE[route_idx + 2][2])
+
+    write_var(process,:var_checkpoint_test_pop_route, :int32,0)
+    write_var(process,:var_checkpoint_test_need_regen,:int32,1)
+  end
+
+  sleep 1.0/30
+end
+
+

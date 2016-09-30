@@ -38,6 +38,7 @@
 (start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
 (start_new_script ((label display_gang_zones_bootstrap) (end_var_args)))
 (start_new_script ((label checkpoint_test_bootstrap) (end_var_args)))
+(start_new_script ((label gimme_car) (end_var_args)))
 
 
 (request_model ((int16 413)))
@@ -65,9 +66,12 @@
 (wait ((int32 1000)))
 (Include "checkpoint-test")
 
+(labeldef gimme_car)
+
 (request_model ((int16 413)))
 (load_all_models_now)
-(create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car)))
+(create_car ((int16 413) (float32 2485.219970703125) (float32 -1662.9410400390625) (float32 13.729999542236328) (var test_car)))
+(terminate_this_script)
 
 % 3079744 - scm size
 % 3079744 - 56257

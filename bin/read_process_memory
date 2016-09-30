@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/read_process_memory 1234555 float32
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+pid = nil
+
+if !pid
+  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+end
+
+args = ARGV.dup
+
+address = args.shift.to_i
+
+type = args.shift.to_sym
+
+size = GtaScm::Types.bytes4type(type)
+
+process = Ragweed::Debuggerosx.new(pid)
+
+bytes = Ragweed::Wraposx::vm_read(process.task, address, size)
+
+value = GtaScm::Types.bin2value(bytes,type)
+
+puts "#{address} #{type} = #{value.inspect}"
+
