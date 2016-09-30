@@ -111,6 +111,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     end
   end
 
+  # TODO: make symbol recogniser recursive, so you can use ie. Rawhex for arguments
   def read_line(scm,line,file_name,line_idx)
     self.parser ||= Elparser::Parser.new
     if line.present? and line.strip[0] == "("# and idx < 30
@@ -302,6 +303,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   def assemble_argument(node,arg_def,arg_idx,tokens)
     node.arguments[arg_idx] = GtaScm::Node::Argument.new.tap do |arg|
       arg_tokens = tokens[1][arg_idx]
+
+      if !arg_tokens
+        raise "no arg idx #{arg_idx} for #{tokens.inspect}"
+      end
+
       case arg_tokens[0]
       # when :objscm
       #   puts "objscm #{}"
@@ -340,6 +346,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           arg.set( arg_tokens[0] , arg_tokens[1] )
         end
       when :var_array
+        arg.set_array(arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
+      when :dereference
+        debugger
         arg.set_array(arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       else
         arg.set( arg_tokens[0] , arg_tokens[1] )

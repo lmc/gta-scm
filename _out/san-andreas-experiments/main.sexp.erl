@@ -35,9 +35,10 @@
 (add_police_restart ((float32 1550.6800537109375) (float32 -1675.489990234375) (float32 14.510000228881836) (float32 90.0) (int8 0)))
 
 (do_fade ((int16 1000) (int8 1)))
-(start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
-(start_new_script ((label display_gang_zones_bootstrap) (end_var_args)))
-(start_new_script ((label checkpoint_test_bootstrap) (end_var_args)))
+(start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
+% (start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
+% (start_new_script ((label display_gang_zones_bootstrap) (end_var_args)))
+% (start_new_script ((label checkpoint_test_bootstrap) (end_var_args)))
 (start_new_script ((label gimme_car) (end_var_args)))
 
 
@@ -51,27 +52,36 @@
 (wait ((int8 100)))
 (goto ((label idle_loop)))
 
+(labeldef debug_rpc_bootstrap)
+(script_name ((string8 "dbgrpc")))
+(wait ((int32 1000)))
+(Include "debug-rpc")
+
 (labeldef display_coordinates_bootstrap)
-(script_name ((string8 "coords")))
+% (script_name ((string8 "coords")))
 (wait ((int32 1000)))
 (Include "coords-display")
 
-(labeldef display_gang_zones_bootstrap)
-(script_name ((string8 "gangzon")))
-(wait ((int32 1000)))
-(Include "gang-zone-display")
+% (labeldef display_gang_zones_bootstrap)
+% (script_name ((string8 "gangzon")))
+% (wait ((int32 1000)))
+% (Include "gang-zone-display")
 
-(labeldef checkpoint_test_bootstrap)
-(script_name ((string8 "chkpnt")))
-(wait ((int32 1000)))
-(Include "checkpoint-test")
+% (labeldef checkpoint_test_bootstrap)
+% (script_name ((string8 "chkpnt")))
+% (wait ((int32 1000)))
+% (Include "checkpoint-test")
 
 (labeldef gimme_car)
 
-(request_model ((int16 413)))
+(request_model ((int16 541)))
 (load_all_models_now)
-(create_car ((int16 413) (float32 2485.219970703125) (float32 -1662.9410400390625) (float32 13.729999542236328) (var test_car)))
+(create_car ((int16 541) (float32 2485.219970703125) (float32 -1662.9410400390625) (float32 13.729999542236328) (var test_car)))
+% pro car ideas
+% 018F IS_CAR_STUCK_ON_ROOF
+
 (terminate_this_script)
+(start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
 
 % 3079744 - scm size
 % 3079744 - 56257

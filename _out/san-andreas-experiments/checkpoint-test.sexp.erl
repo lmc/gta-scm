@@ -40,7 +40,7 @@
 
 % guard against player not existing (it happens?????)
 (andor ((int8 0)))
-(is_player_playing ((dmavar 8)))
+  (is_player_playing ((dmavar 8)))
 (goto_if_false ((label checkpoint_test_worker)))
 
 
@@ -50,18 +50,16 @@
 
 % if we're within range of the checkpoint, tell external script to pop it's route
 (andor ((int8 0)))
-(not_is_float_var_greater_than_number ((var checkpoint_test_player_distance) (float32 5.0)))
+  (not_is_float_var_greater_than_number ((var checkpoint_test_player_distance) (float32 5.0)))
 (goto_if_false ((label checkpoint_test_worker_111)))
-  
   (set_var_int   ((var checkpoint_test_pop_route) (int32 1)))
-
 (labeldef checkpoint_test_worker_111)
 
 
 % if we need to regenerate in-game checkpoints, do so
 (andor ((int8 0)))
-(is_int_var_greater_than_number ((var checkpoint_test_need_regen) (int32 0)))
-(goto_if_false ((label checkpoint_test_worker)))
+  (is_int_var_greater_than_number ((var checkpoint_test_need_regen) (int32 0)))
+(goto_if_false ((label checkpoint_test_worker_222)))
 
   (set_var_int   ((var checkpoint_test_need_regen) (int32 0)))
 
@@ -85,6 +83,9 @@
   (change_blip_colour ((var checkpoint_test_blip2) (int32 -1)))
   (change_blip_display ((var checkpoint_test_blip2) (int8 2)))
   (change_blip_scale ((var checkpoint_test_blip2)(int8 2)))
+  
+(labeldef checkpoint_test_worker_222)
+
 
 (goto ((label checkpoint_test_worker)))
 

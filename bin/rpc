@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/write_gps_route
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+pid = nil
+
+if !pid
+  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+end
+
+SYMBOLS_PATH = "symbols.gta-scm-symbols"
+SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
+
+process = Ragweed::Debuggerosx.new(pid)
+
+data = JSON.parse( File.read(SYMBOLS_PATH) )
+
+VARIABLE_OFFSETS = {}
+VARIABLE_TYPES = {}
+
+data["variables"].each_pair do |offset,(name,type)|
+  VARIABLE_OFFSETS[name] = offset.to_i
+  VARIABLE_TYPES[offset.to_i] = type
+end
+
+MAX_VAR_OFFSET = VARIABLE_OFFSETS.values.max
+
+def read_var(bytes,var_name,type = nil)
+  offset = VARIABLE_OFFSETS[var_name.to_s]
+  type ||= VARIABLE_TYPES[offset]
+  type = :float32 if type == :float
+  type = :int32 if type == :int
+  GtaScm::Types.bin2value(bytes[offset...(offset+4)],type)
+end
+
+def write_var(process,var_name,type,value)
+  offset = VARIABLE_OFFSETS[var_name.to_s]
+  offset += SAN_ANDREAS_3_0_SCM_ADDRESS
+  value = GtaScm::Types.value2bin(value,type)
+  Ragweed::Wraposx::Libc.vm_write(process.task, offset, value, value.size)
+end
+
+puts ARGV.inspect
+
+args = ARGV.dup
+syscall_id = args.shift.to_i
+syscall_args = args
+
+# args.each do |arg|
+  
+# end
+
+write_var process , :"var_debug_rpc_int_arg_0" , :int32 , 56737
+write_var process , :"var_debug_rpc_int_arg_1" , :istring8 , "test"
+write_var process , :"var_debug_rpc_syscall" , :int32 , syscall_id

@@ -89,6 +89,9 @@ def write_var(process,var_name,type,value)
   Ragweed::Wraposx::Libc.vm_write(process.task, offset, value, value.size)
 end
 
+# TODO: compile and inject code? >: O
+# TODO: debug RPC - idle loop, checks global vars for function + args
+
 route_idx = -1
 puts "looping for gps route"
 loop do

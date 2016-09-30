@@ -47,6 +47,8 @@ module GtaScm::Assembler::Feature::CoolOutput
             end
           end
         end
+      elsif node.is_a?(GtaScm::Node::Header)
+      elsif node.is_a?(GtaScm::Node::Raw) && node.size >= 1024
       else
         # print "\e[1m"
         node.hex_array.flatten.each_with_index do |hex,idx|
