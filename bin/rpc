@@ -24,7 +24,7 @@ process = Ragweed::Debuggerosx.new(pid)
 
 data = JSON.parse( File.read(SYMBOLS_PATH) )
 
-LABEL_OFFSETS = {}
+# LABEL_OFFSETS = {}
 VARIABLE_OFFSETS = {}
 VARIABLE_TYPES = {}
 RPCS = {}
@@ -57,7 +57,16 @@ def write_var(process,var_name,type,value)
   puts "write #{value.bytes} to #{offset}"
 end
 
-puts ARGV.inspect
+if ARGV.size == 0
+  puts "  % sudo bundle exec ./bin/rpc [RPC #] [args...]"
+  puts "available RPCs:"
+  RPCS.each_pair do |rpc_id,rpc|
+    puts "#{rpc_id}: #{rpc.inspect}"
+  end
+  exit
+else
+  puts ARGV.inspect
+end
 
 args = ARGV.dup
 syscall_id = args.shift.to_i
@@ -93,14 +102,14 @@ else
   end
   write_var( process , :"var_debug_rpc_syscall" , :int32 , syscall_id )
 
-  # puts "waiting for result"
+  puts "waiting for result"
 
-  # until read_var( process , :"var_debug_rpc_syscall" , :int32 ) == 0
-  #   sleep 1.0 / 30
-  # end
+  until read_var( process , :"var_debug_rpc_syscall" , :int32 ) == 0
+    sleep 1.0 / 30
+  end
 
-  # result = read_var( process , :"var_debug_rpc_syscall_result" , :int32 )
+  result = read_var( process , :"var_debug_rpc_syscall_result" , :int32 )
 
-  # puts "result: #{result.inspect}"
+  puts "result: #{result.inspect}"
 
 end

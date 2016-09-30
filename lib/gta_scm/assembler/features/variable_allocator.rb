@@ -54,7 +54,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
     offset = self.variables_range.begin
     while offset < self.max_var_slot
       if !self.dmavar_uses.include?(offset)
-        logger.debug "Free var slot free at #{offset}"
+        # logger.debug "Free var slot free at #{offset}"
         break
       end
       offset += self.dmavar_sizes[offset] || 4

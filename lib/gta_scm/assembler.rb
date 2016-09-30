@@ -121,7 +121,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     if line.present? and line.strip[0] == "("# and idx < 30
       offset = nodes.next_offset
       tokens = self.parser.parse1(line).to_ruby
-      logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
+      # logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
       # TODO: we can calculate offset + lengths here as we go
       node = case tokens[0]
         when :HeaderVariables
@@ -182,9 +182,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       self.nodes << node
 
       if node.is_a?(GtaScm::Node::Instruction)
-        logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
+        # logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       end
-      logger.info ""
+      # logger.info ""
     end
   end
 
@@ -259,7 +259,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             end
 
             touchup_value = touchup_value[0...arr.size]
-            logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
+            # logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
 
             arr.replace(touchup_value)
         end

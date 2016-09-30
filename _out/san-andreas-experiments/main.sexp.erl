@@ -81,7 +81,6 @@
 % 018F IS_CAR_STUCK_ON_ROOF
 
 (terminate_this_script)
-(start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
 
 % 3079744 - scm size
 % 3079744 - 56257

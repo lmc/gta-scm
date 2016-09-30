@@ -16,11 +16,12 @@
 
 (labeldef display_coordinates_worker)
 (script_name ((string8 "coordsw")))
+(labeldef display_coordinates_worker_top)
 (wait ((int16 10)))
 
 (andor ((int8 0)))
 (is_player_playing ((dmavar 8)))
-(goto_if_false ((label display_coordinates_worker)))
+(goto_if_false ((label display_coordinates_worker_top)))
 
 (get_char_heading ((dmavar 12) (var coords_heading_f)))
 (cset_var_int_to_var_float ((var coords_heading_i) (var coords_heading_f)))
@@ -65,7 +66,7 @@
 % (get_name_of_zone ((var coords_x) (var coords_y) (var coords_z) (dmavar 57096)))
 
 
-(goto ((label display_coordinates_worker)))
+(goto ((label display_coordinates_worker_top)))
 
 
 (labeldef display_coordinates_viewer)
