@@ -50,7 +50,15 @@ class GtaScm::Process
     symbols["ranges"].each_pair do |name,(start_offset,end_offset)|
       self.regions[ Range.new(start_offset,end_offset) ] = name
     end
+
+    # self.load_rpc_region!
   end
+
+  # def load_rpc_region!
+  #   start_offset = self.symbols_label_offsets["rpc_header_prologue"]
+  #   end_offset   = self.symbols_label_offsets["rpc_header_epilogue"]
+  #   self.regions[ Range.new(start_offset,end_offset) ] = "rpc"
+  # end
 
   def scm_offset
     # SA steam version

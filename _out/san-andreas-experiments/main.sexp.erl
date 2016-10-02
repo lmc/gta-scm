@@ -5,6 +5,15 @@
 (HeaderSegment5 ((padding (int8 3)) (mystery (int32 0))))
 (HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 43800)) (allocated_external_count (int8 62)) (unused_external_count (int8 2)) (padding2 (int16 0))))
 
+
+
+% (goto ((label rpc_header_epilogue)))
+% (labeldef rpc_header_prologue)
+% % 1024 = 256 vars
+% (Padding (1024))
+% (labeldef rpc_header_epilogue)
+
+
 (script_name ((string8 "MAIN")))
 
 % (wait ((int32 100000)))
@@ -57,7 +66,8 @@
 (labeldef debug_rpc_bootstrap)
 (script_name ((string8 "dbgrpc")))
 (wait ((int32 1000)))
-(Include "debug-rpc")
+% (Include "debug-rpc")
+(IncludeAndAssemble "debug-rpc" (code_offset nil) (variable_offset self 32))
 
 (labeldef display_coordinates_bootstrap)
 % (script_name ((string8 "coords")))

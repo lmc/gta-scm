@@ -17,7 +17,8 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
   def on_metadata(file,line_idx,tokens,addr)
     super
-
+    # metadata = Hash[tokens[1..-1]]
+    
   end
 
   def on_labeldef(label,offset)

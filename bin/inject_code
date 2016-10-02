@@ -60,6 +60,7 @@ asm.assemble(scm,filename,output)
 output.rewind
 code = output.read
 
+
 puts hex( code.bytes )
 
 puts "writing code to #{process.scm_offset + CODE_OFFSET}"

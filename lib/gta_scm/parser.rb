@@ -168,11 +168,16 @@ class GtaScm::Parser < GtaScm::FileWalker
     self.on_eat_node(self.node)
   end
 
+  $dmavar_uses = Set.new
+
   def eat_instruction!
     begin
       self.node = GtaScm::Node::Instruction.new
       self.node.eat!(self)
       self.on_eat_node(self.node)
+
+      self.node.arguments.select{|a| a.arg_type_id == 2}.each{|a| $dmavar_uses << a.value}
+
       self.node.jumps.each do |jump|
         jump[:from] = node.offset
         # debugger

@@ -95,6 +95,8 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
   def from_ir(tokens,scm,asm)
     data = Hash[tokens[1]]
 
+    hack_bump_missions = data[:HACK_bump_missions]
+
     self[0] = asm.assemble_instruction(scm,self.offset,[:goto,[[:label,:label__post_header_missions]]])
     asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_missions,:jump)
 
@@ -135,7 +137,11 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
 
     self[1][i] = GtaScm::ByteArray.new
     (data[:mission_offsets] || []).each do |mission|
-      self[1][i] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( mission[1][1] , :int32 ).bytes )
+      mission_offset = mission[1][1]
+      mission_offset += (hack_bump_missions[1] - hack_bump_missions[0]) if hack_bump_missions
+      mission_offset = GtaScm::Types.value2bin( mission_offset , :int32 )
+      
+      self[1][i] << GtaScm::Node::Raw.new( mission_offset.bytes )
     end
     i += 1
 

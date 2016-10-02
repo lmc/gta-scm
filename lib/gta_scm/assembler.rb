@@ -111,7 +111,6 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.instruction_offsets_to_vars.each_pair do |offset,vars|
       file_vars[ self.offsets_to_files_lines[offset][0] ] ||= 0
       vars.each do |varn|
-        # debugger
         if !seen_vars[ varn ]
           file_vars[ self.offsets_to_files_lines[offset][0] ] += 1
           seen_vars[ varn ] = true
@@ -119,7 +118,6 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       end
     end
     self.include_sizes.each_pair do |file,code_size|
-
       puts "#{file}: code = #{code_size}, vars = #{file_vars[file]*4} (#{file_vars[file]})"
     end
   end
@@ -191,14 +189,23 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             self.read_line(scm,i_line,tokens[1],i_idx)
           end
           return
+        when :IncludeAndAssemble
+          file = tokens[1]
+          args = Hash[tokens[2..-1]]
+
         when :Rawhex
-          GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } )
+          GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } ).tap do |node|
+            
+          end
         when :Padding
           GtaScm::Node::Raw.new( [0] * tokens[1][0] )
         when :PadUntil
           zeros = tokens[1][0] - self.nodes.next_offset
           logger.info "Inserting #{zeros} zeros #{self.nodes.next_offset}"
           GtaScm::Node::Raw.new( [0] * zeros )
+        when :IncludeBin
+          bytes = File.read(tokens[1][0],(tokens[1][2] - tokens[1][1]),tokens[1][1])
+          GtaScm::Node::Raw.new( bytes.bytes )
         when :Metadata
           logger.info "Metadata node recognised, contents: #{tokens.inspect}"
           self.on_metadata(file_name,line_idx,tokens,offset)
@@ -221,6 +228,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         self.include_sizes[file_name]  += node.size
         logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       end
+      logger.info "#{nodes.last.offset}"
       # logger.info ""
     end
   end

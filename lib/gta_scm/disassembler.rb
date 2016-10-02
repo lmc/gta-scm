@@ -44,6 +44,11 @@ class GtaScm::Disassembler::Base
     end
 
     self.files.close_all
+
+    if $dmavar_uses
+      dmavar_uses = $dmavar_uses.to_a.sort
+      puts dmavar_uses
+    end
   end
 
   attr_accessor :progress_callback

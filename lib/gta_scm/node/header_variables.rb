@@ -30,7 +30,7 @@ class GtaScm::Node::Header::Variables < GtaScm::Node::Header
     asm.use_touchup(self.offset,[0,1,0,1],:label__post_header_variables,:jump)
 
     self[1][0] = GtaScm::Node::Raw.new([data[:magic][1]])
-    self[1][1] = GtaScm::Node::Raw.new([0x69] * data[:size][1])
+    self[1][1] = GtaScm::Node::Raw.new([0x00] * data[:size][1])
 
     next_offset = asm.nodes.next_offset(self)
     asm.define_touchup(:label__post_header_variables,next_offset)
