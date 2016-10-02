@@ -4,6 +4,8 @@
 
 # can write + execute to anywhere in scm memory (including missions)
 
+# TODO: bundle this up into GtaScm::Process
+
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
   require 'gta_scm'

@@ -15,6 +15,9 @@ class GtaScm::Assembler::Base
 
   attr_accessor :code_offset
 
+  attr_accessor :include_sizes
+  attr_accessor :offsets_to_files_lines
+
   def initialize(input_dir)
     self.input_dir = input_dir
     self.nodes = GtaScm::UnbuiltNodeSet.new
@@ -22,6 +25,9 @@ class GtaScm::Assembler::Base
     self.touchup_defines = {}
     self.touchup_uses = Hash.new { |h,k| h[k] = [] }
     self.touchup_types = {}
+
+    self.include_sizes = {}
+    self.offsets_to_files_lines = {}
   end
 
   def assemble(scm,out_path)
@@ -97,6 +103,25 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.on_complete()
 
     # logger.info "Complete, final size: #{File.size(out_path)} bytes"
+    logger.info "Complete"
+    logger.info self.include_sizes.inspect
+
+    file_vars = {}
+    seen_vars = {}
+    self.instruction_offsets_to_vars.each_pair do |offset,vars|
+      file_vars[ self.offsets_to_files_lines[offset][0] ] ||= 0
+      vars.each do |varn|
+        # debugger
+        if !seen_vars[ varn ]
+          file_vars[ self.offsets_to_files_lines[offset][0] ] += 1
+          seen_vars[ varn ] = true
+        end
+      end
+    end
+    self.include_sizes.each_pair do |file,code_size|
+
+      puts "#{file}: code = #{code_size}, vars = #{file_vars[file]*4} (#{file_vars[file]})"
+    end
   end
 
   def read_lines_from_input!(scm,main_name,out_path)
@@ -188,7 +213,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       node.offset = offset
       self.nodes << node
 
+      self.offsets_to_files_lines[offset] = [file_name,line_idx]
+
       if node.is_a?(GtaScm::Node::Instruction)
+        self.include_sizes[file_name] ||= 0
+        self.include_sizes[file_name]  += node.size
         logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       end
       # logger.info ""

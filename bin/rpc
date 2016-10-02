@@ -1,61 +1,22 @@
 #!/usr/bin/env ruby
 
-# sudo ./bin/write_gps_route
+# sudo ./bin/rpc [rpc ID or name] [RPC args ...]
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
   require 'gta_scm'
 end
 
-require 'ragweed'
-require 'ragweed/debuggerosx'
+require 'gta_scm/process'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
 
-pid = nil
-
-if !pid
-  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
-  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
-end
-
-SYMBOLS_PATH = "symbols.gta-scm-symbols"
-SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
-
-process = Ragweed::Debuggerosx.new(pid)
-
-data = JSON.parse( File.read(SYMBOLS_PATH) )
-
-# LABEL_OFFSETS = {}
-VARIABLE_OFFSETS = {}
-VARIABLE_TYPES = {}
+# Internal code in _out/san-andreas-experiments/debug-rpc
 RPCS = {}
-
-RPCS[  1 ] = [ "create_thread", { 0=>:thread_offset, 1=>:thread_name,2=>:thread_name, 3=>:thread_created } ]
-
-data["variables"].each_pair do |offset,(name,type)|
-  VARIABLE_OFFSETS[name] = offset.to_i
-  VARIABLE_TYPES[offset.to_i] = type
-end
-LABEL_OFFSETS = data["labels"]
-
-MAX_VAR_OFFSET = VARIABLE_OFFSETS.values.max
-
-def read_var(process,var_name,type = nil)
-  bytes = Ragweed::Wraposx::vm_read(process.task,SAN_ANDREAS_3_0_SCM_ADDRESS,MAX_VAR_OFFSET)
-  offset = VARIABLE_OFFSETS[var_name.to_s]
-  raise "no offset for #{var_name}" if !offset
-  type ||= VARIABLE_TYPES[offset]
-  type = :float32 if type == :float
-  type = :int32 if type == :int
-  GtaScm::Types.bin2value(bytes[offset...(offset+4)],type)
-end
-
-def write_var(process,var_name,type,value)
-  offset = VARIABLE_OFFSETS[var_name.to_s]
-  offset += SAN_ANDREAS_3_0_SCM_ADDRESS
-  value = GtaScm::Types.value2bin(value,type) if !type.nil?
-  Ragweed::Wraposx::Libc.vm_write(process.task, offset, value, value.size)
-  puts "write #{value.bytes} to #{offset}"
-end
+# RPCS[  1 ] = [ "create_thread", { 0=>:thread_offset, 1=>:thread_name,2=>:thread_name, 3=>:thread_created } ]
+RPCS[  1 ] = "create_thread"
+# RPCS[  2 ] = [ "kill_named_thread", { 0=>:thread_name } ]
+RPCS[  2 ] = "kill_named_thread"
 
 if ARGV.size == 0
   puts "  % sudo bundle exec ./bin/rpc [RPC #] [args...]"
@@ -69,47 +30,13 @@ else
 end
 
 args = ARGV.dup
-syscall_id = args.shift.to_i
-syscall_args = []
-args.each do |arg|
-  case arg
-  when /label:(\w+)/
-    value = LABEL_OFFSETS[$1]
-    value = GtaScm::Types.value2bin(value,:int32)
-    syscall_args << value
-  when/[a-z_]/i
-    value = GtaScm::Types.value2bin(arg,:istring8)
-    syscall_args << value
-  when /\./
-    value = GtaScm::Types.value2bin(arg.to_f,:float32)
-    syscall_args << value
-  else
-    value = GtaScm::Types.value2bin(arg.to_i,:int32)
-    syscall_args << value
-  end
-end
-
-puts syscall_args.inspect
-
-
-if read_var( process , :"var_debug_rpc_syscall" , :int32 ) != 0
-  puts "syscall is already set (execution in progress?)"
+syscall_id = args.shift
+if syscall_id.match(/\d+/)
+  syscall_id = syscall_id.to_i
 else
-
-  puts "making syscall #{syscall_id} with args #{syscall_args.inspect}"
-  syscall_args.each_with_index do |arg,idx|
-    write_var( process , :"var_debug_rpc_int_arg_#{idx}" , nil , arg )
-  end
-  write_var( process , :"var_debug_rpc_syscall" , :int32 , syscall_id )
-
-  puts "waiting for result"
-
-  until read_var( process , :"var_debug_rpc_syscall" , :int32 ) == 0
-    sleep 1.0 / 30
-  end
-
-  result = read_var( process , :"var_debug_rpc_syscall_result" , :int32 )
-
-  puts "result: #{result.inspect}"
-
+  syscall_id = RPCS.invert[syscall_id]
 end
+
+process.detect_pid_and_attach!
+
+process.rpc(syscall_id,*args)

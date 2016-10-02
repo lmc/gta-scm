@@ -6,10 +6,12 @@ module GtaScm::Assembler::Feature::VariableAllocator
       attr_accessor :var_touchups
       attr_accessor :var_touchups_types
       attr_accessor :allocated_vars
+      attr_accessor :instruction_offsets_to_vars
     end
     self.var_touchups = Set.new
     self.var_touchups_types = Hash.new
     self.allocated_vars = Hash.new
+    self.instruction_offsets_to_vars = Hash.new {|h,k| h[k] = Set.new}
   end
 
   def on_before_touchups
@@ -20,6 +22,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
   def use_var_address(node_offset,array_keys,touchup_name,type = nil)
     self.var_touchups << touchup_name
     self.var_touchups_types[touchup_name] = type if type
+    self.instruction_offsets_to_vars[node_offset] << touchup_name
     super
   end
 

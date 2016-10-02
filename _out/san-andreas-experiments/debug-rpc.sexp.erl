@@ -11,9 +11,9 @@
 (script_name ((string8 "dbgrpci")))
 
 % used to dereference vars in memory
-(set_var_int ((var debug_rpc_dereference_index) (int32 0)))
-(set_var_int ((var debug_rpc_dereference_result) (int32 0)))
-(set_var_int ((var debug_rpc_dereference_result1) (int32 0)))
+% (set_var_int ((var debug_rpc_dereference_index) (int32 0)))
+% (set_var_int ((var debug_rpc_dereference_result) (int32 0)))
+% (set_var_int ((var debug_rpc_dereference_result1) (int32 0)))
 
 % args for syscalls
 (set_var_int ((var debug_rpc_int_arg_0) (int32 0)))
@@ -32,6 +32,9 @@
 (terminate_this_script)
 
 
+
+
+% jumped to by start_new_script in syscall 1 (create thread)
 (labeldef debug_rpc_create_thread_init)
 (andor ((int8 0)))
   (is_int_var_greater_than_number ((var debug_rpc_int_arg_1) (int32 0)))
@@ -64,12 +67,12 @@
 
   (set_var_int ((var debug_rpc_int_arg_7) (int32 0)))
   (start_new_script ((label debug_rpc_create_thread_init) (end_var_args)))
+  
   (labeldef debug_rpc_worker_create_thread_complete_loop)
   (wait ((int8 0)))
   (andor ((int8 0)))
     (is_int_var_greater_than_number ((var debug_rpc_int_arg_7) (int32 0)))
   (goto_if_false ((label debug_rpc_worker_create_thread_complete_loop)))
-  (set_var_int ((var debug_rpc_syscall_result) (int32 0)))
   
   (goto ((label debug_rpc_worker_syscall_exit_0)))
 (labeldef debug_rpc_worker_create_thread_after)

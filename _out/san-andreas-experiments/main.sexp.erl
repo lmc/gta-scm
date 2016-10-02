@@ -36,7 +36,7 @@
 
 (do_fade ((int16 1000) (int8 1)))
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
-% (start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
+(start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
 % (start_new_script ((label display_gang_zones_bootstrap) (end_var_args)))
 % (start_new_script ((label checkpoint_test_bootstrap) (end_var_args)))
 (start_new_script ((label gimme_car) (end_var_args)))
@@ -59,7 +59,7 @@
 
 (labeldef display_coordinates_bootstrap)
 % (script_name ((string8 "coords")))
-(wait ((int32 1000)))
+(wait ((int8 0)))
 (Include "coords-display")
 
 % (labeldef display_gang_zones_bootstrap)
@@ -81,6 +81,8 @@
 % 018F IS_CAR_STUCK_ON_ROOF
 
 (terminate_this_script)
+
+(wait ((int16 1)))
 
 % 3079744 - scm size
 % 3079744 - 56257
