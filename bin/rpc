@@ -9,7 +9,7 @@ end
 
 require 'gta_scm/process'
 process = GtaScm::Process.new
-process.load_symbols!("symbols.gta-scm-symbols")
+process.load_symbols!("debug-rpc.gta-scm-symbols")
 
 # Internal code in _out/san-andreas-experiments/debug-rpc
 RPCS = {}

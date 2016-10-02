@@ -17,6 +17,7 @@ class GtaScm::Assembler::Base
 
   attr_accessor :include_sizes
   attr_accessor :offsets_to_files_lines
+  attr_accessor :symbols_name
 
   def initialize(input_dir)
     self.input_dir = input_dir
@@ -192,6 +193,51 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         when :IncludeAndAssemble
           file = tokens[1]
           args = Hash[tokens[2..-1]]
+
+          code_begin = offset
+          code_begin += args[:code_offset][1]
+          # code_end = offset
+          # code_end += args[:code_offset][2]
+
+          # vars_begin = offset
+          vars_begin = args[:variable_offset][0] == :self ? offset : args[:variable_offset][0]
+          # debugger
+          # vars_begin = offset
+          vars_begin += args[:variable_offset][1]
+          vars_begin += (vars_begin % 4) # align
+
+          # vars_begin = 10000
+
+          iscm = GtaScm::Scm.load_string("san-andreas","")
+          iscm.load_opcode_definitions!
+
+          iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
+          iasm.code_offset = code_begin
+
+          def iasm.install_features!
+            class << self
+              include GtaScm::Assembler::Feature::VariableAllocator
+              include GtaScm::Assembler::Feature::VariableHeaderAllocator
+              include GtaScm::Assembler::Feature::ExportSymbols
+            end
+            self.on_feature_init()
+          end
+
+          iasm.symbols_name = "debug-rpc"
+          iasm.var_offset = vars_begin
+          def iasm.variables_range
+            (var_offset..(var_offset+1024))
+          end
+
+          # debugger
+
+          output = StringIO.new
+          iasm.assemble(iscm,file,output)
+
+          output.rewind
+          code = output.read
+
+          GtaScm::Node::Raw.new( code.bytes )
 
         when :Rawhex
           GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } ).tap do |node|
@@ -419,6 +465,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Variables)}
   end
 
+  attr_accessor :var_offset
   def variables_range
     (variables_header.varspace_offset)...(variables_header.varspace_offset + variables_header.varspace_size)
   end

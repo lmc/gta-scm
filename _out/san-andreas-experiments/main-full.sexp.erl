@@ -7,14 +7,40 @@
 (HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 43800)) (allocated_external_count (int8 57)) (unused_external_count (int8 2)) (padding2 (int16 0))))
 
 (IncludeBin ("games/san-andreas/data/script/main.scm" 55976 56124))
+
+(start_new_script ((label debug_rpc_bootstrap) (int32 0) (int32 0) (int8 0) (int8 0) (end_var_args)))
 (goto ((label memory_hole_1_end)))
+
 (PadUntil (56153))
 (labeldef memory_hole_1_end)
 (IncludeBin ("games/san-andreas/data/script/main.scm" 56153 56721))
+
 (goto ((label memory_hole_2_end)))
+
+% (labeldef hello_world)
+% (script_name ((string8 "test")))
+% (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
+% (labeldef hello_world_loop)
+% (wait ((int8 100)))
+% % (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
+% (goto ((label hello_world)))
+
 (PadUntil (57945))
 (labeldef memory_hole_2_end)
-(IncludeBin ("games/san-andreas/data/script/main.scm" 57945 194146))
+
+(IncludeBin ("games/san-andreas/data/script/main.scm" 57945 194125))
+
+(labeldef debug_rpc_bootstrap)
+(wait ((int32 1000)))
+(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset (0 39780 1224)))
+
+(labeldef debug_rpc_test)
+(script_name ((string8 "test")))
+(wait ((int16 50)))
+(add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
+(wait ((int16 50)))
+(goto ((label debug_rpc_test)))
+
 (PadUntil (200000))
 (IncludeBin ("games/san-andreas/data/script/main.scm" 194125 3079744))
-
+00194125

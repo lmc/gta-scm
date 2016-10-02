@@ -1,8 +1,9 @@
 
 (labeldef debug_rpc_bootstrap_inner)
-(start_new_script ((label debug_rpc_init) (end_var_args)))
-(start_new_script ((label debug_rpc_worker) (end_var_args)))
-(terminate_this_script)
+% (start_new_script ((label debug_rpc_init) (end_var_args)))
+% worker is crashing doing nothing when loaded through thing
+% (start_new_script ((label debug_rpc_worker) (end_var_args)))
+% (terminate_this_script)
 
 
 
@@ -20,16 +21,16 @@
 (set_var_int ((var debug_rpc_int_arg_1) (int32 0)))
 (set_var_int ((var debug_rpc_int_arg_2) (int32 0)))
 (set_var_int ((var debug_rpc_int_arg_3) (int32 0)))
-(set_var_int ((var debug_rpc_int_arg_4) (int32 0)))
-(set_var_int ((var debug_rpc_int_arg_5) (int32 0)))
-(set_var_int ((var debug_rpc_int_arg_6) (int32 0)))
+% (set_var_int ((var debug_rpc_int_arg_4) (int32 0)))
+% (set_var_int ((var debug_rpc_int_arg_5) (int32 0)))
+% (set_var_int ((var debug_rpc_int_arg_6) (int32 0)))
 (set_var_int ((var debug_rpc_int_arg_7) (int32 0)))
 
 % load args then set this to do a debug rpc call
 (set_var_int ((var debug_rpc_syscall) (int32 0)))
 (set_var_int ((var debug_rpc_syscall_result) (int32 0)))
 
-(terminate_this_script)
+(goto ((label debug_rpc_worker)))
 
 
 
@@ -50,12 +51,26 @@
 
 (labeldef debug_rpc_worker)
 (script_name ((string8 "dbgrpcw")))
+(wait ((int16 50)))
+(wait ((int16 50)))
+(wait ((int16 50)))
+(wait ((int16 50)))
+
+
 (labeldef debug_rpc_worker_top)
-(wait ((int16 0)))
+(wait ((int16 50)))
+% (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
+(wait ((int16 50)))
+(goto ((label debug_rpc_worker_top2)))
+
+(labeldef debug_rpc_worker_top2)
+% (terminate_this_script)
 
 (andor ((int8 0)))
   (is_int_var_greater_than_number ((var debug_rpc_syscall) (int32 0)))
 (goto_if_false ((label debug_rpc_worker_top)))
+
+% (terminate_this_script)
 
 % syscall 1 = create thread (0 = thread offset, 1-2 = thread name, 7 = thread created)
 (andor ((int8 0)))

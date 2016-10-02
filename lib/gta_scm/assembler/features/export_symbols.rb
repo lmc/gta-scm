@@ -48,14 +48,17 @@ module GtaScm::Assembler::Feature::ExportSymbols
   end
 
   def export_symbols!
-    File.open("symbols.gta-scm-symbols","w") do |f|
+    File.open("#{self.symbols_name || "symbols"}.gta-scm-symbols","w") do |f|
 
       data = {}
 
       data[:ranges] = {}
       # data[:ranges][:main] = [0,self.main_size]
-      data[:ranges][:variables] = [variables_header.varspace_offset,variables_header.end_offset]
-      data[:ranges][:code_main] = [last_header.end_offset,self.main_size]
+
+      if variables_header
+        data[:ranges][:variables] = [variables_header.varspace_offset,variables_header.end_offset]
+        data[:ranges][:code_main] = [last_header.end_offset,self.main_size]
+      end
 
       data[:variables] = {}
       # self.allocated_vars.each_pair do |var_name,address|

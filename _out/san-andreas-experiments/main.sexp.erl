@@ -67,7 +67,7 @@
 (script_name ((string8 "dbgrpc")))
 (wait ((int32 1000)))
 % (Include "debug-rpc")
-(IncludeAndAssemble "debug-rpc" (code_offset nil) (variable_offset self 32))
+(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset (0 4852 1224)))
 
 (labeldef display_coordinates_bootstrap)
 % (script_name ((string8 "coords")))
