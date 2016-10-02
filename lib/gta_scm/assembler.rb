@@ -117,9 +117,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         end
       end
     end
-    self.include_sizes.each_pair do |file,code_size|
-      puts "#{file}: code = #{code_size}, vars = #{file_vars[file]*4} (#{file_vars[file]})"
-    end
+    # self.include_sizes.each_pair do |file,code_size|
+    #   puts "#{file}: code = #{code_size}, vars = #{file_vars[file]*4} (#{file_vars[file]})"
+    # end
   end
 
   def read_lines_from_input!(scm,main_name,out_path)
