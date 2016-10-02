@@ -197,6 +197,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           GtaScm::Node::Raw.new( [0] * tokens[1][0] )
         when :PadUntil
           zeros = tokens[1][0] - self.nodes.next_offset
+          logger.info "Inserting #{zeros} zeros #{self.nodes.next_offset}"
           GtaScm::Node::Raw.new( [0] * zeros )
         when :Metadata
           logger.info "Metadata node recognised, contents: #{tokens.inspect}"
@@ -254,7 +255,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         node = self.nodes.detect{|node| node.offset == offset}
         case touchup_name
           when :_main_size
-            main_size = self.missions_header.mission_offsets.first
+            main_size = self.main_size
             touchup_value = GtaScm::Types.value2bin( main_size , :int32 ).bytes
             self.missions_header[1][1].replace(touchup_value)
 
@@ -270,6 +271,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           # when :_exclusive_mission_count
           when :_version
           else
+            # logger.error "#{touchup_name}"
             arr = node
             array_keys.each do |array_key|
               # logger.error " arr: #{array_key} #{arr.inspect}"
@@ -415,6 +417,18 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   def missions_header
     self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Missions)}
+  end
+
+  def main_size
+    if self.missions_header
+      self.missions_header.mission_offsets.first
+    else
+      self.nodes.next_offset
+    end
+  end
+
+  def last_header
+    self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Segment6)}
   end
 
 end

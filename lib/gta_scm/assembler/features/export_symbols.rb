@@ -52,7 +52,9 @@ module GtaScm::Assembler::Feature::ExportSymbols
       data = {}
 
       data[:ranges] = {}
+      # data[:ranges][:main] = [0,self.main_size]
       data[:ranges][:variables] = [variables_header.varspace_offset,variables_header.end_offset]
+      data[:ranges][:code_main] = [last_header.end_offset,self.main_size]
 
       data[:variables] = {}
       # self.allocated_vars.each_pair do |var_name,address|

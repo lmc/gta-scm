@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/regions
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/process'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+process.detect_pid_and_attach!
+
+process.rpc(syscall_id,*args)

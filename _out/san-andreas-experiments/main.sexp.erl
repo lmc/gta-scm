@@ -16,7 +16,7 @@
 (set_max_wanted_level ((int8 6)))
 (set_deatharrest_state ((int8 0)))
 
-(set_time_of_day ((int8 22) (int8 0)))
+(set_time_of_day ((int8 10) (int8 0)))
 
 (request_collision ((float32 2485.219970703125) (float32 -1672.9410400390625)))
 (load_scene ((float32 2485.219970703125) (float32 -1672.9410400390625) (float32 13.729999542236328)))
@@ -37,15 +37,17 @@
 (do_fade ((int16 1000) (int8 1)))
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
 (start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
+% (start_new_script ((label sprite_init) (end_var_args)))
+% (start_new_script ((label sprite_view) (end_var_args)))
 % (start_new_script ((label display_gang_zones_bootstrap) (end_var_args)))
 % (start_new_script ((label checkpoint_test_bootstrap) (end_var_args)))
-(start_new_script ((label gimme_car) (end_var_args)))
+% (start_new_script ((label gimme_car) (end_var_args)))
 
 
-(request_model ((int16 413)))
-(load_all_models_now)
-(create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car)))
-(create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car2)))
+% (request_model ((int16 413)))
+% (load_all_models_now)
+% (create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car)))
+% (create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car2)))
 
 
 (labeldef idle_loop)
@@ -71,6 +73,48 @@
 % (script_name ((string8 "chkpnt")))
 % (wait ((int32 1000)))
 % (Include "checkpoint-test")
+
+
+
+
+
+
+% (labeldef sprite_init)
+% (set_var_int   ((var sprites_loaded) (int32 0)))
+% (use_text_commands ((int8 1)))
+
+% (load_texture_dictionary ((string8 "LD_RCE2")))
+% % 01089385 - 8f 03 04 07 0e 06 52 41 43 45 30 36
+% (load_sprite ((int8 7) (vlstring "RACE06")))
+% % 01089397 - 8f 03 04 08 0e 06 52 41 43 45 30 37
+% % (load_sprite ((int8 1) (vlstring "RACE07")))
+% % % 01089409 - 8f 03 04 09 0e 06 52 41 43 45 30 38
+% % (load_sprite ((int8 2) (vlstring "RACE08")))
+% % % 01089421 - 8f 03 04 0a 0e 06 52 41 43 45 30 39
+% % (load_sprite ((int8 3) (vlstring "RACE09")))
+% % % 01089433 - 8f 03 04 0b 0e 06 52 41 43 45 31 30
+% % (load_sprite ((int8 4) (vlstring "RACE10")))
+% % % 01089445 - 8f 03 04 0c 0e 06 52 41 43 45 31 31
+% % (load_sprite ((int8 5) (vlstring "RACE11")))
+% (set_var_int   ((var sprites_loaded) (int32 1)))
+% % (terminate_this_script)
+
+% (wait ((int16 3000)))
+
+
+% (labeldef sprite_view)
+% (wait ((int16 30)))
+% (andor ((int8 0)))
+%   (is_int_var_greater_than_number ((var sprites_loaded) (int32 0)))
+% (goto_if_false ((label sprite_view)))
+
+% (draw_sprite ((int8 7) (float32 160.0) (float32 112.0) (float32 320.0) (float32 224.0) (int16 150) (int16 150) (int16 150) (int16 255)))
+% (goto ((label sprite_view)))
+
+
+
+
+
 
 (labeldef gimme_car)
 

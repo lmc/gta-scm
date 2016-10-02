@@ -22,9 +22,11 @@ if !pid
 end
 
 SYMBOLS_PATH = "symbols.gta-scm-symbols"
-SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
 
-process = Ragweed::Debuggerosx.new(pid)
+require 'gta_scm/process'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+process.detect_pid_and_attach!
 
 args = ARGV.dup
 dir = args[0]
@@ -60,10 +62,13 @@ code = output.read
 
 puts hex( code.bytes )
 
-puts "writing code to #{SAN_ANDREAS_3_0_SCM_ADDRESS + CODE_OFFSET}"
-Ragweed::Wraposx::Libc.vm_write(process.task, SAN_ANDREAS_3_0_SCM_ADDRESS + CODE_OFFSET, code, code.size)
+puts "writing code to #{process.scm_offset + CODE_OFFSET}"
+# Ragweed::Wraposx::Libc.vm_write(process.task, SAN_ANDREAS_3_0_SCM_ADDRESS + CODE_OFFSET, code, code.size)
+process.write(process.scm_offset + CODE_OFFSET, code)
 
 puts "sending RPC to run new thread at #{CODE_OFFSET}"
 
-puts "sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd"
+process.rpc(1,CODE_OFFSET,"injectd")
+
+# puts "sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd"
 # system({"PWD" => ENV["PWD"]} , "PWD=#{ENV["PWD"]} sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd")

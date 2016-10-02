@@ -11,8 +11,10 @@ class GtaScm::Process
   attr_accessor :symbols_label_offsets
   attr_accessor :max_var_offset
 
+  attr_accessor :regions
+
   def initialize()
-     
+     self.regions = {}
   end
 
   def detect_pid!
@@ -44,11 +46,23 @@ class GtaScm::Process
     self.max_var_offset = self.symbols_var_offsets.values.max
 
     self.symbols_label_offsets = symbols["labels"]
+
+    symbols["ranges"].each_pair do |name,(start_offset,end_offset)|
+      self.regions[ Range.new(start_offset,end_offset) ] = name
+    end
   end
 
   def scm_offset
     # SA steam version
     10664568
+  end
+
+  def read(offset,size)
+    Ragweed::Wraposx::vm_read(self.process.task,offset,size)
+  end
+
+  def write(offset,value)
+    Ragweed::Wraposx::Libc.vm_write(self.process.task, offset, value, value.size)
   end
 
   def threads
@@ -124,7 +138,8 @@ class GtaScm::Process
 
     size ||= GtaScm::Types.bytes4type(type)
 
-    bytes = Ragweed::Wraposx::vm_read(process.task,offset,size)
+    # bytes = Ragweed::Wraposx::vm_read(process.task,offset,size)
+    bytes = self.read(offset,size)
 
     value = if type
       GtaScm::Types.bin2value(bytes,type)
@@ -144,7 +159,8 @@ class GtaScm::Process
     value = GtaScm::Types.value2bin(value,type) if !type.nil?
 
     # logger.info "write_variable #{scm_var_offset}, #{value} #{"(#{type} #{value.inspect}" if type}"
-    Ragweed::Wraposx::Libc.vm_write(self.process.task, offset, value, value.size)
+    # Ragweed::Wraposx::Libc.vm_write(self.process.task, offset, value, value.size)
+    self.write(offset,value)
   end
 
   def scm_var_offset_for(variable_name)
