@@ -19,6 +19,11 @@ class GtaScm::Assembler::Base
   attr_accessor :offsets_to_files_lines
   attr_accessor :symbols_name
 
+  attr_accessor :vars_to_use
+  attr_accessor :var_offset
+  attr_accessor :var_size
+
+
   def initialize(input_dir)
     self.input_dir = input_dir
     self.nodes = GtaScm::UnbuiltNodeSet.new
@@ -78,6 +83,7 @@ require 'gta_scm/assembler/feature'
 require 'gta_scm/assembler/features/base'
 require 'gta_scm/assembler/features/dma_variable_checker'
 require 'gta_scm/assembler/features/variable_allocator'
+require 'gta_scm/assembler/features/list_variable_allocator'
 require 'gta_scm/assembler/features/variable_header_allocator'
 require 'gta_scm/assembler/features/cool_output'
 require 'gta_scm/assembler/features/export_symbols'
@@ -93,7 +99,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.define_touchup(:_exclusive_mission_count,0)
     self.define_touchup(:_exclusive_mission_count,0)
 
-    logger.info "Checking variables, #{variables_range.size} bytes allocated at #{variables_range.inspect}"
+    # logger.info "Checking variables, #{variables_range.size} bytes allocated at #{variables_range.inspect}"
 
     self.on_before_touchups()
     install_touchup_values!
@@ -199,12 +205,19 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           # code_end = offset
           # code_end += args[:code_offset][2]
 
-          # vars_begin = offset
-          vars_begin = args[:variable_offset][0] == :self ? offset : args[:variable_offset][0]
-          # debugger
-          # vars_begin = offset
-          vars_begin += args[:variable_offset][1]
-          vars_begin += (vars_begin % 4) # align
+
+          if args[:variable_offset][0].is_a?(String)
+            vars_to_use = File.read(args[:variable_offset][0]).lines.map{|l| l.strip.to_i}
+          else
+            # vars_begin = offset
+            vars_begin = args[:variable_offset][0] == :self ? offset : args[:variable_offset][0]
+            # debugger
+            # vars_begin = offset
+            vars_begin += args[:variable_offset][1]
+            vars_begin += (vars_begin % 4) # align
+
+            max_vars = args[:variable_offset][2] || 1024
+          end
 
           # vars_begin = 10000
 
@@ -213,10 +226,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
           iasm.code_offset = code_begin
+          iasm.vars_to_use = vars_to_use
 
           def iasm.install_features!
             class << self
               include GtaScm::Assembler::Feature::VariableAllocator
+              include GtaScm::Assembler::Feature::ListVariableAllocator
               include GtaScm::Assembler::Feature::VariableHeaderAllocator
               include GtaScm::Assembler::Feature::ExportSymbols
             end
@@ -225,9 +240,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           iasm.symbols_name = "debug-rpc"
           iasm.var_offset = vars_begin
-          def iasm.variables_range
-            (var_offset..(var_offset+1024))
-          end
+          iasm.var_size = max_vars
+          # def iasm.variables_range
+          #   (var_offset..(var_offset+var_size))
+          # end
 
           # debugger
 
@@ -465,8 +481,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Variables)}
   end
 
-  attr_accessor :var_offset
   def variables_range
+    return nil if !variables_header
     (variables_header.varspace_offset)...(variables_header.varspace_offset + variables_header.varspace_size)
   end
 

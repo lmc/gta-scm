@@ -36,7 +36,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
       self.define_touchup(var_name,allocated_offset)
     end
 
-    if allocated_offset
+    if allocated_offset && variables_range
       logger.debug "Last allocated variable at #{allocated_offset}"
       logger.info  "Spare variable space: #{variables_range.end - (allocated_offset + 4) - variables_range.begin} bytes"
       # logger.info "Using jump_touchups_offset: #{self.jump_touchups_offset}"

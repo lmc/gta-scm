@@ -2,26 +2,10 @@
 
 # sudo ./bin/inject_code _out/san-andreas-experiments/ _inject 2000 30000
 
-# can write + execute to anywhere in scm memory (including missions)
-
-# TODO: bundle this up into GtaScm::Process
-
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
   require 'gta_scm'
 end
-
-require 'ragweed'
-require 'ragweed/debuggerosx'
-
-pid = nil
-
-if !pid
-  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
-  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
-end
-
-SYMBOLS_PATH = "symbols.gta-scm-symbols"
 
 require 'gta_scm/process'
 process = GtaScm::Process.new
@@ -39,9 +23,9 @@ puts "ARGV: #{args.inspect}"
 scm = GtaScm::Scm.load_string("san-andreas","")
 scm.load_opcode_definitions!
 
+# hackily tell assembler to assign code/variables at alternate offsets
 asm = GtaScm::Assembler::Sexp.new(dir)
 asm.code_offset = CODE_OFFSET
-
 def asm.install_features!
   class << self
     include GtaScm::Assembler::Feature::VariableAllocator
@@ -49,7 +33,6 @@ def asm.install_features!
   end
   self.on_feature_init()
 end
-
 def asm.variables_range
   (VARS_OFFSET..(VARS_OFFSET+1024))
 end
@@ -61,15 +44,10 @@ output.rewind
 code = output.read
 
 
+# inject code and create thread
 puts hex( code.bytes )
-
 puts "writing code to #{process.scm_offset + CODE_OFFSET}"
-# Ragweed::Wraposx::Libc.vm_write(process.task, SAN_ANDREAS_3_0_SCM_ADDRESS + CODE_OFFSET, code, code.size)
 process.write(process.scm_offset + CODE_OFFSET, code)
 
 puts "sending RPC to run new thread at #{CODE_OFFSET}"
-
 process.rpc(1,CODE_OFFSET,"injectd")
-
-# puts "sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd"
-# system({"PWD" => ENV["PWD"]} , "PWD=#{ENV["PWD"]} sudo bundle exec ./bin/rpc 1 #{CODE_OFFSET} injectd")
