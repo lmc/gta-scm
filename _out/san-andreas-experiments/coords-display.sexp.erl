@@ -26,45 +26,44 @@
 (get_char_heading ((dmavar 12) (var coords_heading_f)))
 (cset_var_int_to_var_float ((var coords_heading_i) (var coords_heading_f)))
 
-(get_char_coordinates ((dmavar 12) (var coords_x) (var coords_y) (var coords_z)))
-(get_char_coordinates ((dmavar 12) (var coords_x_f) (var coords_y_f) (var coords_z_f)))
+(get_char_coordinates ((dmavar 12) (lvar 4 coords_x_f) (lvar 5 coords_y_f) (lvar 6 coords_z_f)))
+
+(get_name_of_zone ((lvar 4 coords_x_f) (lvar 5 coords_y_f) (lvar 6 coords_z_f) (var_string8 coords_zone_s)))
 
 % % 1400.1234 -> 14001234 -> intval(1400)*10000 -> 1400,0000 -> 14001234 - 1400,0000 -> 1234
 
 % % 1400
-(cset_var_int_to_var_float ((var coords_x_i) (var coords_x_f)))
-(cset_var_int_to_var_float ((var coords_y_i) (var coords_y_f)))
-(cset_var_int_to_var_float ((var coords_z_i) (var coords_z_f)))
+% GLOBAL
+(cset_var_int_to_lvar_float ((var coords_x_i) (lvar 4 coords_x_f)))
+(cset_var_int_to_lvar_float ((var coords_y_i) (lvar 5 coords_y_f)))
+(cset_var_int_to_lvar_float ((var coords_z_i) (lvar 6 coords_z_f)))
 
 % % 14001234
-(mult_float_var_by_val ((var coords_x_f) (float32 1000.0)))
-(mult_float_var_by_val ((var coords_y_f) (float32 1000.0)))
-(mult_float_var_by_val ((var coords_z_f) (float32 1000.0)))
+(mult_float_lvar_by_val ((lvar 4 coords_x_f) (float32 1000.0)))
+(mult_float_lvar_by_val ((lvar 5 coords_y_f) (float32 1000.0)))
+(mult_float_lvar_by_val ((lvar 6 coords_z_f) (float32 1000.0)))
 
 % % intval(1400)*1000
-(set_var_int_to_var_int ((var coords_x_frac_i) (var coords_x_i)))
-(set_var_int_to_var_int ((var coords_y_frac_i) (var coords_y_i)))
-(set_var_int_to_var_int ((var coords_z_frac_i) (var coords_z_i)))
-(mult_int_var_by_val ((var coords_x_frac_i) (int16 1000)))
-(mult_int_var_by_val ((var coords_y_frac_i) (int16 1000)))
-(mult_int_var_by_val ((var coords_z_frac_i) (int16 1000)))
+(set_lvar_int_to_var_int ((lvar 7 coords_x_frac_i) (var coords_x_i)))
+(set_lvar_int_to_var_int ((lvar 8 coords_y_frac_i) (var coords_y_i)))
+(set_lvar_int_to_var_int ((lvar 9 coords_z_frac_i) (var coords_z_i)))
+(mult_int_lvar_by_val ((lvar 7 coords_x_frac_i) (int16 1000)))
+(mult_int_lvar_by_val ((lvar 8 coords_y_frac_i) (int16 1000)))
+(mult_int_lvar_by_val ((lvar 9 coords_z_frac_i) (int16 1000)))
 
 % % 14001234 - 1400000 = 1234
-(cset_var_int_to_var_float ((var coords_x_frac_2_i) (var coords_x_f)))
-(cset_var_int_to_var_float ((var coords_y_frac_2_i) (var coords_y_f)))
-(cset_var_int_to_var_float ((var coords_z_frac_2_i) (var coords_z_f)))
-(sub_int_var_from_int_var ((var coords_x_frac_2_i) (var coords_x_frac_i)))
-(sub_int_var_from_int_var ((var coords_y_frac_2_i) (var coords_y_frac_i)))
-(sub_int_var_from_int_var ((var coords_z_frac_2_i) (var coords_z_frac_i)))
+(cset_var_int_to_lvar_float ((var coords_x_frac_2_i) (lvar 4 coords_x_f)))
+(cset_var_int_to_lvar_float ((var coords_y_frac_2_i) (lvar 5 coords_y_f)))
+(cset_var_int_to_lvar_float ((var coords_z_frac_2_i) (lvar 6 coords_z_f)))
+(sub_int_var_from_int_lvar ((var coords_x_frac_2_i) (lvar 7 coords_x_frac_i)))
+(sub_int_var_from_int_lvar ((var coords_y_frac_2_i) (lvar 8 coords_y_frac_i)))
+(sub_int_var_from_int_lvar ((var coords_z_frac_2_i) (lvar 9 coords_z_frac_i)))
 
 % % remove negative signs
+% GLOBAL
 (abs_var_int ((var coords_x_frac_2_i)))
 (abs_var_int ((var coords_y_frac_2_i)))
 (abs_var_int ((var coords_z_frac_2_i)))
-
-(get_name_of_zone ((var coords_x) (var coords_y) (var coords_z) (var_string8 coords_zone_s)))
-% (get_name_of_zone ((var coords_x) (var coords_y) (var coords_z) (dmavar 57096)))
-
 
 (goto ((label display_coordinates_worker_top)))
 

@@ -41,13 +41,18 @@
 (goto_if_false ((label wait_for_initial_missions)))
 
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
-(start_new_script ((label test) (end_var_args)))
+(start_new_script ((label coords_display_bootstrap) (end_var_args)))
+% (start_new_script ((label test) (end_var_args)))
 (terminate_this_script)
 
 (labeldef debug_rpc_bootstrap)
-(wait ((int32 1000)))
+(wait ((int8 0)))
 % (IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset (0 4852 15)))
-(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars")))
+(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars1-16")))
+
+(labeldef coords_display_bootstrap)
+(wait ((int8 0)))
+(IncludeAndAssemble "coords-display" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars2-16")))
 
 (labeldef test)
 (script_name ((string8 "test")))
