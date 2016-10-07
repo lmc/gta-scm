@@ -6,6 +6,8 @@ end
 class GtaScm::Assembler::Base
   attr_accessor :input_dir
 
+  attr_accessor :parent
+
   attr_accessor :parser
   attr_accessor :nodes
 
@@ -225,6 +227,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iscm.load_opcode_definitions!
 
           iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
+          iasm.parent = self
           iasm.code_offset = code_begin
           iasm.vars_to_use = vars_to_use
 

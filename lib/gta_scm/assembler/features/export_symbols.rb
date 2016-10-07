@@ -48,33 +48,38 @@ module GtaScm::Assembler::Feature::ExportSymbols
   end
 
   def export_symbols!
-    File.open("#{self.symbols_name || "symbols"}.gta-scm-symbols","w") do |f|
+    if self.parent
+      self.parent.allocated_vars.merge!(self.allocated_vars)
+      self.parent.dmavar_uses += self.dmavar_uses
 
-      data = {}
-
-      data[:ranges] = {}
-      # data[:ranges][:main] = [0,self.main_size]
-
-      if variables_header
-        data[:ranges][:variables] = [variables_header.varspace_offset,variables_header.end_offset]
-        data[:ranges][:code_main] = [last_header.end_offset,self.main_size]
+      self.label_map.each_pair do |label,offset|
+        self.parent.label_map[label] = offset + self.code_offset
       end
+    else
+      File.open("#{self.symbols_name || "symbols"}.gta-scm-symbols","w") do |f|
+        data = {}
 
-      data[:variables] = {}
-      # self.allocated_vars.each_pair do |var_name,address|
-      #   data[:variables][address] = [var_name
-      # end
-      offset2name = self.allocated_vars.invert
-      self.dmavar_uses.sort.each do |offset|
+        data[:ranges] = {}
+        # data[:ranges][:main] = [0,self.main_size]
 
-        data[:variables][offset] = [ offset2name[offset], self.var_types[offset] ]
+        if variables_header
+          data[:ranges][:variables] = [variables_header.varspace_offset,variables_header.end_offset]
+          data[:ranges][:code_main] = [last_header.end_offset,self.main_size]
+        end
+
+        data[:variables] = {}
+        # self.allocated_vars.each_pair do |var_name,address|
+        #   data[:variables][address] = [var_name
+        # end
+        offset2name = self.allocated_vars.invert
+        self.dmavar_uses.sort.each do |offset|
+          data[:variables][offset] = [ offset2name[offset], self.var_types[offset] ]
+        end
+
+        data[:labels] = self.label_map
+
+        f << data.to_json
       end
-
-      data[:labels] = self.label_map
-
-
-      f << data.to_json
-
     end
   end
 
