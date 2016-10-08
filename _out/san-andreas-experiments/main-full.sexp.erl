@@ -41,7 +41,7 @@
 (goto_if_false ((label wait_for_initial_missions)))
 
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
-% (start_new_script ((label coords_display_bootstrap) (end_var_args)))
+(start_new_script ((label coords_display_bootstrap) (end_var_args)))
 % (start_new_script ((label test) (end_var_args)))
 (terminate_this_script)
 

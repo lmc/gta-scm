@@ -13,7 +13,7 @@
 (request_model ((var inject_car_id)))
 (load_all_models_now)
 
-% (custom_plate_for_next_car ((var inject_car_id) (vlstring "__SWAG__")))
+(custom_plate_for_next_car ((var inject_car_id) (vlstring "__SWAG__")))
 (create_car ((var inject_car_id) (var inject_x1) (var inject_y1) (var inject_z1) (var test_car)))
 (set_car_heading ((var test_car) (var inject_h1)))
 
