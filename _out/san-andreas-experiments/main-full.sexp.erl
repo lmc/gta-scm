@@ -42,6 +42,19 @@
 
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
 (start_new_script ((label coords_display_bootstrap) (end_var_args)))
+
+% first horseshoe: 11528 /4= 2882
+% first snapshot : 11728 /4= 2932
+%  last snapshot : 11924 /4= 2981
+%  last oyster   : 12124 /4= 3031
+(terminate_all_scripts_with_this_name ((string8 "zfndcol")))
+% horseshoes
+% (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2882) (int16 2931) (int8 1) (int32 -1) (end_var_args)))
+% snapshots
+(start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (end_var_args)))
+% oysters
+% (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (end_var_args)))
+
 % (start_new_script ((label test) (end_var_args)))
 (terminate_this_script)
 
@@ -53,6 +66,9 @@
 (labeldef coords_display_bootstrap)
 (wait ((int8 0)))
 (IncludeAndAssemble "coords-display" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars2-16")))
+
+(labeldef blip_nearest_snapshot_boostrap)
+(IncludeAndAssemble "blip-nearest-snapshot" (code_offset (nil 0 1024)) (variable_offset (0 4852 15)))
 
 (labeldef test)
 (script_name ((string8 "test")))
