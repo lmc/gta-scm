@@ -51,7 +51,7 @@
 % horseshoes
 % (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2882) (int16 2931) (int8 1) (int32 -1) (end_var_args)))
 % snapshots
-(start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (end_var_args)))
+(start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
 % oysters
 % (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (end_var_args)))
 
@@ -71,6 +71,9 @@
 (IncludeAndAssemble "blip-nearest-snapshot" (code_offset (nil 0 1024)) (variable_offset (0 4852 15)))
 
 (labeldef test)
+(start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+(terminate_this_script)
+
 (script_name ((string8 "test")))
 (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
 (wait ((int16 50)))
