@@ -5,6 +5,11 @@
 %  last snapshot : 11924 /4= 2981
 %  last oyster   : 12124 /4= 3031
 
+% search through all pickups
+% note down elgible pickup with shortest distance
+
+% create blip at nearest pickup
+
 
 (set_lvar_int   ((lvar 0  first_pickup) (int16 2932)    ))
 (set_lvar_int   ((lvar 1   last_pickup) (int16 2981)    ))
@@ -28,7 +33,7 @@
 (set_lvar_float ((lvar 16 distance)    (float32 0)      ))
 
 (set_lvar_int   ((lvar 17 closest_pickup) (int32 0)     ))
-(set_lvar_float ((lvar 18 closest_distance) (float32 0)      ))
+(set_lvar_float ((lvar 18 closest_distance) (float32 10000) ))
 
 
 (set_char_coordinates ((dmavar 12) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
@@ -36,7 +41,12 @@
 (set_time_of_day ((int8 22) (int8 0)))
 
 
+(labeldef begin_pickup_scan)
 
+(clear_wanted_level ((dmavar 8)))
+
+(set_lvar_int   ((lvar 17 closest_pickup) (int32 0)     ))
+(set_lvar_float ((lvar 18 closest_distance) (float32 10000) ))
 (set_var_int_to_lvar_int ((dmavar 7144) (lvar 0 first_pickup)))
 
 (labeldef loop_without_increment)
@@ -44,52 +54,77 @@
 (wait ((int8 50)))
 
 (andor ((int8 0)))
-(is_player_playing ((dmavar 8)))
+  (is_player_playing ((dmavar 8)))
 (goto_if_false ((label loop_without_increment)))
-
-(clear_wanted_level ((dmavar 8)))
 
 (get_char_coordinates ((dmavar 12) (lvar 13 x2) (lvar 14 y2) (lvar 15 z2)))
 
-
 (andor ((int8 0)))
-(is_int_var_greater_than_int_lvar ((dmavar 7144) (lvar 1 last_pickup)))
+  (is_int_var_greater_than_int_lvar ((dmavar 7144) (lvar 1 last_pickup)))
 (goto_if_false ((label post_reset_index)))
-
-(set_var_int_to_lvar_int ((dmavar 7144) (lvar 0 first_pickup)))
-
+  % (set_var_int_to_lvar_int ((dmavar 7144) (lvar 0 first_pickup)))
+  (goto ((label end_pickup_scan)))
+  % TODO: jump to end of scan
 (labeldef post_reset_index)
-
-
-
 
 (get_pickup_coordinates ((var_array 0 7144 4 (1 t)) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
 
-(remove_blip ((lvar 9 blip)))
-
 % detect if snapshot has been taken (no pickup at coords = snapshot taken)
 (andor ((int8 0)))
-(is_any_pickup_at_coords ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+  (is_any_pickup_at_coords ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
 (goto_if_false ((label loop_with_increment)))
 
 % handle horseshoe/oyster pickups
 (andor ((int8 0)))
-(not_has_pickup_been_collected ((var_array 0 7144 4 (1 t))))
+  (not_has_pickup_been_collected ((var_array 0 7144 4 (1 t))))
 (goto_if_false ((label loop_with_increment)))
-
 
 (get_distance_between_coords_2d ((lvar 13 x2) (lvar 14 y2) (lvar 10 x1) (lvar 11 y1) (lvar 16 distance)))
 
-
-% distance = 150, radius = 200, radius > distance = true
-% distance = 150, radius = 200, distance > radius = false
 (andor ((int8 0)))
-(is_float_lvar_greater_than_float_lvar ((lvar 2 radius) (lvar 16 distance)))
-(goto_if_false ((label loop_with_increment)))
+  % closest_distance > distance
+  % 10000 > 300 = true
+  %   300 > 160 = true
+  %   160 > 300 = false
+  (is_float_lvar_greater_than_float_lvar ((lvar 18 closest_distance) (lvar 16 distance)))
+(goto_if_false ((label further_than_closest)))
 
-(add_blip_for_coord ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1) (lvar 9 blip)))
+(set_lvar_int_to_var_int ((lvar 17 closest_pickup) (dmavar 7144)))
+(set_lvar_float_to_lvar_float ((lvar 18 closest_distance) (lvar 16 distance)))
+
+(labeldef further_than_closest)
+(goto ((label loop_with_increment)))
+
+(labeldef loop_with_increment)
 (goto ((label loop_without_increment)))
 
 (labeldef loop_with_increment)
 (add_val_to_int_var ((dmavar 7144) (int8 1)))
 (goto ((label loop_without_increment)))
+
+
+
+(labeldef end_pickup_scan)
+
+(remove_blip ((lvar 9 blip)))
+
+(andor ((int8 0)))
+  (is_int_lvar_greater_than_number ((lvar 17 closest_pickup) (int8 0)))
+(goto_if_false ((label begin_pickup_scan)))
+
+(set_var_int_to_lvar_int ((dmavar 7144) (lvar 17 closest_pickup)))
+(get_pickup_coordinates ((var_array 0 7144 4 (1 t)) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+
+% detect if snapshot has been taken (no pickup at coords = snapshot taken)
+(andor ((int8 0)))
+  (is_any_pickup_at_coords ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+(goto_if_false ((label begin_pickup_scan)))
+
+% handle horseshoe/oyster pickups
+(andor ((int8 0)))
+  (not_has_pickup_been_collected ((var_array 0 7144 4 (1 t))))
+(goto_if_false ((label begin_pickup_scan)))
+
+(add_blip_for_coord ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1) (lvar 9 blip)))
+
+(goto ((label begin_pickup_scan)))
