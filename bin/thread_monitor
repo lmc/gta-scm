@@ -1,0 +1,141 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/thread_monitor [thread name] [lvar types...]
+# sudo ./bin/thread_monitor 
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+
+process.detect_pid_and_attach!
+
+name = nil
+types = [:int] * 32
+
+ARGV.each_with_index do |val,i|
+  if i == 0
+    name = val
+  else
+    lvar,type = val.split(":")
+    types[lvar.to_i] = type.to_sym
+  end
+end
+
+# process.threads.each_with_index do |thread,thread_id|
+#   if thread.active? && thread.pc > 0
+#     puts "#{thread_id}: #{thread.active? ? "o" : "-"} #{thread.name.ljust(8," ")} PC=#{thread.pc - process.scm_offset} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
+#   end
+# end
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+
+
+screen = RuTui::Screen.new
+
+box = RuTui::Box.new({ :x => 0, :y => 6, :width => 121, :height => 14 })
+text = RuTui::Text.new( :x => 3, :y => 7, :text => "Local variables - (q) next lvar - (a) prev lvar - (i) set int - (f) set float" )
+screen.add_static(box)
+screen.add_static(text)
+
+box = RuTui::Box.new({ :x => 0, :y => 0, :width => 60, :height => 6 })
+text = RuTui::Text.new( :x => 3, :y => 1, :text => "Thread" )
+screen.add_static(box)
+screen.add_static(text)
+
+locals = []
+4.times do |i|
+  locals[i] = RuTui::Table.new({
+    :x => 1 +(i * 30),
+    :y  => 8,
+    :table => [["","",""]],
+    :cols => [
+      { title: "#", length: 2 },
+      { title: "Type", length: 7 },
+      { title: "Value",   length: 10 },
+    ],
+    :header => true,
+  })
+  screen.add(locals[i])
+end
+
+selected_lvar = -1
+
+RuTui::ScreenManager.add :default, screen
+# RuTui::ScreenManager.loop({ autodraw: true }) do |key|
+
+thr = ::Thread.new do
+  loop do
+  thread = process.threads.detect{|t| t.name == "wfndcol"}
+
+  lvars_int   = thread.local_variables_ints
+  lvars_float = thread.local_variables_floats
+
+  vars_each = 8
+  locals.each_with_index do |table,i|
+    range = ( (i * vars_each) ... ((i + 1) * vars_each) )
+    data = vars_each.times.map do |ii|
+      ii += (vars_each * i)
+      case types[ii]
+      when :int
+        [ii.to_s,"int32",lvars_int[ii].to_s ]
+      when :float
+        [ii.to_s,"float32",lvars_float[ii].round(3).to_s ]
+      end
+    end
+    table.clear_highlight!
+    if range.include?(selected_lvar)
+      table.highlight( selected_lvar - range.begin )
+    end
+    table.set_table(data)
+  end
+
+  RuTui::ScreenManager.draw
+  `stty -echo`
+  # key = gets
+  sleep 0.2
+end
+end
+
+thr2 = ::Thread.new do
+loop do |key|
+  # print "\n\n"
+  key = nil
+  key = RuTui::Input.getc
+  # `stty -echo`
+  # key = gets
+  # sleep 0.1
+
+  # break if key == "q" or key == :ctrl_c # CTRL+C
+  break if key == :ctrl_c # CTRL+C
+  
+  if key == "q"
+    selected_lvar -= 1
+    selected_lvar = 0 if selected_lvar < 0
+  end
+  
+  if key == "a"
+    selected_lvar += 1
+    selected_lvar = 31 if selected_lvar > 31
+  end
+
+  if key == "i"
+    types[ selected_lvar ] = :int
+  end
+  if key == "f"
+    types[ selected_lvar ] = :float
+  end
+
+end
+end
+
+# thr.join
+thr2.join
+
+print RuTui::Ansi.clear_color + RuTui::Ansi.clear

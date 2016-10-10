@@ -353,13 +353,13 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
   end
 
   def local_variables_ints
-    self[9].in_groups_of(4).map do |bytes|
+    self[7].in_groups_of(4).map do |bytes|
       GtaScm::Types.bin2value(bytes.map(&:chr).join,:int32)
     end
   end
 
   def local_variables_floats
-    self[9].in_groups_of(4).map do |bytes|
+    self[7].in_groups_of(4).map do |bytes|
       GtaScm::Types.bin2value(bytes.map(&:chr).join,:float32)
     end
   end

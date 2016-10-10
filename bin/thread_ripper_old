@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+
+# ./bin/thread_ripper
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/thread'
+
+require 'ragweed'
+require 'ragweed/debuggerosx'
+
+SAN_ANDREAS_3_0_SCM_ADDRESS = 10664568
+
+# THREAD_CONTROL_BLOCK_ADDRESS = 8252624
+# THREAD_CONTROL_BLOCK_ADDRESS = 10954856 + 224
+
+# THREAD_CONTROL_BLOCK_ADDRESS = 11056176
+#                                - 122600
+THREAD_CONTROL_BLOCK_ADDRESS = 10933576
+
+# THREAD_SIZE = 136
+THREAD_SIZE = 224
+MAX_THREADS = 96
+
+pid = nil
+
+if !pid
+  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+end
+
+process = Ragweed::Debuggerosx.new(pid)
+
+Ragweed::Wraposx::task_suspend(process.task)
+start = THREAD_CONTROL_BLOCK_ADDRESS
+# start -= (MAX_THREADS * THREAD_SIZE)
+stop = start + (THREAD_SIZE * MAX_THREADS)
+addr = start
+thread_id = 0
+
+  bytes = Ragweed::Wraposx::vm_read(process.task,addr-4,4)
+  puts GtaScm::Types.bin2value(GtaScm::Node::Raw.new(bytes.bytes),:int32)
+  bytes = Ragweed::Wraposx::vm_read(process.task,addr-8,4)
+  puts GtaScm::Types.bin2value(GtaScm::Node::Raw.new(bytes.bytes),:int32)
+
+# 10952840
+# 10953960
+
+while addr < stop
+  bytes = Ragweed::Wraposx::vm_read(process.task,addr,THREAD_SIZE)
+  bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
+  thread = GtaScm::ThreadSa.new
+  thread.offset = addr
+  # debugger
+  thread.eat!( bytes )
+  # debugger
+
+  if thread.active? && thread.pc > 0
+    puts "#{thread_id}: #{thread.active? ? "o" : "-"} #{thread.name.ljust(8," ")} PC=#{thread.pc - SAN_ANDREAS_3_0_SCM_ADDRESS} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
+    # puts "#{thread_id}: #{thread.name} PC=#{thread.pc} WAKE=#{thread.wake_time} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
+    # puts thread.inspect
+    # puts "#{thread_id}: #{thread.name} PC=#{thread.pc} STACK=#{thread.return_stack.reject(&:zero?)} WAKE=#{thread.wake_time}"
+    # puts "  stack_counter=#{thread.stack_counter} return_stack=#{thread.return_stack.inspect}"
+    # puts "  local_variables_ints=#{thread.local_variables_ints.inspect}"
+    # puts "  local_variables_floats=#{thread.local_variables_floats.inspect}"
+    # puts "  #{thread.bytes.inspect}"
+    # puts ""
+  end
+
+  thread_id += 1
+  addr += THREAD_SIZE
+end
+Ragweed::Wraposx::task_resume(process.task)
+

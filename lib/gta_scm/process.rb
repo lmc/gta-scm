@@ -65,6 +65,19 @@ class GtaScm::Process
     10664568
   end
 
+  def thread_control_block_offset
+    # SA steam version
+    10933576
+  end
+
+  def thread_size
+    224
+  end
+
+  def thread_max
+    96
+  end
+
   def read(offset,size)
     Ragweed::Wraposx::vm_read(self.process.task,offset,size)
   end
@@ -74,7 +87,21 @@ class GtaScm::Process
   end
 
   def threads
-    
+    threads = []
+    start = self.thread_control_block_offset
+    stop = start + (self.thread_size * self.thread_max)
+    addr = start
+    while addr < stop
+      bytes = Ragweed::Wraposx::vm_read(process.task,addr,self.thread_size)
+      bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
+      thread = GtaScm::ThreadSa.new
+      thread.thread_id = threads.size
+      thread.offset = addr
+      thread.eat!( bytes )
+      threads << thread
+      addr += self.thread_size
+    end
+    threads
   end
 
   def thread(thread_id)
