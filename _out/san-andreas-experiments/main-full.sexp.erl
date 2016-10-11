@@ -55,7 +55,7 @@
 % oysters
 % (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (end_var_args)))
 
-% (start_new_script ((label test) (end_var_args)))
+(start_new_script ((label test) (end_var_args)))
 (terminate_this_script)
 
 (labeldef debug_rpc_bootstrap)
@@ -72,6 +72,17 @@
 
 (labeldef test)
 (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+(wait ((int16 5000)))
+(add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
+(set_lvar_float ((lvar 10 x1)          (float32 -1528)  ))
+(set_lvar_float ((lvar 11 y1)          (float32 970)    ))
+(set_lvar_float ((lvar 12 z1)          (float32 7.2)     ))
+(set_char_coordinates ((dmavar 12) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+(set_time_of_day ((int8 15) (int8 0)))
+(labeldef testloop)
+(wait ((int8 0)))
+(clear_wanted_level ((dmavar 8)))
+(goto ((label testloop)))
 (terminate_this_script)
 
 (script_name ((string8 "test")))
