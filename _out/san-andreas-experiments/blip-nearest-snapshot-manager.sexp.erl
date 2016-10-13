@@ -1,3 +1,5 @@
+% IDEA: can this be attached to an object with an external script ? would save MAIN space
+
 (script_name ((string8 "bnsm")))
 % script for:
 
@@ -16,6 +18,8 @@
 (set_lvar_float ((lvar 4 h) (float32 120)))
 (set_lvar_float ((lvar 5 r) (float32 10)))
 
+(set_lvar_int ((lvar 23 current_time) (int8 0)))
+(set_lvar_int ((lvar 24 char_respawn_time) (int8 0)))
 (set_lvar_int ((lvar 25 prop) (int8 0)))
 (set_lvar_int ((lvar 26 char) (int8 0)))
 (set_lvar_float ((lvar 27 distance) (float32 0)))
@@ -69,16 +73,30 @@
     (set_object_heading ((lvar 25 prop) (lvar 4 h)))
     % HACK: reuse px/py/pz
     (get_offset_from_object_in_world_coords ((lvar 25 prop) (float32 0.0) (float32 1.5) (float32 0.0) (lvar 28 px) (lvar 29 py) (lvar 30 pz)))
-    (create_char ((int8 26) (int16 214) (lvar 28 px) (lvar 29 py) (lvar 30 pz) (lvar 26 char)))
-    (set_char_heading ((lvar 26 char) (lvar 4 h)))
+
+    (get_game_timer ((lvar 23 current_time)))
+    (andor ((int8 0)))
+      (is_int_lvar_greater_than_int_lvar ((lvar 23 current_time) (lvar 24 char_respawn_time)))
+    (goto_if_false ((label state_0_handler_mid_0)))
+
+      (create_char ((int8 26) (int16 214) (lvar 28 px) (lvar 29 py) (lvar 30 pz) (lvar 26 char)))
+      (set_char_heading ((lvar 26 char) (lvar 4 h)))
+      (set_lvar_int ((lvar 24 char_respawn_time) (int8 0)))
+
+    (labeldef state_0_handler_mid_0)
+
     (set_lvar_int ((lvar 31 state) (int8 2)))
   (labeldef state_1_handler_end_1)
   (goto ((label bnsm_main_loop)))
 (labeldef state_1_handler_end)
 
-(andor ((int8 0)))
+% handle states 2/3/4
+(andor ((int8 22)))
   (is_int_lvar_equal_to_number ((lvar 31 state) (int8 2)))
+  (is_int_lvar_equal_to_number ((lvar 31 state) (int8 3)))
+  (is_int_lvar_equal_to_number ((lvar 31 state) (int8 4)))
 (goto_if_false ((label state_2_handler_end)))
+
   % state 2 - has player left load radius?
   (andor ((int8 0)))
     (not_is_float_lvar_greater_than_float_lvar ((lvar 5 r) (lvar 27 distance)))
@@ -87,6 +105,19 @@
     (set_lvar_int ((lvar 31 state) (int8 5)))
     (goto ((label bnsm_main_loop)))
   (labeldef state_2_handler_end_1)
+
+  (andor ((int8 1)))
+    (is_char_dead ((lvar 26 char)))
+    (not_is_int_lvar_equal_to_number ((lvar 31 state) (int8 3)))
+  (goto_if_false ((label state_2_handler_end_4)))
+    (andor ((int8 0)))
+      (is_int_lvar_equal_to_number ((lvar 24 char_respawn_time) (int8 0)))
+    (goto_if_false ((label state_2_handler_mid_0)))
+      (get_game_timer ((lvar 24 char_respawn_time)))
+      (add_val_to_int_lvar ((lvar 24 char_respawn_time) (int16 10000)))
+    (labeldef state_2_handler_mid_0)
+    (set_lvar_int ((lvar 31 state) (int8 3)))
+  (labeldef state_2_handler_end_4)
 
   % state 2 - close enough to show help?
   (andor ((int8 0)))
