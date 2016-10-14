@@ -3,6 +3,8 @@
 # sudo ./bin/thread_monitor [thread name] [lvar types...]
 # sudo ./bin/thread_monitor 
 
+# portrait terminal = ~50 cols, 60 rows
+
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
   require 'gta_scm'
@@ -36,106 +38,310 @@ end
 require 'rutui'
 require 'gta_scm/rutui_ext'
 
+# RuTui::Theme.use :basic
+
+# NEXT:
+# scroll through list of threads
+# global variable viewer/editor
+# injector/region mapper
 
 screen = RuTui::Screen.new
 
-box = RuTui::Box.new({ :x => 0, :y => 6, :width => 121, :height => 14 })
-text = RuTui::Text.new( :x => 3, :y => 7, :text => "Local variables - (q) next lvar - (a) prev lvar - (i) set int - (f) set float" )
-screen.add_static(box)
-screen.add_static(text)
+LEFT_COL = 2
+RIGHT_COL = 14
 
-box = RuTui::Box.new({ :x => 0, :y => 0, :width => 60, :height => 6 })
-text = RuTui::Text.new( :x => 3, :y => 1, :text => "Thread" )
-screen.add_static(box)
-screen.add_static(text)
+texts = {}
+row = 0
 
-locals = []
-4.times do |i|
-  locals[i] = RuTui::Table.new({
-    :x => 1 +(i * 30),
-    :y  => 8,
-    :table => [["","",""]],
-    :cols => [
-      { title: "#", length: 2 },
-      { title: "Type", length: 7 },
-      { title: "Value",   length: 10 },
-    ],
-    :header => true,
-  })
-  screen.add(locals[i])
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Thread"))
+row += 1
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "q/a: prev/next"))
+row += 1
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Index:"))
+texts[:thread_id] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:thread_id])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Name:"))
+texts[:name] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:name])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Base PC:"))
+texts[:base_pc] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:base_pc])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "PC:"))
+texts[:scm_pc] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:scm_pc])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Wake:"))
+texts[:wake_time] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:wake_time])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Active:"))
+texts[:active] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:active])
+row += 1
+
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "TimerA:"))
+texts[:timer_a] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:timer_a])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "TimerB:"))
+texts[:timer_b] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:timer_b])
+row += 1
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Stack:"))
+# texts[:stack_counter] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+# screen.add(texts[:stack_counter])
+# row += 1
+0.upto(7) do |i|
+  texts[:"stack_#{i}"] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+  screen.add(texts[:"stack_#{i}"])
+  row += 1
 end
+row += 1
 
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Branch:"))
+texts[:branch_result] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:branch_result])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Branch2:"))
+texts[:branch_result2] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:branch_result2])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Mission:"))
+texts[:is_mission] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:is_mission])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "External:"))
+texts[:is_external] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:is_external])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Not:"))
+texts[:not_flag] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:not_flag])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "DA State:"))
+texts[:death_arrest_state] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:death_arrest_state])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "DA Exec?:"))
+texts[:death_arrest_executed] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:death_arrest_executed])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Skip PC:"))
+texts[:scene_skip_pc] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:scene_skip_pc])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "MisFlag:"))
+texts[:mission_flag] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:mission_flag])
+row += 1
+
+row += 1
+
+
+# screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Unknown1:"))
+# texts[:unknown1] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+# screen.add(texts[:unknown1])
+# row += 1
+
+# screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Unknown2:"))
+# texts[:unknown2] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+# screen.add(texts[:unknown2])
+# row += 1
+# row += 1
+
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Offset:"))
+texts[:offset] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:offset])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "PrevOffset:"))
+texts[:prev_thread_pointer] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:prev_thread_pointer])
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "NextOffset:"))
+texts[:next_thread_pointer] = RuTui::Text.new(x: RIGHT_COL, y: row, text: "")
+screen.add(texts[:next_thread_pointer])
+row += 1
+
+
+screen.add_static(RuTui::Text.new(x: 24, y: 0, text: "Local variables"))
+screen.add_static(RuTui::Text.new(x: 24, y: 1, text: "w/s: up/down, f/i: type"))
+
+ref = RuTui::Theme.get(:border)
+pixel_vert = RuTui::Pixel.new(ref.fg,ref.bg,"|")
+pixel_end = RuTui::Pixel.new(ref.fg,ref.bg,"+")
+
+screen.add_static(RuTui::Line.new(x: 0, y: 2, length: 50))
+screen.add_static(RuTui::Line.new(x: 0, y: 35, length: 50, endpixel: pixel_end))
+screen.add_static(RuTui::Line.new(x: 0, y: 2, length: 33, direction: :vertical, pixel: pixel_vert, endpixel: pixel_end))
+
+row += 1
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Global variables:"))
+
+row += 5
+row += 1
+
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row, text: "Regions:"))
+screen.add_static(RuTui::Text.new(x: LEFT_COL, y: row+1, text: "p/l: up/down, o: kill threads, i: inject code"))
+
+locals = RuTui::Table.new({
+  x: 24,
+  y: 2,
+  table: [["","",""]],
+  cols: [
+    { title: "", length: 2 },
+    { title: "", length: 3 },
+    { title: "", length: 11 },
+  ],
+  header: false,
+  hover: 4
+})
+screen.add(locals)
+
+regions_table = RuTui::Table.new({
+  x: 0,
+  y: 45,
+  table: [["","","",""]],
+  cols: [
+    { title: "Begin", length: 6 },
+    { title: "Size", length: 6 },
+    { title: "#", length: 1 },
+    { title: "Filename", length: 24 },
+  ],
+  header: true,
+  hover: 4
+})
+screen.add(regions_table)
+
+
+current_thread = process.threads.detect{|t| t.name == "bnsm"}.andand.thread_id || process.threads.last.thread_id
+selected_screen = :default
 selected_lvar = -1
+regions = []
+
+regions << { begin: 197_000, end: 200_000, filename: "blip-nearest-snapshot-manager" }
+process.regions.each_pair do |range,range_name|
+  regions << { begin: range.begin, end: range.end, filename: range_name }
+end
+# regions << { begin: 194269 , end: 194766, filename: "debug-rpc" }
+# regions << { begin: 194766 , end: 195601, filename: "coords-display" }
+# regions << { begin: 195601 , end: 196187, filename: "blip-nearest-snapshot" }
+# regions << { begin: 196_500 , end: 200_000, filename: "blip-nearest-snapshot-manager" }
+
+
 
 RuTui::ScreenManager.add :default, screen
-# RuTui::ScreenManager.loop({ autodraw: true }) do |key|
 
 thr = ::Thread.new do
   loop do
-  thread = process.threads.detect{|t| t.name == "wfndcol"}
+    begin
+      thread = process.threads[current_thread]
 
-  lvars_int   = thread.local_variables_ints
-  lvars_float = thread.local_variables_floats
+      lvars_int   = thread.local_variables_ints
+      lvars_float = thread.local_variables_floats
 
-  vars_each = 8
-  locals.each_with_index do |table,i|
-    range = ( (i * vars_each) ... ((i + 1) * vars_each) )
-    data = vars_each.times.map do |ii|
-      ii += (vars_each * i)
-      case types[ii]
-      when :int
-        [ii.to_s,"int32",lvars_int[ii].to_s ]
-      when :float
-        [ii.to_s,"float32",lvars_float[ii].round(3).to_s ]
+      vars_each = 32
+      i = 0
+      range = ( (i * vars_each) ... ((i + 1) * vars_each) )
+      data = vars_each.times.map do |ii|
+        ii += (vars_each * i)
+        case types[ii]
+        when :int
+          [ii.to_s,"int",lvars_int[ii].to_s ]
+        when :float
+          [ii.to_s,"flt",lvars_float[ii].round(3).to_s ]
+        end
       end
-    end
-    table.clear_highlight!
-    if range.include?(selected_lvar)
-      table.highlight( selected_lvar - range.begin )
-    end
-    table.set_table(data)
-  end
+      locals.clear_highlight!
+      locals.highlight( selected_lvar )
+      locals.set_table(data)
 
-  RuTui::ScreenManager.draw
-  `stty -echo`
-  # key = gets
-  sleep 0.2
-end
+      texts.each_pair do |name,text|
+        text.set_text( thread.send(name).to_s )
+      end
+
+      data = regions.map do |region|
+        thread_count = process.threads.select{|t| t.active? && Range.new(region[:begin],region[:end],false).include?(t.scm_pc) }.size
+        # region.values_at(:begin,:end,:name) + ["?","?"]
+        [region[:begin],(region[:end]-region[:begin]),"#{thread_count}",region[:filename]]
+      end
+      regions_table.set_table(data)
+
+      RuTui::ScreenManager.draw
+      `stty -echo`
+    rescue
+
+    ensure
+      sleep 0.05
+    end
+  end
 end
 
 thr2 = ::Thread.new do
-loop do |key|
-  # print "\n\n"
-  key = nil
-  key = RuTui::Input.getc
-  # `stty -echo`
-  # key = gets
-  # sleep 0.1
+  loop do |key|
+    key = RuTui::Input.getc
 
-  # break if key == "q" or key == :ctrl_c # CTRL+C
-  break if key == :ctrl_c # CTRL+C
-  
-  if key == "q"
-    selected_lvar -= 1
-    selected_lvar = 0 if selected_lvar < 0
-  end
-  
-  if key == "a"
-    selected_lvar += 1
-    selected_lvar = 31 if selected_lvar > 31
-  end
+    break if key == :ctrl_c # CTRL+C
 
-  if key == "i"
-    types[ selected_lvar ] = :int
-  end
-  if key == "f"
-    types[ selected_lvar ] = :float
-  end
+    if key == "q"
+      current_thread -= 1
+      current_thread = 0 if current_thread < 0
+    end
+    
+    if key == "a"
+      current_thread += 1
+      current_thread = 95 if selected_lvar > 95
+    end
+    
+    if key == "w"
+      selected_lvar -= 1
+      selected_lvar = 0 if selected_lvar < 0
+    end
+    
+    if key == "s"
+      selected_lvar += 1
+      selected_lvar = 31 if selected_lvar > 31
+    end
 
+    if key == "i"
+      types[ selected_lvar ] = :int
+    end
+    if key == "f"
+      types[ selected_lvar ] = :float
+    end
+
+  end
 end
-end
 
-# thr.join
+thr.join
 thr2.join
 
 print RuTui::Ansi.clear_color + RuTui::Ansi.clear

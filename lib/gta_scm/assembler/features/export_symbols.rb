@@ -5,9 +5,11 @@ module GtaScm::Assembler::Feature::ExportSymbols
     class << self
       attr_accessor :var_types
       attr_accessor :label_map
+      attr_accessor :includes
     end
     self.var_types = Hash.new
     self.label_map = Hash.new
+    self.includes = Array.new
   end
 
   def on_complete
@@ -47,6 +49,12 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
   end
 
+  def on_include(offset,node,tokens)
+    super
+
+    self.includes << { offset: offset, node: node, tokens: tokens }
+  end
+
   def export_symbols!
     if self.parent
       self.parent.allocated_vars.merge!(self.allocated_vars)
@@ -61,6 +69,10 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
         data[:ranges] = {}
         # data[:ranges][:main] = [0,self.main_size]
+
+        self.includes.each do |inc|
+          data[:ranges][inc[:tokens][1]] = [inc[:offset],inc[:offset]+inc[:node].size]
+        end
 
         if variables_header
           data[:ranges][:variables] = [variables_header.varspace_offset,variables_header.end_offset]

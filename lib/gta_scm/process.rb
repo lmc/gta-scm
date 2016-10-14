@@ -95,6 +95,7 @@ class GtaScm::Process
       bytes = Ragweed::Wraposx::vm_read(process.task,addr,self.thread_size)
       bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
       thread = GtaScm::ThreadSa.new
+      thread.scm_offset = self.scm_offset
       thread.thread_id = threads.size
       thread.offset = addr
       thread.eat!( bytes )

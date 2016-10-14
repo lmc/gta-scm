@@ -67,6 +67,10 @@ class GtaScm::Assembler::Base
     
   end
 
+  def on_include(offset,node,tokens)
+    
+  end
+
   def on_labeldef(label,offset)
     
   end
@@ -256,7 +260,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           output.rewind
           code = output.read
 
-          GtaScm::Node::Raw.new( code.bytes )
+          n = GtaScm::Node::Raw.new( code.bytes )
+          self.on_include(offset,n,tokens)
+          n
 
         when :Rawhex
           GtaScm::Node::Raw.new( tokens[1].map{|hex| hex.to_s.to_i(16) } ).tap do |node|

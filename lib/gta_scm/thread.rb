@@ -176,6 +176,7 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
 
   attr_accessor :thread_id
   attr_accessor :offset
+  attr_accessor :scm_offset
 
   def eat!(bytes)
     # prev thread pointer
@@ -334,12 +335,20 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
 
   def pc
     val = GtaScm::Types.bin2value(self[4],:int32)
-
     val
   end
   def pc=(val)
     val = GtaScm::Types.value2bin(val,:int32)
     self[4] = GtaScm::Node::Raw.new(val.bytes)
+  end
+
+  def scm_pc
+    self.pc - self.scm_offset
+  end
+
+  def base_pc
+    val = GtaScm::Types.bin2value(self[3],:int32)
+    val
   end
 
   def stack_counter
@@ -364,12 +373,73 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     end
   end
 
+  def timer_a
+    GtaScm::Types.bin2value(self[8],:int32)
+  end
+
+  def timer_b
+    GtaScm::Types.bin2value(self[9],:int32)
+  end
+
   def wake_time
     GtaScm::Types.bin2value(self[16],:int32)
   end
   def wake_time=(val)
     val = GtaScm::Types.value2bin(val,:int32)
     self[16] = GtaScm::Node::Raw.new(val.bytes)
+  end
+
+  def branch_result
+    self[11][0]
+  end
+
+  def is_mission
+    self[12][0]
+  end
+
+  def is_external
+    self[13][0]
+  end
+
+  def branch_result2
+    GtaScm::Types.bin2value(self[17],:int16)
+  end
+
+  def not_flag
+    self[18][0]
+  end
+
+  def death_arrest_state
+    self[19][0]
+  end
+  def death_arrest_executed
+    GtaScm::Types.bin2value(self[20],:int32)
+  end
+
+  def scene_skip_pc
+    GtaScm::Types.bin2value(self[21],:int32)
+  end
+
+  def mission_flag
+    GtaScm::Types.bin2value(self[22],:int32)
+  end
+
+  def unknown1
+    GtaScm::Types.bin2value(self[14],:int16)
+  end
+
+  def unknown2
+    GtaScm::Types.bin2value(self[15],:int16)
+  end
+
+  0.upto(7) do |i|
+    define_method(:"stack_#{i}") do
+      if return_stack[i] == 0 || stack_counter <= i
+        "-"
+      else
+        return_stack[i] - self.scm_offset
+      end
+    end
   end
 
 end
