@@ -18,6 +18,7 @@
 (set_lvar_float ((lvar 4 h) (float32 120)))
 (set_lvar_float ((lvar 5 r) (float32 10)))
 
+(set_lvar_int ((lvar 22 sphere) (int8 0)))
 (set_lvar_int ((lvar 23 current_time) (int8 0)))
 (set_lvar_int ((lvar 24 char_respawn_time) (int8 0)))
 (set_lvar_int ((lvar 25 prop) (int8 0)))
@@ -79,6 +80,7 @@
       (is_int_lvar_greater_than_int_lvar ((lvar 23 current_time) (lvar 24 char_respawn_time)))
     (goto_if_false ((label state_0_handler_mid_0)))
 
+      (add_sphere ((lvar 28 px) (lvar 29 py) (lvar 30 pz) (float32 3.0) (lvar 22 sphere)))
       (create_char ((int8 26) (int16 214) (lvar 28 px) (lvar 29 py) (lvar 30 pz) (lvar 26 char)))
       (set_char_heading ((lvar 26 char) (lvar 4 h)))
       (set_lvar_int ((lvar 24 char_respawn_time) (int8 0)))
@@ -106,24 +108,41 @@
     (goto ((label bnsm_main_loop)))
   (labeldef state_2_handler_end_1)
 
+  % state 2 - has the actor died?
   (andor ((int8 1)))
     (is_char_dead ((lvar 26 char)))
     (not_is_int_lvar_equal_to_number ((lvar 31 state) (int8 3)))
   (goto_if_false ((label state_2_handler_end_4)))
+    % state 2 - only set respawn timer if currently nil
     (andor ((int8 0)))
       (is_int_lvar_equal_to_number ((lvar 24 char_respawn_time) (int8 0)))
     (goto_if_false ((label state_2_handler_mid_0)))
       (get_game_timer ((lvar 24 char_respawn_time)))
       (add_val_to_int_lvar ((lvar 24 char_respawn_time) (int16 10000)))
     (labeldef state_2_handler_mid_0)
+    (remove_sphere ((lvar 22 sphere)))
+    % state 2 - transition to state 3
     (set_lvar_int ((lvar 31 state) (int8 3)))
+    % (goto ((label bnsm_main_loop)))
   (labeldef state_2_handler_end_4)
 
   % state 2 - close enough to show help?
-  (andor ((int8 0)))
+  (andor ((int8 1)))
     (is_number_greater_than_float_lvar ((float32 3.0) (lvar 27 distance)))
+    (is_int_lvar_equal_to_number ((lvar 31 state) (int8 2)))
   (goto_if_false ((label state_2_handler_end_2)))
     (print_help_forever_with_number ((string8 "IE06") (int8 99)))
+
+    (andor ((int8 2)))
+      (is_button_pressed ((int8 0) (int8 15)))
+      (is_score_greater ((dmavar 8) (int8 99)))
+      (is_int_var_equal_to_number ((dmavar 7140) (int8 0)))
+    (goto_if_false ((label state_2_handler_end_2_1)))
+
+      (add_score ((dmavar 8) (int8 -100)))
+      (set_lvar_int ((lvar 31 state) (int8 4)))
+
+    (labeldef state_2_handler_end_2_1)
   (labeldef state_2_handler_end_2)
 
   % state 2 - if not, and still within a certain range, clear help
@@ -143,6 +162,7 @@
 (andor ((int8 0)))
   (is_int_lvar_equal_to_number ((lvar 31 state) (int8 5)))
 (goto_if_false ((label state_5_handler_end)))
+  (remove_sphere ((lvar 22 sphere)))
   (delete_char ((lvar 26 char)))
   (delete_object ((lvar 25 prop)))
   (set_lvar_int ((lvar 26 char) (int8 0)))
