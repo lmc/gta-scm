@@ -9,14 +9,14 @@
 % spawning script with set timer/usage counter
 % terminating script when expired
 
-(set_lvar_int ((lvar 0 type) (int8 0)))
-(set_lvar_float ((lvar 1 x) (float32 -1525)))
-(set_lvar_float ((lvar 2 y) (float32 974)))
-% z - for blackboard prop, subtract 1.0
-% (set_lvar_float ((lvar 3 z) (float32 7.2)))
-(set_lvar_float ((lvar 3 z) (float32 6.2)))
-(set_lvar_float ((lvar 4 h) (float32 120)))
-(set_lvar_float ((lvar 5 r) (float32 10)))
+% (set_lvar_int ((lvar 0 type) (int8 0)))
+% (set_lvar_float ((lvar 1 x) (float32 -1525)))
+% (set_lvar_float ((lvar 2 y) (float32 974)))
+% % z - for blackboard prop, subtract 1.0
+% % (set_lvar_float ((lvar 3 z) (float32 7.2)))
+% (set_lvar_float ((lvar 3 z) (float32 6.2)))
+% (set_lvar_float ((lvar 4 h) (float32 120)))
+% (set_lvar_float ((lvar 5 r) (float32 10)))
 
 (set_lvar_int ((lvar 22 sphere) (int8 0)))
 (set_lvar_int ((lvar 23 current_time) (int8 0)))
@@ -65,7 +65,7 @@
   (is_int_lvar_equal_to_number ((lvar 31 state) (int8 1)))
 (goto_if_false ((label state_1_handler_end)))
   % state 1 - are all models loaded?
-  (andor ((int8 0)))
+  (andor ((int8 1)))
     (has_model_loaded ((int16 214)))
     (has_model_loaded ((int16 -45)))
   (goto_if_false ((label state_1_handler_end_1)))
@@ -140,6 +140,34 @@
     (goto_if_false ((label state_2_handler_end_2_1)))
 
       (add_score ((dmavar 8) (int8 -100)))
+
+      (andor ((int8 0)))
+        (is_int_lvar_equal_to_number ((lvar 0 type) (int8 0)))
+      (goto_if_false ((label state_2_handler_mid_0)))
+        % gang tags
+      (labeldef state_2_handler_mid_0)
+
+      (andor ((int8 0)))
+        (is_int_lvar_equal_to_number ((lvar 0 type) (int8 1)))
+      (goto_if_false ((label state_2_handler_mid_1)))
+        % snapshots
+        (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+      (labeldef state_2_handler_mid_1)
+
+      (andor ((int8 0)))
+        (is_int_lvar_equal_to_number ((lvar 0 type) (int8 2)))
+      (goto_if_false ((label state_2_handler_mid_2)))
+        % horseshoes
+        (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2882) (int16 2931) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+      (labeldef state_2_handler_mid_2)
+
+      (andor ((int8 0)))
+        (is_int_lvar_equal_to_number ((lvar 0 type) (int8 3)))
+      (goto_if_false ((label state_2_handler_mid_3)))
+        % oysters
+        (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+      (labeldef state_2_handler_mid_3)
+
       (set_lvar_int ((lvar 31 state) (int8 4)))
 
     (labeldef state_2_handler_end_2_1)

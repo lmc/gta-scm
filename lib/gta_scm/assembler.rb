@@ -198,9 +198,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             node.from_ir(tokens,scm,self)
           end
         when :Include
+          start_offset = offset
           File.read("#{self.input_dir}/#{tokens[1]}.sexp.erl").each_line.each_with_index do |i_line,i_idx|
             self.read_line(scm,i_line,tokens[1],i_idx)
           end
+          end_offset = self.nodes.last.offset
+          self.on_include(start_offset,end_offset,tokens)
           return
         when :IncludeAndAssemble
           file = tokens[1]

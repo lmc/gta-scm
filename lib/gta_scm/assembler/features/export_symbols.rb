@@ -71,7 +71,11 @@ module GtaScm::Assembler::Feature::ExportSymbols
         # data[:ranges][:main] = [0,self.main_size]
 
         self.includes.each do |inc|
-          data[:ranges][inc[:tokens][1]] = [inc[:offset],inc[:offset]+inc[:node].size]
+          if inc[:node].is_a?(Numeric)
+            data[:ranges][inc[:tokens][1]] = [inc[:offset],inc[:node]]
+          else
+            data[:ranges][inc[:tokens][1]] = [inc[:offset],inc[:offset]+inc[:node].size]
+          end
         end
 
         if variables_header
