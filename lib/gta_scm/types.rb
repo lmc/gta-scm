@@ -84,9 +84,7 @@ module GtaScm::Types
       if char = TYPE_PACK_CHARS[o_type]
         [value].pack(char)
       elsif o_type == :uint32
-        debugger
-        value.pack("l<")
-        value.pack("L<")
+        [value].pack("L<")
       elsif o_type == :int
 
       elsif o_type == :float
@@ -109,6 +107,10 @@ module GtaScm::Types
     end
 
     type = self.normalize_type(o_type)
+
+    if type == :uint32
+      return bin.unpack("L<").first
+    end
 
     if char = TYPE_PACK_CHARS[type]
       bin.unpack(char).first

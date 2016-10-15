@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+# ./bin/read_gxt
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/gxt_file'
+
+require 'zlib'
+crc32 = Zlib::crc32('input field value')
+
+PATH = "./games/san-andreas/Text/american.gxt"
+
+file = nil
+begin
+  file = File.open(PATH,"r")
+
+  gxt_file = GtaScm::GxtFile.new(file)
+
+  gxt_file.read_tabl_sa!
+  gxt_file.read_tkey_sa!
+  gxt_file.read_reverse_crc32!
+
+  # puts gxt_file.tkey["MAIN"].inspect
+  # # puts gxt_file.tkey["WUZI4"].inspect
+  # puts gxt_file.tkey["MAIN"].values.sort[0]
+  # puts gxt_file.tkey["MAIN"].values.sort[1]
+
+  gxt_file.tkey.each_pair do |name,arr|
+    arr.each_pair do |crc32,offset|
+      puts "#{name},#{gxt_file.reverse_crc32[crc32] || crc32} = #{offset}"
+    end
+  end
+
+ensure
+  file.close
+end
+
