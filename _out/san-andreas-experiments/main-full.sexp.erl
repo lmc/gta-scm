@@ -21,6 +21,11 @@
 (PadUntil (57945))
 (labeldef memory_hole_2_end)
 
+
+% New property ideas
+% remove safehouse in south-west town (already have savepoint there)
+% add safehouse in north-west town (marina)
+
 % rest of MAIN segment
 (IncludeBin ("games/san-andreas/data/script/main.scm" 57945 194125))
 % MAIN segment can contain 200,000 bytes of code, so we have ~6kb free here
@@ -48,15 +53,12 @@
 %  last snapshot : 11924 /4= 2981
 %  last oyster   : 12124 /4= 3031
 (terminate_all_scripts_with_this_name ((string8 "zfndcol")))
-% horseshoes
-% (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2882) (int16 2931) (int8 1) (int32 -1) (end_var_args)))
-% snapshots
-% (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
-% oysters
-% (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (end_var_args)))
 
-% (start_new_script ((label blip_nearest_snapshot_manager_bootstrap) (int8 1) (float32 -1525) (float32 974) (float32 6.2) (float32 120) (float32 10) (end_var_args)))
-% (start_new_script ((label blip_nearest_snapshot_manager_bootstrap) (int8 0) (float32 1515) (float32 -1620) (float32 13.4) (float32 270) (float32 10) (end_var_args)))
+% (start_new_script ((label blip_nearest_tag_bootstrap) (end_var_args)))
+(start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 0) (int16 0) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+
+(start_new_script ((label blip_nearest_snapshot_manager_bootstrap) (int8 1) (float32 -1525) (float32 974) (float32 6.2) (float32 120) (float32 50) (end_var_args)))
+(start_new_script ((label blip_nearest_snapshot_manager_bootstrap) (int8 0) (float32 1515) (float32 -1620) (float32 13.4) (float32 270) (float32 50) (end_var_args)))
 (start_new_script ((label blip_nearest_snapshot_manager_bootstrap) (int8 2) (float32 2085) (float32 1403) (float32 9.8) (float32 90) (float32 50) (end_var_args)))
 
 (start_new_script ((label test) (end_var_args)))
@@ -71,8 +73,11 @@
 (wait ((int8 0)))
 (IncludeAndAssemble "coords-display" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars2-16")))
 
-(labeldef blip_nearest_snapshot_boostrap)
-% (IncludeAndAssemble "blip-nearest-snapshot" (code_offset (nil 0 1024)) (variable_offset (0 4852 15)))
+
+(labeldef blip_nearest_tag_bootstrap)
+(Include "blip-nearest-tag")
+
+(labeldef blip_nearest_snapshot_bootstrap)
 (Include "blip-nearest-snapshot")
 
 (labeldef blip_nearest_snapshot_manager_bootstrap)
@@ -80,14 +85,21 @@
 
 
 (labeldef test)
-% (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+% (start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
 (wait ((int16 5000)))
 (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
-(set_lvar_float ((lvar 10 x1)          (float32 2078)  ))
-(set_lvar_float ((lvar 11 y1)          (float32 1390)    ))
-(set_lvar_float ((lvar 12 z1)          (float32 10.8)     ))
+(give_weapon_to_char ((dmavar 12) (int8 41) (int16 1000)))
+(set_current_char_weapon ((dmavar 12) (int8 41)))
+(set_lvar_float ((lvar 10 x1)          (float32 1515)  ))
+(set_lvar_float ((lvar 11 y1)          (float32 -1620)    ))
+(set_lvar_float ((lvar 12 z1)          (float32 13.8)     ))
+% vegas
+% (set_lvar_float ((lvar 10 x1)          (float32 2078)  ))
+% (set_lvar_float ((lvar 11 y1)          (float32 1390)    ))
+% (set_lvar_float ((lvar 12 z1)          (float32 10.8)     ))
 (set_char_coordinates ((dmavar 12) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
 (set_time_of_day ((int8 15) (int8 0)))
+(task_jetpack ((dmavar 12)))
 (labeldef testloop)
 (wait ((int8 0)))
 (clear_wanted_level ((dmavar 8)))

@@ -37,7 +37,8 @@
 
 % (set_lvar_int   ((lvar 17 closest_pickup)   (int32 0)       ))
 % (set_lvar_float ((lvar 18 closest_distance) (float32 10000) ))
-(set_lvar_int   ((lvar 19 highlight_pickup) (int32 0)       ))
+(set_lvar_int   ((lvar 19 highlight_pickup) (int8 0)       ))
+(set_lvar_int   ((lvar 20 tag_percent) (int8 0)       ))
 
 
 (labeldef bns_begin_pickup_scan)
@@ -54,19 +55,33 @@
   (is_int_var_greater_than_number ((dmavar 7140) (int8 0)))
 (goto_if_false ((label bns_self_terminate)))
 
-% if we have a pickup to highlight, t
-(andor ((int8 0)))
-  (is_int_lvar_greater_than_number ((lvar 19 highlight_pickup) (int8 0)))
-(goto_if_false ((label bns_highlight_pickup_invalid_no_increment)))
+% HIGHLIGHT start
 
-(get_pickup_coordinates ((lvar 19 highlight_pickup) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+(labeldef bns_highlight_pickup)
+  (andor ((int8 0)))
+    (is_int_lvar_equal_to_number ((lvar 0 first_pickup) (int8 0)))
+  (goto_if_false ((label bns_highlight_pickup)))
 
-(andor ((int8 1)))
-  % detect if snapshot has been taken (no pickup at coords = snapshot taken)
-  (is_any_pickup_at_coords ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
-  % handle horseshoe/oyster pickups
-  (not_has_pickup_been_collected ((lvar 19 highlight_pickup)))
-(goto_if_false ((label bns_highlight_pickup_invalid)))
+    % for type = 0, assume (lvar 10 x1) (lvar 11 y1) (lvar 12 z1) already have closest tag
+    % check if tag sprayed here, go to invalid if so
+    (get_percentage_tagged_in_area ((lvar 10 x1) (lvar 11 y1) (lvar 10 x1) (lvar 11 y1) (lvar 20 tag_percent)))
+
+    (goto ((label bns_highlight_do)))
+
+  (andor ((int8 0)))
+    (is_int_lvar_greater_than_number ((lvar 19 highlight_pickup) (int8 0)))
+  (goto_if_false ((label bns_highlight_pickup_invalid_no_increment)))
+
+  (get_pickup_coordinates ((lvar 19 highlight_pickup) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+
+  (andor ((int8 1)))
+    % detect if snapshot has been taken (no pickup at coords = snapshot taken)
+    (is_any_pickup_at_coords ((lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+    % handle horseshoe/oyster pickups
+    (not_has_pickup_been_collected ((lvar 19 highlight_pickup)))
+  (goto_if_false ((label bns_highlight_pickup_invalid)))
+
+(labeldef bns_highlight_do)
 
 (set_var_float_to_lvar_float ((dmavar 7136) (lvar 10 x1)))
 (set_var_float_to_lvar_float ((dmavar 7132) (lvar 11 y1)))
@@ -93,14 +108,26 @@
 (labeldef bns_highlight_pickup_invalid_no_increment)
 (gosub ((label bns_invalidate)))
 (labeldef bns_highlight_pickup_end)
+% HIGHLIGHT end
 
 
+% SEARCH start
 (andor ((int8 0)))
   (is_player_playing ((dmavar 8)))
 (goto_if_false ((label bns_loop_without_increment)))
 
 (get_char_coordinates ((dmavar 12) (lvar 13 x2) (lvar 14 y2) (lvar 15 z2)))
 
+% if type = 0, skip whole search, use get_closest_tag
+(andor ((int8 0)))
+  (is_int_lvar_equal_to_number ((lvar 0 first_pickup) (int8 0)))
+(goto_if_false ((label bns_search_pickup)))
+  
+  % need to find nearest tag that isn't sprayed here
+  (get_nearest_tag_position ((lvar 13 x2) (lvar 14 y2) (lvar 15 z2) (lvar 10 x1) (lvar 11 y1) (lvar 12 z1)))
+
+  (goto ((label bns_loop_without_increment)))
+(labeldef bns_search_pickup)
 % are we at the end of the pickup list?
 (andor ((int8 0)))
   (is_int_var_greater_than_int_lvar ((dmavar 7144) (lvar 1 last_pickup)))
@@ -139,6 +166,8 @@
 (labeldef bns_loop_with_increment)
 (add_val_to_int_var ((dmavar 7144) (int8 1)))
 (goto ((label bns_loop_without_increment)))
+% SEARCH end
+
 
 (labeldef bns_invalidate)
 (set_lvar_int   ((lvar 19 highlight_pickup) (int8 0)))
@@ -146,6 +175,8 @@
 % put corona z up in the sky to make it disappear
 (set_var_float ((dmavar 7128) (float32 10000)))
 (return)
+
+
 
 (labeldef bns_self_terminate)
 (terminate_all_scripts_with_this_name ((string8 "vfndcol")))

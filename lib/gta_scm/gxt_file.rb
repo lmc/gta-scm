@@ -149,9 +149,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
   end
 
   def gxt_crc32(str)
-    # {
-    #    // table used in CRC calculation
-    #    unsigned long table[256] = {
+    # san andreas uses a custom crc32 polynomial (why??? no idea)
     table = [
            0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
            0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,

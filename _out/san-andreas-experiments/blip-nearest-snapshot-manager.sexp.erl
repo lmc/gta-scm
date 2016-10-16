@@ -151,21 +151,21 @@
         (is_int_lvar_equal_to_number ((lvar 0 type) (int8 1)))
       (goto_if_false ((label state_2_handler_mid_1)))
         % snapshots
-        (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+        (start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 2932) (int16 2981) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
       (labeldef state_2_handler_mid_1)
 
       (andor ((int8 0)))
         (is_int_lvar_equal_to_number ((lvar 0 type) (int8 2)))
       (goto_if_false ((label state_2_handler_mid_2)))
         % horseshoes
-        (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2882) (int16 2931) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+        (start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 2882) (int16 2931) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
       (labeldef state_2_handler_mid_2)
 
       (andor ((int8 0)))
         (is_int_lvar_equal_to_number ((lvar 0 type) (int8 3)))
       (goto_if_false ((label state_2_handler_mid_3)))
         % oysters
-        (start_new_script ((label blip_nearest_snapshot_boostrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
+        (start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 2982) (int16 3031) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
       (labeldef state_2_handler_mid_3)
 
       (set_lvar_int ((lvar 31 state) (int8 4)))
