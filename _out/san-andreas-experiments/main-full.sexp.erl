@@ -24,6 +24,7 @@
 
 % New property ideas
 % remove safehouse in south-west town (already have savepoint there)
+% remove safehouse in south-east san-fran (already have savepoint there at sf garage)
 % add safehouse in north-west town (marina)
 
 % rest of MAIN segment

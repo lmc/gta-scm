@@ -6,6 +6,7 @@ class GtaScm::Process
   attr_accessor :pid
   attr_accessor :process
   # attr_accessor :symbols
+  attr_accessor :thread_symbols
   attr_accessor :symbols_var_offsets
   attr_accessor :symbols_var_types
   attr_accessor :symbols_label_offsets
@@ -15,6 +16,7 @@ class GtaScm::Process
 
   def initialize()
      self.regions = {}
+     self.thread_symbols = {}
   end
 
   def detect_pid!
@@ -24,18 +26,33 @@ class GtaScm::Process
   def attach!
     begin
       self.process = Ragweed::Debuggerosx.new(self.pid)
-    # rescue os exception
+    rescue Ragweed::Wraposx::KernelCallError
+      nil
+    end
+  end
 
+  def attached?
+    begin
+      return false if !self.pid
+      return false if !self.process
+      self.read(self.scm_offset,1)
+      return true
+    rescue Ragweed::Wraposx::KernelCallError
+      self.pid = nil
+      false
+    rescue Ragweed::Wraposx::KErrno::INVALID_ARGUMENT
+      self.pid = nil
+      false
     end
   end
 
   def detect_pid_and_attach!
-    detect_pid!
+    detect_pid! if !self.pid
     attach!
   end
 
   def load_symbols!(path = "./symbols.gta-scm-symbols")
-    symbols = JSON.parse( File.read(path) )
+    symbols = JSON.parse( File.read(path).strip )
 
     self.symbols_var_offsets = {}
     self.symbols_var_types = {}
@@ -52,6 +69,10 @@ class GtaScm::Process
     end
 
     # self.load_rpc_region!
+  end
+
+  def load_thread_symbols!(thread_name,path)
+    self.thread_symbols[thread_name] = JSON.parse( File.read(path) )
   end
 
   # def load_rpc_region!
@@ -208,5 +229,81 @@ class GtaScm::Process
     label_name = label_name.to_s
     self.symbols_label_offsets[label_name] || raise("no scm_label_offset_for #{label_name.inspect}")
   end
+
+
+
+  def osascript(script)
+    system 'osascript', *script.split(/\n/).map { |line| ['-e', line] }.flatten
+  end
+
+  def launch!
+    # system "/Users/barry/Library/Application Support/Steam/steamapps/common/grand theft auto - san andreas/Grand Theft Auto - San Andreas.app/Contents/MacOS/cider -psn"
+    system "sudo -s -u barry -- open steam://run/12250"
+  end
+
+  def kill!
+    `kill -TERM #{self.pid}`
+  end
+
+  def launch_and_ready!
+    puts "launching process"
+    self.launch!
+    loop do
+      self.detect_pid!
+      # puts process.pid.inspect
+      mem_kb = `ps -o rss= -p #{self.pid}`.strip.to_i
+      if mem_kb > 100_000
+        break
+      end
+      sleep 0.1
+    end
+    sleep 1.0
+    puts "self.skip_cutscenes!"
+    self.skip_cutscenes!
+    sleep 6.0
+    puts "self.toggle_fullscreen!"
+    self.toggle_fullscreen!
+    sleep 5.0
+    puts "self.move_window_to_corner!"
+    self.move_window_to_corner!
+  end
+
+  def skip_cutscenes!
+    self.osascript <<-TEXT
+      tell application "Grand Theft Auto San Andreas"
+        activate
+        delay 0.2
+        tell application "System Events"
+          delay 0.25
+          key code 36
+          delay 0.25
+          key code 36
+        end
+      end
+    TEXT
+  end
+
+  def toggle_fullscreen!
+    self.osascript <<-TEXT
+      tell application "Grand Theft Auto San Andreas"
+        activate
+        delay 0.2
+        tell application "System Events"
+          key code 36 using command down
+        end
+      end
+    TEXT
+  end
+
+  def move_window_to_corner!
+    self.osascript <<-TEXT
+    tell application "System Events"
+        tell application "Grand Theft Auto San Andreas" to activate
+        delay 0.5
+        set position of window "Grand Theft Auto San Andreas" of application process "Grand Theft Auto San Andreas" to {320, 20}
+      end
+    TEXT
+  end
+
 
 end

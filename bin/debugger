@@ -1,0 +1,364 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/thread_monitor [thread name] [lvar types...]
+# sudo ./bin/thread_monitor 
+
+# portrait terminal = ~50 cols, 60 rows
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+print "\033]0;GtaScm Debugger\a"
+print "\n"
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+
+process.load_thread_symbols!("bnsm","bnsm.gta-scm-symbols")
+
+process.detect_pid_and_attach!
+
+# if process.attached?
+#   # puts "killing process"
+#   # process.kill!
+# else
+#   puts "launching process"
+#   process.launch!
+#   loop do
+#     process.detect_pid!
+#     # puts process.pid.inspect
+#     mem_kb = `ps -o rss= -p #{process.pid}`.strip.to_i
+#     if mem_kb > 100_000
+#       break
+#     end
+#     sleep 0.1
+#   end
+#   sleep 1.0
+#   puts "process.skip_cutscenes!"
+#   process.skip_cutscenes!
+#   sleep 6.0
+#   puts "process.toggle_fullscreen!"
+#   process.toggle_fullscreen!
+# end
+# exit
+
+name = nil
+types = [:int] * 32
+lvar_names = [nil] * 32
+
+ARGV.each_with_index do |val,i|
+  if i == 0
+    name = val
+  else
+    lvar,type = val.split(":")
+    types[lvar.to_i] = type.to_sym
+  end
+end
+
+# process.threads.each_with_index do |thread,thread_id|
+#   if thread.active? && thread.pc > 0
+#     puts "#{thread_id}: #{thread.active? ? "o" : "-"} #{thread.name.ljust(8," ")} PC=#{thread.pc - process.scm_offset} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
+#   end
+# end
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+
+# RuTui::Theme.use :basic
+
+# NEXT:
+# scroll through list of threads
+# global variable viewer/editor
+# injector/region mapper
+
+# screen = RuTui::Screen.new.tap do |screen|
+screen = RuTui::Screen.new
+
+  left_col = 0
+  right_col = 12
+
+  otexts = {}
+  texts = {}
+  row = 0
+
+  otexts[:process_status] = RuTui::Text.new(x: left_col, y: row, text: "")
+  screen.add(otexts[:process_status])
+  row += 1
+
+  row += 1
+
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Thread - q/a: prev/next"))
+  row += 1
+  row += 1
+
+  start_of_thread_row = row
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Index:"))
+  texts[:thread_id] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:thread_id])
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Name:"))
+  texts[:name] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:name])
+  row += 1
+
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Base PC:"))
+  # texts[:base_pc] = RuTui::Text.new(x: right_col, y: row, text: "")
+  # screen.add(texts[:base_pc])
+  # row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "PC:"))
+  texts[:scm_pc] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:scm_pc])
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Wake:"))
+  texts[:wake_time] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:wake_time])
+  row += 1
+
+  # NEXT: compress other thread flags/info into one line here (OR underneath left "Stack:" text)
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Active:"))
+  texts[:active] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:active])
+  row += 1
+
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "TimerA:"))
+  texts[:timer_a] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:timer_a])
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "TimerB:"))
+  texts[:timer_b] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:timer_b])
+
+  row = start_of_thread_row
+  left_col  += 24
+  right_col += 24
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Stack:"))
+  # texts[:stack_counter] = RuTui::Text.new(x: right_col, y: row, text: "")
+  # screen.add(texts[:stack_counter])
+  # row += 1
+  0.upto(7) do |i|
+    texts[:"stack_#{i}"] = RuTui::Text.new(x: right_col, y: row, text: "")
+    screen.add(texts[:"stack_#{i}"])
+    row += 1
+  end
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: 2, y: row, text: "Local variables - w/s: up/down, f/i: type"))
+  row += 1
+
+  ref = RuTui::Theme.get(:border)
+  pixel_vert = RuTui::Pixel.new(ref.fg,ref.bg,"|")
+  pixel_end = RuTui::Pixel.new(ref.fg,ref.bg,"+")
+
+  # screen.add_static(RuTui::Line.new(x: 0, y: 2, length: 50))
+  # screen.add_static(RuTui::Line.new(x: 0, y: 35, length: 50, endpixel: pixel_end))
+  # screen.add_static(RuTui::Line.new(x: 0, y: 2, length: 33, direction: :vertical, pixel: pixel_vert, endpixel: pixel_end))
+
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Regions:"))
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row+1, text: "p/l: up/down, o: kill threads, i: inject code"))
+
+  locals = RuTui::Table.new({
+    # x: 24,
+    # y: 2,
+    x: 2,
+    y: row,
+    table: [["","","",""]],
+    cols: [
+      { title: "", length: 2 },
+      { title: "", length: 3 },
+      { title: "", length: 11 },
+      { title: "", length: 11 },
+    ],
+    header: false,
+    hover: 4
+  })
+  screen.add(locals)
+
+# end
+
+# regions_table = RuTui::Table.new({
+#   x: 0,
+#   y: 45,
+#   table: [["","","",""]],
+#   cols: [
+#     { title: "Begin", length: 6 },
+#     { title: "Size", length: 6 },
+#     { title: "#", length: 1 },
+#     { title: "Filename", length: 24 },
+#   ],
+#   header: true,
+#   hover: 4
+# })
+# screen.add(regions_table)
+
+current_thread = nil
+
+if process.attached?
+  current_thread = process.threads.detect{|t| t.name == "bnsm"}.andand.thread_id || process.threads.last.thread_id
+end
+selected_screen = :thread
+selected_lvar = -1
+regions = []
+
+regions << { begin: 197_000, end: 200_000, filename: "blip-nearest-snapshot-manager" }
+process.regions.each_pair do |range,range_name|
+  regions << { begin: range.begin, end: range.end, filename: range_name }
+end
+# regions << { begin: 194269 , end: 194766, filename: "debug-rpc" }
+# regions << { begin: 194766 , end: 195601, filename: "coords-display" }
+# regions << { begin: 195601 , end: 196187, filename: "blip-nearest-snapshot" }
+# regions << { begin: 196_500 , end: 200_000, filename: "blip-nearest-snapshot-manager" }
+
+
+
+RuTui::ScreenManager.add :thread, screen
+RuTui::ScreenManager.set_current :thread
+
+thr = ::Thread.new do
+  loop do
+    begin
+
+      if selected_screen == :thread
+
+        process.detect_pid_and_attach!
+        if process.attached?
+
+          if current_thread.nil?
+            current_thread = process.threads.detect{|t| t.name == "bnsm"}.andand.thread_id || process.threads.last.thread_id
+          end
+
+          otexts[:process_status].set_text("Process: Attached, PID: #{process.pid} - m: kill".center(50))
+
+          if thread = process.threads[current_thread]
+
+            if thread_symbols = process.thread_symbols[thread.name]
+              thread_symbols["locals"].each_pair do |lvar,info|
+                if info.key?("type")
+                  if info["type"]
+                    types[ lvar.to_i ] = info["type"].to_sym
+                  else
+                    types[ lvar.to_i ] = nil
+                  end
+                end
+                if info["name"]
+                  lvar_names[ lvar.to_i ] = info["name"]
+                end
+              end
+            end
+
+            lvars_int   = thread.local_variables_ints
+            lvars_float = thread.local_variables_floats
+
+            vars_each = 32
+            i = 0
+            range = ( (i * vars_each) ... ((i + 1) * vars_each) )
+            data = vars_each.times.map do |ii|
+              ii += (vars_each * i)
+              case types[ii]
+              when :int
+                [ii.to_s,"int",lvars_int[ii].to_s,lvar_names[ii].to_s]
+              when :float
+                [ii.to_s,"flt",lvars_float[ii].round(3).to_s,lvar_names[ii].to_s]
+              else
+                nil
+              end
+            end.compact
+            locals.clear_highlight!
+            locals.highlight( selected_lvar )
+            locals.set_table(data)
+
+            texts.each_pair do |name,text|
+              text.set_text( thread.send(name).to_s )
+            end
+          end
+
+          # data = regions.map do |region|
+          #   thread_count = process.threads.select{|t| t.active? && Range.new(region[:begin],region[:end],false).include?(t.scm_pc) }.size
+          #   # region.values_at(:begin,:end,:name) + ["?","?"]
+          #   [region[:begin],(region[:end]-region[:begin]),"#{thread_count}",region[:filename]]
+          # end
+          # regions_table.set_table(data)
+
+        else
+
+          # not attached
+          otexts[:process_status].set_text("Process: Detached - n: launch")
+
+        end
+      end
+
+      RuTui::ScreenManager.draw
+      # `stty -echo`
+    # rescue
+
+    ensure
+      sleep 0.1
+    end
+  end
+end
+
+thr2 = ::Thread.new do
+  loop do |key|
+    key = RuTui::Input.getc
+
+    break if key == :ctrl_c # CTRL+C
+
+    if key == "n"
+      if !process.attached?
+        process.launch_and_ready!
+      end
+    end
+
+    if key == "m"
+      if process.attached?
+        process.kill!
+      end
+    end
+
+    if key == "q"
+      current_thread -= 1
+      current_thread = 0 if current_thread < 0
+    end
+    
+    if key == "a"
+      current_thread += 1
+      current_thread = 95 if selected_lvar > 95
+    end
+    
+    if key == "w"
+      selected_lvar -= 1
+      selected_lvar = 0 if selected_lvar < 0
+    end
+    
+    if key == "s"
+      selected_lvar += 1
+      selected_lvar = 31 if selected_lvar > 31
+    end
+
+    if key == "i"
+      types[ selected_lvar ] = :int
+    end
+    if key == "f"
+      types[ selected_lvar ] = :float
+    end
+
+  end
+end
+
+thr.join
+thr2.join
+
+print RuTui::Ansi.clear_color + RuTui::Ansi.clear
