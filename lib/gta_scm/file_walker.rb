@@ -38,6 +38,13 @@ class GtaScm::FileWalker
     end
   end
 
+  def read_no_advance(length, as = nil)
+    old_offset = self.offset
+    val = self.read(length,as)
+    self.seek(old_offset)
+    val
+  end
+
   def seek(offset)
     update_offset!(offset)
   end

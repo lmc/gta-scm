@@ -268,6 +268,21 @@ class GtaScm::Process
     self.move_window_to_corner!
   end
 
+  def press_enter!
+    self.osascript <<-TEXT
+      tell application "Grand Theft Auto San Andreas"
+        activate
+        delay 0.1
+        tell application "System Events"
+          delay 0.1
+          key down 36
+          delay 0.1
+          key up 36
+        end
+      end
+    TEXT
+  end
+
   def skip_cutscenes!
     self.osascript <<-TEXT
       tell application "Grand Theft Auto San Andreas"

@@ -1,0 +1,157 @@
+#!/usr/bin/env ruby
+
+# ./bin/write_gxt
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/gxt_file'
+
+require 'zlib'
+crc32 = Zlib::crc32('input field value')
+
+DIR = "_out/sa-gxt"
+PATH = "./games/san-andreas/Text/american-rebuilt.gxt"
+
+gxt_file = GtaScm::GxtFile.new( File.open(PATH,"r+") )
+
+out_head = ""
+out_str = ""
+
+file = nil
+begin
+  
+  files = Dir.new(DIR).entries - [".",".."]
+  # files = ["000-MAIN.txt"]
+
+  files = files.sort
+
+  out_head = ""
+  out_head << "\x04\x00\x08\x00" # ascii encoding flag
+  out_head << "TABL"
+  out_head << GtaScm::Types.value2bin(files.size * 12,:int32)
+  out_head_dup = out_head.dup
+
+  out_head_tabl = (" " * 12) * files.size
+
+  files.each do |filename|
+
+    puts "reading #{filename}"
+    name = filename.gsub(/^\d+-/,"").gsub(/\.txt$/,"")
+
+    block_offset = out_head_dup.bytesize + out_head_tabl.bytesize + out_str.bytesize
+    out_head << name[0..8].ljust(8,"\0")
+    out_head << GtaScm::Types.value2bin(block_offset,:int32)
+
+    strings = {}
+    lines_to_strings = []
+
+    file = File.open("#{DIR}/#{filename}","r")
+    file.lines.each do |line|
+      puts "#{line}"
+      next if line.blank?
+      crc32,text = line.gsub(/\r|\n/,'').split("=",2)
+      if crc32.match(/^[0-9-]+$/)
+        crc32 = crc32.to_i
+      else
+        crc32 = gxt_file.gxt_crc32(crc32)
+      end
+      if strings[crc32] && strings[crc32] != text
+        raise "CRC32 conflict! (new: #{text.inspect}, old: #{strings[crc32].inspect})"
+      end
+      strings[crc32] = text
+      lines_to_strings << [crc32,text]
+    end
+
+    header_size = 0
+    header_size += 8 if name != "MAIN"
+    header_size += 4
+    header_size += 4
+    header_size += strings.size * 8
+    header_size += 4
+    header_size += 4
+
+    # sort strings by crc32 ascending
+
+    # output all strings, store crc32 => string offset in hash
+
+    crcs_to_offsets = {}
+    text_block = "".encode("Windows-1252")
+
+    # sorted_crcs = strings.keys.sort
+    # sorted_crcs.each do |crc32|
+    #   crcs_to_offsets[crc32] = text_block.bytes.size
+    #   text_block << strings[crc32] << "\0"
+    # end
+    lines_to_strings.each do |(crc32,string)|
+      crcs_to_offsets[crc32] = text_block.bytes.size
+      text_block << string.encode("Windows-1252") << "\0"
+    end
+
+    text_block_size = text_block.bytesize
+    if text_block.bytesize % 4 != 0
+      case text_block.size % 4
+      when 1
+        text_block << "\0\0\0"
+      when 2
+        text_block << "\0\0"
+      when 3
+        text_block << "\0"
+      end
+    end
+
+
+
+    puts "building"
+
+    tkey_header = ""
+    if name != "MAIN"
+      tkey_header << "#{name.ljust(8,"\0")}"
+    end
+    tkey_header << "TKEY"
+    tkey_header << GtaScm::Types.value2bin(crcs_to_offsets.size * 8,:int32)
+    crcs_to_offsets.keys.sort.each do |crc32|
+      tkey_header << GtaScm::Types.value2bin(crcs_to_offsets[crc32],:int32)
+      tkey_header << GtaScm::Types.value2bin(crc32,:int32)
+    end
+    tkey_header << "TDAT"
+    tkey_header << GtaScm::Types.value2bin(text_block_size,:int32)
+
+    out_str << tkey_header
+    out_str << text_block.force_encoding("ASCII-8BIT")
+
+
+    # GXT File structure
+    # encoding - 4 bytes
+    # TABL - 4 bytes
+    # table count, divided by 12
+    # table list
+    #   name - 8 bytes
+    #   block offset - 4 bytes
+
+    # Multiple GXT Blocks follow, as described below:
+
+    # GXT Block structure
+    # MAIN - filename, 8 bytes
+    # TKEY - 4 bytes
+    # number of entries, divided by 8 - 4 bytes
+    # entries list
+    #   entry offset - 4 bytes
+    #   entry crc32  - 4 bytes
+    # raw strings follow
+
+  end
+
+  puts "writing"
+
+  File.open(PATH,"wb") do |f|
+    f << out_head
+    f << out_str
+  end
+
+ensure
+
+end
+

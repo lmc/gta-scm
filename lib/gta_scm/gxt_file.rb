@@ -8,6 +8,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
   attr_accessor :reverse_crc32
 
   attr_accessor :strings
+  attr_accessor :strings_order
   attr_accessor :rebuilt
 
   # ===================
@@ -20,6 +21,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
 
     # self.strings = Hash.new { |hash, key| hash[key] = {} }
     self.strings = Hash.new
+    self.strings_order = []
   end
 
 
@@ -93,7 +95,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
 
   def read_tkey_sa!
     self.tabl.each_pair do |tabl_name,offset|
-      logger.info "reading tkey for #{tabl_name} at #{offset}"
+      # logger.info "reading tkey for #{tabl_name} at #{offset}"
       self.seek(offset)
 
       if tabl_name == "MAIN"
@@ -114,7 +116,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
         self.tkey[tabl_name][entry_crc32] = entry_offset
       end
 
-      logger.info "  got #{name.inspect} #{_tkey} #{size}"
+      # logger.info "  got #{name.inspect} #{_tkey} #{size}"
 
       _tdat = self.read(4).map(&:chr).join.strip
       # puts _tdat
@@ -128,10 +130,18 @@ class GtaScm::GxtFile < GtaScm::FileWalker
         str = ""
         loop do
           char = self.read(1)[0]
-          break if char == 0
+          if char == 0
+            break
+            # if self.read_no_advance(1)[0] != 0
+            #   puts "breaking at #{self.offset}"
+            #   break
+            # else
+            #   puts "multiple nulls found in #{self.offset} #{str.inspect} "
+            # end
+          end
           str << char.chr
         end
-        self.strings[entry_crc32] = str
+        self.strings[entry_crc32] = str.force_encoding("Windows-1252").encode("UTF-8")
       end
     end
   end

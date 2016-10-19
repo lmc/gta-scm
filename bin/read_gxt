@@ -17,22 +17,27 @@ PATH = "./games/san-andreas/Text/american.gxt"
 file = nil
 begin
   file = File.open(PATH,"r")
-
   gxt_file = GtaScm::GxtFile.new(file)
 
   gxt_file.read_tabl_sa!
   gxt_file.read_tkey_sa!
   gxt_file.read_reverse_crc32!
 
-  # puts gxt_file.tkey["MAIN"].inspect
-  # # puts gxt_file.tkey["WUZI4"].inspect
-  # puts gxt_file.tkey["MAIN"].values.sort[0]
-  # puts gxt_file.tkey["MAIN"].values.sort[1]
-
+  idx = 0
   gxt_file.tkey.each_pair do |name,arr|
-    arr.each_pair do |crc32,offset|
-      puts "#{name},#{gxt_file.reverse_crc32[crc32] || crc32} = #{offset}"
+    file = File.open("_out/sa-gxt/#{idx.to_s.rjust(3,"0")}-#{name}.txt","w")
+    # arr.each_pair do |crc32,offset|
+    #   key = gxt_file.reverse_crc32[crc32] || crc32
+    #   file.puts("#{key}=#{gxt_file.strings[crc32]}")
+    # end
+    inv = arr.invert
+    inv.keys.sort.each do |offset|
+      crc32 = inv[offset]
+      key = gxt_file.reverse_crc32[crc32] || crc32
+      file.puts("#{key}=#{gxt_file.strings[crc32]}")
     end
+    idx += 1
+    file.close
   end
 
 ensure

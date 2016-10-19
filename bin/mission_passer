@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+
+# sudo bundle exec ./bin/mission_passer
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+require 'gta_scm/process'
+require 'gta_scm/thread'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+
+process.load_thread_symbols!("bnsm","bnsm.gta-scm-symbols")
+
+process.detect_pid_and_attach!
+
+MISSIONS = [
+  ["intro",200467,200740],
+  ["intro",200924,200967],
+  ["intro",202686,206817],
+
+  ["intro1",207319,218131],
+
+]
+
+loop do
+  process.threads.each do |thread|
+    if mission = MISSIONS.detect {|m| thread.name == m[0] && thread.scm_pc == m[1] }
+      puts "detected #{mission.inspect}"
+
+      case mission[2]
+      when :press_enter
+        puts "pressing enter!"
+        process.press_enter!
+      else
+        skip_pc = mission[2]
+        thread.scm_pc = skip_pc
+        offset = process.thread_control_block_offset + (thread.thread_id * thread.size)
+        puts "writing new pc #{skip_pc} (#{thread.pc}) to thread #{thread.thread_id} at #{offset} (size: #{thread.size})"
+        process.write(offset,thread.to_binary)
+      end
+    end
+  end
+  sleep 0.5
+end

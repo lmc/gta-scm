@@ -345,6 +345,10 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
   def scm_pc
     self.pc - self.scm_offset
   end
+  def scm_pc=(val)
+    val += self.scm_offset
+    self.pc = val
+  end
 
   def base_pc
     val = GtaScm::Types.bin2value(self[3],:int32)
