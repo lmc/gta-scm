@@ -4,6 +4,22 @@
 # sudo ./bin/thread_monitor 
 
 # portrait terminal = ~50 cols, 60 rows
+# widest with game at 800x500 = 125 cols
+
+# Process
+# launch/kill
+# pause/resume
+
+# Thread list
+# id/name/pc/wake/active
+# can scroll list?
+# can tag threads to be pinned to top of list
+
+# Character
+# x/y/z/heading
+# current zone
+# current car model/id
+# current weapon model/id
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
@@ -17,8 +33,6 @@ require 'gta_scm/process'
 require 'gta_scm/thread'
 process = GtaScm::Process.new
 process.load_symbols!("symbols.gta-scm-symbols")
-
-process.load_thread_symbols!("bnsm","bnsm.gta-scm-symbols")
 
 process.detect_pid_and_attach!
 
@@ -59,7 +73,10 @@ ARGV.each_with_index do |val,i|
   end
 end
 
-thread_name ||= 'bnsm'
+thread_name ||= 'wfndcol'
+
+# process.os_pause!
+# process.os_resume!
 
 # process.threads.each_with_index do |thread,thread_id|
 #   if thread.active? && thread.pc > 0
@@ -69,6 +86,10 @@ thread_name ||= 'bnsm'
 
 require 'rutui'
 require 'gta_scm/rutui_ext'
+
+if File.exist?("#{thread_name}.gta-scm-symbols")
+  process.load_thread_symbols!("#{thread_name}","#{thread_name}.gta-scm-symbols")
+end
 
 RuTui::Theme.create :scm, {
   :background => RuTui::Pixel.new(236,234,":"),

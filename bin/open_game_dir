@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+GAME_PATH = "/Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - san andreas/Grand Theft Auto - San Andreas.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/GTA San Andreas"
+`open "#{GAME_PATH}"`

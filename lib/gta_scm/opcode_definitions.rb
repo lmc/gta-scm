@@ -9,7 +9,11 @@ class GtaScm::OpcodeDefinitions < Hash
 
   # FIXME: allow both byte/string lookup
   def [](key)
-    super( GtaScm::OpcodeDefinitions.normalize_opcode(key) )
+    if key.is_a?(String)
+      super( self.names2opcodes[key] )
+    else
+      super( GtaScm::OpcodeDefinitions.normalize_opcode(key) )
+    end
   end
 
   def self.normalize_opcode(key)
@@ -117,8 +121,23 @@ class GtaScm::OpcodeDefinition
   def initialize(opcode_bytes,name,arg_types = [])
     self.opcode = opcode_bytes
     self.name = name.downcase.to_sym
-    self.arguments = arg_types.map do |type|
-      {_type: type}
+    self.arguments = arg_types.map.each_with_index do |type,i|
+      argdef = {_type: type,_i: i}
+      case type
+      when "ARGTYPE_VAR_LVAR_INT"
+        argdef[:var] = true
+        argdef[:type] = :int
+      when "ARGTYPE_VAR_LVAR_FLOAT"
+        argdef[:var] = true
+        argdef[:type] = :float
+      else
+
+      end
+      argdef
+    end
+
+    if self.name.to_s.match(/^get_/) && self.arguments.size == 1
+      self.arguments[0][:return_value] = true
     end
   end
 

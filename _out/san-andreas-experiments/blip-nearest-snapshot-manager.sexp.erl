@@ -1,5 +1,12 @@
 % IDEA: can this be attached to an object with an external script ? would save MAIN space
 
+% strings used:
+% ZBNCM01 - Buy Gang Tag Map: $~1~
+% ZBNCM02 - Buy Snapshot Map: $~1~
+% ZBNCM03 - Buy Horseshoe Map: $~1~
+% ZBNCM04 - Buy Oyster Map: $~1~
+% ZBNCM05 - No maps for sale now, come back later
+
 (script_name ((string8 "bnsm")))
 % script for:
 

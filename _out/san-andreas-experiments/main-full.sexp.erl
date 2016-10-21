@@ -91,9 +91,14 @@
 (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
 (give_weapon_to_char ((dmavar 12) (int8 41) (int16 1000)))
 (set_current_char_weapon ((dmavar 12) (int8 41)))
-(set_lvar_float ((lvar 10 x1)          (float32 1515)  ))
-(set_lvar_float ((lvar 11 y1)          (float32 -1620)    ))
-(set_lvar_float ((lvar 12 z1)          (float32 13.8)     ))
+% la square
+% (set_lvar_float ((lvar 10 x1)          (float32 1515)  ))
+% (set_lvar_float ((lvar 11 y1)          (float32 -1620)    ))
+% (set_lvar_float ((lvar 12 z1)          (float32 13.8)     ))
+% la rooftop
+(set_lvar_float ((lvar 10 x1)          (float32 913)  ))
+(set_lvar_float ((lvar 11 y1)          (float32 -1031)    ))
+(set_lvar_float ((lvar 12 z1)          (float32 111.8)     ))
 % vegas
 % (set_lvar_float ((lvar 10 x1)          (float32 2078)  ))
 % (set_lvar_float ((lvar 11 y1)          (float32 1390)    ))

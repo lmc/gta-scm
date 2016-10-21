@@ -2,6 +2,13 @@
 (set_var_int ((dmavar 7140) (int8 1)))
 (start_new_script ((label bns_viewer) (lvar 4 corona_size) (lvar 5 corona_red) (lvar 6 corona_green) (lvar 7 corona_blue) (end_var_args)))
 
+% strings used:
+% ZBNCM01 - Buy Gang Tag Map: $~1~
+% ZBNCM02 - Buy Snapshot Map: $~1~
+% ZBNCM03 - Buy Horseshoe Map: $~1~
+% ZBNCM04 - Buy Oyster Map: $~1~
+% ZBNCM05 - No maps for sale now, come back later
+
 % first horseshoe: 11528 /4= 2882
 % first snapshot : 11728 /4= 2932
 %  last snapshot : 11924 /4= 2981
@@ -40,6 +47,43 @@
 (set_lvar_int   ((lvar 19 highlight_pickup) (int8 0)       ))
 (set_lvar_int   ((lvar 20 tag_percent) (int8 0)       ))
 
+% set tag_stage to = 0
+% loop
+%   if tag_stage == 0 OR tag_stage == 4
+%     set tag_min = -125
+%     set tag_max =  125
+%     set tag_step =  25
+%     set tag_stage = 1
+%     set x/y to tag_min
+%   if tag_stage == 2
+%     set tag_min = -1250
+%     set tag_max =  1250
+%     set tag_step =  250
+%     set tag_stage = 3
+%     set x/y to tag_min
+%   get player coords with offset x/y
+%   get closest tag at x/y
+%   if not sprayed
+%     get distance between player
+%     if closest_distance > distance
+%       set x1/y1 to x/y
+%   increment x by tag_step
+%   if x > tag_max
+%     increment y by tag_step
+%   if y > tag_max
+%     increment tag_stage by +1
+%     end search
+
+(set_lvar_float ((lvar 21 tag_min)    (float32 0)      ))
+(set_lvar_float ((lvar 23 tag_max)    (float32 0)      ))
+(set_lvar_float ((lvar 24 tag_step)    (float32 0)      ))
+(set_lvar_float ((lvar 25 tag_x)    (float32 0)      ))
+(set_lvar_float ((lvar 26 tag_y)    (float32 0)      ))
+(set_lvar_int ((lvar 26 tag_stage)    (int8 0)      ))
+% reuse (lvar 16 distance)
+% reuse (lvar 18 closest_distance)
+% reuse lvar 10 x1) - for closest tag
+% reuse lvar 12 x2) - for closest tag
 
 (labeldef bns_begin_pickup_scan)
 

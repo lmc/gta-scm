@@ -81,6 +81,14 @@ class GtaScm::Process
   #   self.regions[ Range.new(start_offset,end_offset) ] = "rpc"
   # end
 
+  def os_pause!
+    Ragweed::Wraposx::task_suspend(self.process.task)
+  end
+
+  def os_resume!
+    Ragweed::Wraposx::task_resume(self.process.task)
+  end
+
   def scm_offset
     # SA steam version
     10664568
@@ -250,20 +258,22 @@ class GtaScm::Process
     self.launch!
     loop do
       self.detect_pid!
-      # puts process.pid.inspect
+      puts process.pid.inspect
       mem_kb = `ps -o rss= -p #{self.pid}`.strip.to_i
-      if mem_kb > 100_000
+      puts mem_kb
+      if mem_kb > 80_000
+        sleep 1.0
         break
       end
       sleep 0.1
     end
-    sleep 1.0
+    sleep 2.0
     puts "self.skip_cutscenes!"
     self.skip_cutscenes!
     sleep 6.0
     puts "self.toggle_fullscreen!"
     self.toggle_fullscreen!
-    sleep 5.0
+    sleep 3.0
     puts "self.move_window_to_corner!"
     self.move_window_to_corner!
   end
@@ -289,9 +299,9 @@ class GtaScm::Process
         activate
         delay 0.2
         tell application "System Events"
-          delay 0.25
+          delay 0.3
           key code 36
-          delay 0.25
+          delay 0.3
           key code 36
         end
       end
@@ -311,11 +321,12 @@ class GtaScm::Process
   end
 
   def move_window_to_corner!
+    coords = [640,20]
     self.osascript <<-TEXT
     tell application "System Events"
         tell application "Grand Theft Auto San Andreas" to activate
         delay 0.5
-        set position of window "Grand Theft Auto San Andreas" of application process "Grand Theft Auto San Andreas" to {320, 20}
+        set position of window "Grand Theft Auto San Andreas" of application process "Grand Theft Auto San Andreas" to {#{coords[0]}, #{coords[1]}}
       end
     TEXT
   end
