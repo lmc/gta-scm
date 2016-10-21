@@ -5,8 +5,12 @@ class GtaScm::RubyToScmCompiler
 
   def transform_node(node)
     # debugger
+    if !node.respond_to?(:type)
+      debugger
+      node
+    end
 
-    case node.type
+    ttt = case node.type
 
     when :block
 
@@ -59,6 +63,10 @@ class GtaScm::RubyToScmCompiler
       debugger
       raise "unknown node type #{node.type.inspect}"
     end
+
+    puts "transform_node - #{ttt.inspect}"
+
+    ttt
   end
 
   def emit_loop(loop_node,block_node)
@@ -238,48 +246,59 @@ class GtaScm::RubyToScmCompiler
   end
 
   COMPARISON_OPERATORS = {
+    :"=" => [],
+    :>=  => [nil,"greater_than_or_equal_to"],
     :>  => [nil,"greater_than"],
+    :<=  => ["not_","greater_than"],
     :<  => ["not_","greater_than_or_equal_to"]
   }
   def emit_conditional_opcode_call(node)
-    if node.children.size == 3 && COMPARISON_OPERATORS[ node.children[1] ]
-      left_type = node.children[0].type
-      left_value = nil
-      right_type = node.children[2].type
-      right_value = nil
+    if node.children.size == 3
+      if COMPARISON_OPERATORS[ node.children[1] ]
+        left_type = node.children[0].type
+        left_value = nil
+        right_type = node.children[2].type
+        right_value = nil
 
-      not_operator,sign_operator = *COMPARISON_OPERATORS[ node.children[1] ]
+        not_operator,sign_operator = *COMPARISON_OPERATORS[ node.children[1] ]
 
-      opcode_name = "#{not_operator}is_"
+        opcode_name = "#{not_operator}is_"
 
-      if left_type == :lvar
-        left_value = lvar(node.children[0].children[0])
-        left_var_type = self.lvar_names_to_types[ node.children[0].children[0] ]
-        raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
-        opcode_name << "#{left_var_type}_lvar"
-      else
-        raise "can only handle lvars on left side"
+        if left_type == :lvar
+          left_value = lvar(node.children[0].children[0])
+          left_var_type = self.lvar_names_to_types[ node.children[0].children[0] ]
+          raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
+          opcode_name << "#{left_var_type}_lvar"
+        else
+          raise "can only handle lvars on left side"
+        end
+
+        opcode_name << "_#{sign_operator}_"
+
+        if right_type == :int || right_type == :float
+          opcode_name << "number"
+          right_value = emit_value(node.children[2])
+        end
+
+        return [opcode_name.to_sym,[left_value,right_value]]
+      elsif node.children[1].is_a?(Symbol)
+        return emit_opcode_call(node)
       end
-
-      opcode_name << "_#{sign_operator}_"
-
-      if right_type == :int || right_type == :float
-        opcode_name << "number"
-        right_value = emit_value(node.children[2])
-      end
+    else
+      debugger
+      node
     end
 
-    [opcode_name.to_sym,[left_value,right_value]]
   end
 
   def emit_if(node)
 
     andor_id, conditions = *emit_if_conditions( node.children[0] )
 
-    if node.children.size == 2 # if/end
+    if node.children[0].type == :send && node.children[1].type == :begin && node.children[2].nil? # if/end
       false_label = generate_label!
       [
-        [:andor,[[andor_id]]],
+        [:andor,[[:int8, andor_id]]],
         *conditions,
         [:goto_if_false,[[:label, false_label]]],
         *transform_node(node.children[1]),
@@ -290,7 +309,7 @@ class GtaScm::RubyToScmCompiler
       false_label = generate_label!
       end_label = generate_label!
       [
-        [:andor,[[andor_id]]],
+        [:andor,[[:int8, andor_id]]],
         *conditions,
         [:goto_if_false,[[:label, false_label]]],
         *transform_node(node.children[1]),

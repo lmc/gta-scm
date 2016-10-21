@@ -34,15 +34,22 @@ ruby = <<-RUBY
   # end
 
   loop do
-    $player = create_player(0,1000.0,2000.0,20.0)
-    $player_char = get_player_char($player)
-    x,y,z = get_char_coordinates($_12)
-    current_time = get_game_timer()
-    if current_time > 5000
-      add_one_off_sound(x,y,z,1056)
-      terminate_this_script()
-    else
-      wait(50)
+    wait(100)
+    if is_player_playing($_8)
+      x,y,z = get_char_coordinates($_12)
+      current_time = get_game_timer()
+      if current_time > 5000
+        add_one_off_sound(x,y,z,1056)
+        wait(10)
+        add_one_off_sound(x,y,z,1056)
+        wait(10)
+        add_one_off_sound(x,y,z,1056)
+        wait(10)
+        add_one_off_sound(x,y,z,1056)
+        terminate_this_script()
+      else
+        add_one_off_sound(x,y,z,1056)
+      end
     end
   end
 RUBY
@@ -51,7 +58,7 @@ parsed = Parser::CurrentRuby.parse(ruby)
 
 require 'gta_scm/ruby_to_scm_compiler'
 
-compiler = RubyToScmCompiler.new
+compiler = GtaScm::RubyToScmCompiler.new
 compiler.scm = scm
 scm = compiler.transform_node(parsed)
 # print JSON.pretty_generate(scm)
