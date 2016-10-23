@@ -3,6 +3,10 @@ class GtaScm::RubyToScmCompiler
 
   attr_accessor :scm
 
+  def initialize
+    self.local_method_names_to_labels = {}
+  end
+
   def transform_node(node)
     # debugger
     if !node.respond_to?(:type)
@@ -23,6 +27,10 @@ class GtaScm::RubyToScmCompiler
     when :begin
 
       emit_block(node)
+
+    when :def
+
+      emit_method_def(node)
 
     # multiple assign
     # s(:masgn,
@@ -87,6 +95,32 @@ class GtaScm::RubyToScmCompiler
     sexps
   end
 
+  attr_accessor :local_method_names_to_labels
+  def emit_method_def(node)
+    method_name = node.children[0]
+    raise "can only handle :args" if node.children[1].type != :args
+    method_body = if node.children[2].type == :send
+      [ emit_opcode_call(node.children[2]) ]
+    else
+      debugger
+      raise "cannot handle ???"
+    end
+
+    self.local_method_names_to_labels ||= {}
+    raise "method name #{method_name} already defined!" if self.local_method_names_to_labels[method_name]
+
+    method_label = self.local_method_names_to_labels["#{method_name}"] = generate_label!
+    method_end_label = self.local_method_names_to_labels["#{method_name}_end"] = generate_label!
+
+    [
+      [:goto, [[:label, method_end_label]]],
+      [:labeldef, method_label],
+      *method_body,
+      [:return],
+      [:labeldef, method_end_label]
+    ]
+  end
+
   def emit_local_var_assign(node)
     left = node.children[0]
     right = node.children[1]
@@ -110,14 +144,16 @@ class GtaScm::RubyToScmCompiler
   end
 
   ASSIGNMENT_OPERATORS = {
+    :cset => [],
     :"=" => ["set","to"],
     :+ => ["add","to"],
     :- => ["sub","from"],
     :* => ["mult","by"],
     :/ => ["div","by"],
   }
-  def emit_operator_assign(node)
-    left,right,operator = nil,nil,nil
+  def emit_operator_assign(node,operator = nil)
+    left,right = nil,nil
+    operator ||= nil
 
     if node.children.size == 3 && ASSIGNMENT_OPERATORS[ node.children[1] ]
       left = node.children[0]
@@ -191,17 +227,27 @@ class GtaScm::RubyToScmCompiler
 
   def emit_opcode_call(node)
     opcode_name = node.children[1]
-    opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
-    args = node.children[2..-1]
-    args.map! {|a| emit_value(a)}
+    if method_label = self.local_method_names_to_labels["#{opcode_name}"]
+      [:gosub,[[:label,method_label]]]
+    else
+      opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
-    [opcode_name,args]
+      args = node.children[2..-1]
+      args.map! {|a| emit_value(a)}
+      args = nil if args.size == 0
+
+      [opcode_name,args].compact
+    end
   end
 
   def emit_assignment_opcode_call(opcode_call_node,variable_node,assign_type = nil)
     opcode_name = opcode_call_node.children[1]
     opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
+
+    if opcode_call_node.children[0].is_a?(Parser::AST::Node) && [:gvar,:lvar].include?(opcode_call_node.children[0].type) && [:to_i,:to_f].include?(opcode_call_node.children[1])
+      return emit_cast_opcode_call(variable_node)
+    end
 
     # multi assign
     if variable_node.is_a?(Parser::AST::Node) && variable_node.type == :mlhs
@@ -241,7 +287,7 @@ class GtaScm::RubyToScmCompiler
     if args.size == 0
       return [ opcode_name ]
     else
-      return [ opcode_name, args ]
+      return [ opcode_name, args ].compact
     end
   end
 

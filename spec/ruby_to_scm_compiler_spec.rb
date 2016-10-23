@@ -62,22 +62,46 @@ describe GtaScm::RubyToScmCompiler do
         end
       end
     end
+
+
+    context "type-casting" do
+      let(:ruby){"a = 1.0; b = a.to_i"}
+      it { is_expected.to eql "(cset_lvar_int_to_lvar_float ((lvar 1 b) (lvar 0 a)))" }
+    end
+
+    # context "decomposing operations" do
+    #   let(:ruby){"a = 1; b = 2; c = (a + 4) * b"}
+    #   it { is_expected.to eql "c = a; c += 4; c *= b" }
+    # end
+
   end
 
   describe "compares" do
-    let(:ruby){"a = 0; if a > 5; wait(1); else; wait(0); end"}
-    it { is_expected.to eql <<-LISP.strip_heredoc.strip
-      (set_lvar_int ((lvar 0 a) (int32 0)))
-      (andor ((int8 0)))
-      (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
-      (goto_if_false ((label label_1)))
-      (wait ((int32 1)))
-      (goto ((label label_2)))
-      (labeldef label_1)
-      (wait ((int32 0)))
-      (labeldef label_2)
-      LISP
-    }
+    context "trivial compares" do
+      let(:ruby){"a = 0; if a > 5; wait(1); else; wait(0); end"}
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (andor ((int8 0)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
+        (goto_if_false ((label label_1)))
+        (wait ((int32 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int32 0)))
+        (labeldef label_2)
+        LISP
+      }
+    end
+
+    context "compares with ands" do
+      let(:ruby){"a = 0; if a > 5 && a < 10; wait(1); else; wait(0); end"}
+      it { is_expected.to eql "" }
+    end
+
+    context "compares with ors" do
+      let(:ruby){"a = 0; if a > 5 || a < 10; wait(1); else; wait(0); end"}
+      it { is_expected.to eql "" }
+    end
   end
 
   describe "loops" do
@@ -88,6 +112,34 @@ describe GtaScm::RubyToScmCompiler do
       (goto ((label label_1)))
       LISP
     }
+  end
+
+  describe "functions" do
+    context "function definition and call" do
+      let(:ruby){ <<-RUBY
+        def test
+          terminate_this_script()
+        end
+        test()
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (goto ((label label_2)))
+          (labeldef label_1)
+          (terminate_this_script)
+          (return)
+          (labeldef label_2)
+          (gosub ((label label_1)))
+        LISP
+      }
+    end
+  end
+
+  describe "lambdas" do
+    context "lambda definition and call" do
+      let(:ruby){"block = lambda{ terminate_this_script() }; block();"}
+      it { is_expected.to eql "" }
+    end
   end
 
   describe "complex stuff" do
@@ -122,7 +174,7 @@ describe GtaScm::RubyToScmCompiler do
           (is_int_lvar_greater_than_number ((lvar 4 current_time) (int32 5000)))
           (goto_if_false ((label label_3)))
           (add_one_off_sound ((lvar 1 x) (lvar 2 y) (lvar 3 z) (int32 1056)))
-          (terminate_this_script nil)
+          (terminate_this_script)
           (goto ((label label_4)))
           (labeldef label_3)
           (add_val_to_int_lvar ((lvar 0 waiting_for) (int32 100)))
