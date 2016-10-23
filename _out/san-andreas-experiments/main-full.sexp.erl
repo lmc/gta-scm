@@ -55,7 +55,10 @@
 %  last oyster   : 12124 /4= 3031
 (terminate_all_scripts_with_this_name ((string8 "zfndcol")))
 
-% (start_new_script ((label blip_nearest_tag_bootstrap) (end_var_args)))
+(start_new_script ((label ruby_test) (end_var_args)))
+(start_new_script ((label test) (end_var_args)))
+(terminate_this_script)
+
 (start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 0) (int16 0) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
 
 (start_new_script ((label blip_nearest_snapshot_manager_bootstrap) (int8 1) (float32 -1525) (float32 974) (float32 6.2) (float32 120) (float32 50) (end_var_args)))
@@ -67,7 +70,6 @@
 
 (labeldef debug_rpc_bootstrap)
 (wait ((int8 0)))
-% (IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset (0 4852 15)))
 (IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars1-16")))
 
 (labeldef coords_display_bootstrap)
@@ -76,13 +78,17 @@
 
 
 (labeldef blip_nearest_tag_bootstrap)
-(Include "blip-nearest-tag")
+% (Include "blip-nearest-tag")
 
 (labeldef blip_nearest_snapshot_bootstrap)
-(Include "blip-nearest-snapshot")
+% (Include "blip-nearest-snapshot")
 
 (labeldef blip_nearest_snapshot_manager_bootstrap)
-(Include "blip-nearest-snapshot-manager")
+% (Include "blip-nearest-snapshot-manager")
+
+(labeldef ruby_test)
+(script_name ((string8 "rubytst")))
+(IncludeRuby "test")
 
 
 (labeldef test)

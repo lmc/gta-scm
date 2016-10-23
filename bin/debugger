@@ -73,7 +73,8 @@ ARGV.each_with_index do |val,i|
   end
 end
 
-thread_name ||= 'wfndcol'
+# thread_name ||= 'wfndcol'
+thread_name ||= 'rubytst'
 
 # process.os_pause!
 # process.os_resume!

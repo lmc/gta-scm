@@ -1,6 +1,10 @@
 module GtaScm::Assembler
 end
 
+require 'gta_scm/ruby_to_scm_compiler'
+require 'parser/current'
+
+
 # /Users/barry/Library/Application Support/Steam/SteamApps/common/grand theft auto - vice city/Grand Theft Auto - Vice City.app/Contents/Resources/transgaming/c_drive/Program Files/Rockstar Games/Grand Theft Auto Vice City
 
 class GtaScm::Assembler::Base
@@ -205,6 +209,59 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           end_offset = self.nodes.last.offset
           self.on_include(start_offset,end_offset,tokens)
           return
+        when :IncludeRuby
+          file = tokens[1]
+          args = Hash[tokens[2..-1]]
+
+          # debugger
+          ruby = File.read("#{self.input_dir}/#{file}.scmrb")
+          parsed = Parser::CurrentRuby.parse(ruby)
+
+          iscm = GtaScm::Scm.load_string("san-andreas","")
+          iscm.load_opcode_definitions!
+
+          compiler = GtaScm::RubyToScmCompiler.new
+          compiler.scm = iscm
+          compiler.label_prefix = "l_#{file}_"
+          instructions = compiler.transform_node(parsed)
+
+          lines = instructions.map do |node|
+            Elparser::encode(node)
+          end
+
+
+          iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
+          iasm.parent = self
+          iasm.code_offset = offset
+          def iasm.install_features!
+            class << self
+              include GtaScm::Assembler::Feature::VariableAllocator
+              include GtaScm::Assembler::Feature::ListVariableAllocator
+              include GtaScm::Assembler::Feature::VariableHeaderAllocator
+              include GtaScm::Assembler::Feature::ExportSymbols
+            end
+            self.on_feature_init()
+          end
+          iasm.symbols_name = "debug-rpc"
+
+          output = StringIO.new
+          # iasm.assemble(iscm,file,output)
+          lines.each_with_index do |line,idx|
+            iasm.read_line(iscm,line,file,idx)
+          end
+          iasm.on_before_touchups()
+          iasm.install_touchup_values!
+          iasm.on_after_touchups()
+          iasm.emit_assembly!(iscm,file,output)
+          iasm.on_complete()
+
+          output.rewind
+          code = output.read
+
+          n = GtaScm::Node::Raw.new( code.bytes )
+          self.on_include(offset,n,tokens)
+          n
+
         when :IncludeAndAssemble
           file = tokens[1]
           args = Hash[tokens[2..-1]]

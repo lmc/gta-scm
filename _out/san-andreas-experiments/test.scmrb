@@ -1,0 +1,7 @@
+loop do
+  wait(100)
+  if is_player_playing($_8)
+    ox,oy,oz = get_offset_from_char_in_world_coords($_12,0.0,50.0,50.0)
+    heading = get_char_heading($_12)
+  end
+end

@@ -2,9 +2,11 @@
 class GtaScm::RubyToScmCompiler
 
   attr_accessor :scm
+  attr_accessor :label_prefix
 
   def initialize
     self.local_method_names_to_labels = {}
+    self.label_prefix = "label_"
   end
 
   def transform_node(node)
@@ -249,6 +251,8 @@ class GtaScm::RubyToScmCompiler
       return emit_cast_opcode_call(variable_node)
     end
 
+    # debugger
+
     # multi assign
     if variable_node.is_a?(Parser::AST::Node) && variable_node.type == :mlhs
       args = opcode_call_node.children[2..-1]
@@ -265,20 +269,27 @@ class GtaScm::RubyToScmCompiler
     else
       args = opcode_call_node.children[2..-1]
       args.map! {|a| emit_value(a)}
+      # debugger
       if assign_type == :gvasgn
         args << gvar(variable_node.to_s.gsub('$',''))
       else
-        args = []
-        return_args = opcode_def.arguments.select {|a| a[:return_value]}
-        return_args.each do |return_arg|
-          if variable_node.type == :lvasgn
-            args[ return_arg[:_i] ] = lvar( variable_node.children[0] , return_arg[:type] )
-          else
-            raise "can only handle lvar assigns"
-          end
-        end
+        # args = []
+        # return_args = opcode_def.arguments.select {|a| a[:return_value]}
+        # return_args.each do |return_arg|
+        #   if variable_node.type == :lvasgn
+        #     args[ return_arg[:_i] ] = lvar( variable_node.children[0] , return_arg[:type] )
+        #   else
+        #     raise "can only handle lvar assigns"
+        #   end
+        # end
+        args << lvar( variable_node.children[0] , opcode_def.arguments.last[:type] )
+        # debugger
+        args
+
       end
     end
+
+    # debugger
 
     if args.size != opcode_def.arguments.size
       raise "wrong final arg count for #{opcode_name} (expected #{opcode_def.arguments.size}, got #{args.size})"
@@ -293,10 +304,10 @@ class GtaScm::RubyToScmCompiler
 
   COMPARISON_OPERATORS = {
     :"=" => [],
-    :>=  => [nil,"greater_than_or_equal_to"],
+    :>=  => [nil,"greater_or_equal_to"],
     :>  => [nil,"greater_than"],
     :<=  => ["not_","greater_than"],
-    :<  => ["not_","greater_than_or_equal_to"]
+    :<  => ["not_","greater_or_equal_to"]
   }
   def emit_conditional_opcode_call(node)
     if node.children.size == 3
@@ -341,7 +352,7 @@ class GtaScm::RubyToScmCompiler
 
     andor_id, conditions = *emit_if_conditions( node.children[0] )
 
-    if node.children[0].type == :send && node.children[1].type == :begin && node.children[2].nil? # if/end
+    if node.children[0].type == :send && [:begin,:send,:if].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
         [:andor,[[:int8, andor_id]]],
@@ -401,7 +412,7 @@ class GtaScm::RubyToScmCompiler
   def generate_label!
     self.generate_label_counter ||= 0
     self.generate_label_counter += 1
-    :"label_#{self.generate_label_counter}"
+    :"#{self.label_prefix}#{self.generate_label_counter}"
   end
 
   attr_accessor :lvar_names_to_types
