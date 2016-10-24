@@ -23,6 +23,10 @@ module RSpec::Support::ObjectFormatter
       obj.inspect
     elsif obj.is_a?(Numeric)
       obj.to_s
+    elsif obj.is_a?(Class)
+      obj.inspect
+    elsif obj.is_a?(Exception)
+      obj.inspect
     else
       super(obj)
     end

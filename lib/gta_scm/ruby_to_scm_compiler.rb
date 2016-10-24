@@ -261,8 +261,16 @@ class GtaScm::RubyToScmCompiler
 
       args = node.children[2..-1]
       args.map! {|a| emit_value(a)}
-      args = nil if args.size == 0
 
+      # if args.nil? || opcode_def.arguments.nil?
+      #   debugger
+      # end
+
+      if args.size != opcode_def.arguments.size
+        raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
+      end
+
+      args = nil if args.size == 0
       [opcode_name,args].compact
     end
   end
@@ -316,7 +324,7 @@ class GtaScm::RubyToScmCompiler
     # debugger
 
     if args.size != opcode_def.arguments.size
-      raise "wrong final arg count for #{opcode_name} (expected #{opcode_def.arguments.size}, got #{args.size})"
+      raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
     end
 
     if args.size == 0
@@ -413,12 +421,13 @@ class GtaScm::RubyToScmCompiler
   end
 
   def emit_value(node)
-    if node.type == :int || node.type == :float
+    case node.type
+    when :int, :float
       type = {int: :int32, float: :float32}[node.type]
       [type,node.children[0]]
-    elsif node.type == :lvar
+    when :lvar
       lvar(node.children[0])
-    elsif node.type == :gvar
+    when :gvar
       name = node.children[0].to_s.gsub(%r(^\$),'')
       if matches = name.match(%r(^_(\d+)))
         [:dmavar, matches[1].to_i]
@@ -433,25 +442,22 @@ class GtaScm::RubyToScmCompiler
 
   def emit_if_conditions(node)
     case node.type
-    when :and
+    when :and, :or
+      andor_id = node.type == :and ? 0 : 20
+
       conditions = node.children.map do |condition_node|
-        if condition_node.type == :send
+        case condition_node.type
+        when :and, :or
+          raise InvalidConditionalLogicalOperatorUse, "cannot mix AND/OR in one IF statement"
+        when :send
           emit_conditional_opcode_call(condition_node)
         else
+          debugger
           raise "dunno what sort of condition node is"
         end
       end
-      andor_id = conditions.size - 1
-      [andor_id,conditions]
-    when :or
-      conditions = node.children.map do |condition_node|
-        if condition_node.type == :send
-          emit_conditional_opcode_call(condition_node)
-        else
-          raise "dunno what sort of condition node is"
-        end
-      end
-      andor_id = 20 + conditions.size - 1
+
+      andor_id += (conditions.size - 1)
       [andor_id,conditions]
     when :send
       [ 0, [emit_conditional_opcode_call(node)] ]
@@ -507,4 +513,9 @@ class GtaScm::RubyToScmCompiler
     [:var, name]
   end
 
+
+  # ERRORS
+
+  class InvalidConditionalLogicalOperatorUse < ::ArgumentError; end
+  class IncorrectArgumentCount < ::ArgumentError; end
 end

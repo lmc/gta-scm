@@ -74,6 +74,32 @@ describe GtaScm::RubyToScmCompiler do
     #   it { is_expected.to eql "c = a; c += 4; c *= b" }
     # end
 
+    context "opcode calls" do
+      context "with a single assignment" do
+        let(:ruby){"time = get_game_timer()"}
+        it { is_expected.to eql "(get_game_timer ((lvar 0 time)))" }
+      end
+
+      context "with multiple assignments" do
+        let(:ruby){"x,y,z = get_char_coordinates($_12)"}
+        it { is_expected.to eql "(get_char_coordinates ((dmavar 12) (lvar 0 x) (lvar 1 y) (lvar 2 z)))" }
+      end
+
+      context "with the wrong number of arguments" do
+        let(:ruby){"get_game_timer()"}
+        it { expect {
+          compile(ruby)
+          }.to raise_error(GtaScm::RubyToScmCompiler::IncorrectArgumentCount) }
+      end
+
+      context "with the wrong number of multiple assignments" do
+        let(:ruby){"x,y = get_char_coordinates($_12)"}
+        it { expect {
+          compile(ruby)
+          }.to raise_error(GtaScm::RubyToScmCompiler::IncorrectArgumentCount) }
+      end
+    end
+
   end
 
   describe "compares" do
@@ -125,6 +151,13 @@ describe GtaScm::RubyToScmCompiler do
         (labeldef label_2)
       LISP
       }
+    end
+
+    context "compares with mixed and/ors" do
+      let(:ruby){"a = 0; if a > 5 && a == 10 || a < 10; wait(1); else; wait(0); end"}
+      it { expect {
+        compile(ruby)
+      }.to raise_error(GtaScm::RubyToScmCompiler::InvalidConditionalLogicalOperatorUse) }
     end
   end
 
