@@ -95,12 +95,36 @@ describe GtaScm::RubyToScmCompiler do
 
     context "compares with ands" do
       let(:ruby){"a = 0; if a > 5 && a < 10; wait(1); else; wait(0); end"}
-      it { is_expected.to eql "" }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (andor ((int8 1)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
+        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int32 10)))
+        (goto_if_false ((label label_1)))
+        (wait ((int32 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int32 0)))
+        (labeldef label_2)
+      LISP
+      }
     end
 
     context "compares with ors" do
       let(:ruby){"a = 0; if a > 5 || a < 10; wait(1); else; wait(0); end"}
-      it { is_expected.to eql "" }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (andor ((int8 21)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
+        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int32 10)))
+        (goto_if_false ((label label_1)))
+        (wait ((int32 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int32 0)))
+        (labeldef label_2)
+      LISP
+      }
     end
   end
 
@@ -114,31 +138,22 @@ describe GtaScm::RubyToScmCompiler do
     }
   end
 
-  describe "functions" do
-    context "function definition and call" do
+  describe "lambdas" do
+    context "lambda definition and call" do
       let(:ruby){ <<-RUBY
-        def test
-          terminate_this_script()
-        end
-        test()
+        block = routine{ terminate_this_script() };
+        block();
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (goto ((label label_2)))
-          (labeldef label_1)
-          (terminate_this_script)
-          (return)
-          (labeldef label_2)
-          (gosub ((label label_1)))
-        LISP
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (terminate_this_script)
+        (return)
+        (labeldef label_2)
+        (gosub ((label label_1)))
+      LISP
       }
-    end
-  end
-
-  describe "lambdas" do
-    context "lambda definition and call" do
-      let(:ruby){"block = lambda{ terminate_this_script() }; block();"}
-      it { is_expected.to eql "" }
     end
   end
 

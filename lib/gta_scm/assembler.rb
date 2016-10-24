@@ -226,7 +226,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           instructions = compiler.transform_node(parsed)
 
           lines = instructions.map do |node|
-            Elparser::encode(node)
+
+            s = Elparser::encode(node)
+            puts s
+            s
           end
 
 
@@ -486,6 +489,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         # puts "  #{node.hex_inspect}"
       end
     else
+      debugger
       raise "unknown opcode #{tokens[0]}"
     end
   end

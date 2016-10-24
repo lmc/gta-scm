@@ -55,7 +55,7 @@ class GtaScm::RubyToScmCompiler
     # local var assign
     when :lvasgn
 
-      [ emit_local_var_assign(node) ]
+      emit_local_var_assign(node)
 
     when :op_asgn
 
@@ -99,14 +99,26 @@ class GtaScm::RubyToScmCompiler
 
   attr_accessor :local_method_names_to_labels
   def emit_method_def(node)
+    # debugger
     method_name = node.children[0]
-    raise "can only handle :args" if node.children[1].type != :args
-    method_body = if node.children[2].type == :send
-      [ emit_opcode_call(node.children[2]) ]
-    else
-      debugger
-      raise "cannot handle ???"
-    end
+    # raise "can only handle :args" if node.children[1].type != :args
+    method_body = case node.children[1].type
+      when :send
+      [ emit_opcode_call(node.children[1]) ]
+      when :begin
+        transform_node(node.children[1])
+      when :block
+        # debugger
+        if node.children[1].children[0].type == :send && node.children[1].children[0].children[1] == :routine
+          transform_node(node.children[1].children[2])
+        else
+          debugger
+          raise "cannot handle ???"
+        end
+      else
+        debugger
+        raise "cannot handle ???"
+      end
 
     self.local_method_names_to_labels ||= {}
     raise "method name #{method_name} already defined!" if self.local_method_names_to_labels[method_name]
@@ -128,20 +140,26 @@ class GtaScm::RubyToScmCompiler
     right = node.children[1]
 
     if right.type == :send
-      return emit_assignment_opcode_call(right, node)
+      return [emit_assignment_opcode_call(right, node)]
     end
 
     type = right.type
     if type == :int
-      return [:set_lvar_int , [lvar(node.children[0],:int) , [:int32,node.children[1].children[0]]] ]
+      return [[:set_lvar_int , [lvar(node.children[0],:int) , [:int32,node.children[1].children[0]]] ]]
     end
     if type == :float
-      return [:set_lvar_float , [lvar(node.children[0],:float) , [:float32,node.children[1].children[0]]] ]
+      return [[:set_lvar_float , [lvar(node.children[0],:float) , [:float32,node.children[1].children[0]]] ]]
     end
     if type == :lvar
-      return emit_operator_assign(node)
+      return [emit_operator_assign(node)]
     end
+    if type == :block
+      nn = emit_method_def(node)
+      # debugger
+      return nn
 
+    end
+    debugger
     raise "unknown lvar assignment #{node.inspect}"
   end
 
@@ -186,7 +204,11 @@ class GtaScm::RubyToScmCompiler
       right_value = emit_value(node.children[2])
     elsif right_type == :lvar
       right_var_type = self.lvar_names_to_types[ right.children[0] ]
-      opcode_name << "#{right_var_type}_lvar"
+      if operator == :"="
+        opcode_name << "lvar_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_lvar"
+      end
       right_value = lvar(right.children[0],right_var_type)
     end
 
@@ -206,10 +228,12 @@ class GtaScm::RubyToScmCompiler
 
       if operator == :"="
         left_var_type = self.lvar_names_to_types[ right.children[0] ]
+        opcode_name << "lvar_#{left_var_type}"
+      else
+        opcode_name << "#{left_var_type}_lvar"
       end
 
       if left_var_type
-        opcode_name << "#{left_var_type}_lvar"
       else
         debugger
         raise "no type for #{right.children[0]}"
@@ -303,7 +327,7 @@ class GtaScm::RubyToScmCompiler
   end
 
   COMPARISON_OPERATORS = {
-    :"=" => [],
+    :"==" => [nil,"equal_to"],
     :>=  => [nil,"greater_or_equal_to"],
     :>  => [nil,"greater_than"],
     :<=  => ["not_","greater_than"],
@@ -332,9 +356,18 @@ class GtaScm::RubyToScmCompiler
 
         opcode_name << "_#{sign_operator}_"
 
+        if node.children[1] == :> && node.children[0].children[0] == :angle
+          # debugger
+          node
+        end
+
         if right_type == :int || right_type == :float
           opcode_name << "number"
           right_value = emit_value(node.children[2])
+        elsif right_type == :lvar
+          right_var_type = self.lvar_names_to_types[ node.children[2].children[0] ]
+          opcode_name << "#{right_var_type}_lvar"
+          right_value = lvar(node.children[2].children[0])
         end
 
         return [opcode_name.to_sym,[left_value,right_value]]
@@ -352,7 +385,7 @@ class GtaScm::RubyToScmCompiler
 
     andor_id, conditions = *emit_if_conditions( node.children[0] )
 
-    if node.children[0].type == :send && [:begin,:send,:if].include?(node.children[1].type) && node.children[2].nil? # if/end
+    if node.children[0].type == :send && [:begin,:send,:if,:op_asgn].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
         [:andor,[[:int8, andor_id]]],
@@ -393,6 +426,7 @@ class GtaScm::RubyToScmCompiler
         gvar(name)
       end
     else
+      debugger
       raise "emit_value ??? #{node.inspect}"
     end
   end
@@ -400,9 +434,25 @@ class GtaScm::RubyToScmCompiler
   def emit_if_conditions(node)
     case node.type
     when :and
-      raise ArgumentError
+      conditions = node.children.map do |condition_node|
+        if condition_node.type == :send
+          emit_conditional_opcode_call(condition_node)
+        else
+          raise "dunno what sort of condition node is"
+        end
+      end
+      andor_id = conditions.size - 1
+      [andor_id,conditions]
     when :or
-      raise ArgumentError
+      conditions = node.children.map do |condition_node|
+        if condition_node.type == :send
+          emit_conditional_opcode_call(condition_node)
+        else
+          raise "dunno what sort of condition node is"
+        end
+      end
+      andor_id = 20 + conditions.size - 1
+      [andor_id,conditions]
     when :send
       [ 0, [emit_conditional_opcode_call(node)] ]
     end

@@ -72,6 +72,7 @@ class GtaScm::OpcodeDefinitions < Hash
       hex2names[ matches[1] ] = matches[2]
     end
 
+    # return
 
     path = "games/#{game_id}/SASCM.INI"
     File.open(path,"r").readlines.each do |line|
