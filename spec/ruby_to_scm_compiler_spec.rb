@@ -153,6 +153,57 @@ describe GtaScm::RubyToScmCompiler do
       }
     end
 
+    context "compares with nots" do
+      let(:ruby){ <<-RUBY
+        a = 0
+        if not is_car_dead(a)
+          wait(1)
+        else
+          wait(0)
+        end
+      RUBY
+      }
+
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (andor ((int8 0)))
+        (not_is_car_dead ((lvar 0 a)))
+        (goto_if_false ((label label_1)))
+        (wait ((int32 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int32 0)))
+        (labeldef label_2)
+      LISP
+      }
+    end
+
+    context "compares with AND and NOT" do
+      let(:ruby){ <<-RUBY
+        a = 0
+        if a > 0 and not is_car_dead(a)
+          wait(1)
+        else
+          wait(0)
+        end
+      RUBY
+      }
+
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (andor ((int8 1)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 0)))
+        (not_is_car_dead ((lvar 0 a)))
+        (goto_if_false ((label label_1)))
+        (wait ((int32 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int32 0)))
+        (labeldef label_2)
+      LISP
+      }
+    end
+
     context "compares with mixed and/ors" do
       let(:ruby){"a = 0; if a > 5 && a == 10 || a < 10; wait(1); else; wait(0); end"}
       it { expect {
@@ -162,13 +213,15 @@ describe GtaScm::RubyToScmCompiler do
   end
 
   describe "loops" do
-    let(:ruby){"loop do; wait(1); end"}
-    it { is_expected.to eql <<-LISP.strip_heredoc.strip
-      (labeldef label_1)
-      (wait ((int32 1)))
-      (goto ((label label_1)))
-      LISP
-    }
+    context "main loop" do
+      let(:ruby){"loop do; wait(1); end"}
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (labeldef label_1)
+        (wait ((int32 1)))
+        (goto ((label label_1)))
+        LISP
+      }
+    end
   end
 
   describe "lambdas" do

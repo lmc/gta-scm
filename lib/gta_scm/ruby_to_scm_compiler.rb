@@ -251,7 +251,7 @@ class GtaScm::RubyToScmCompiler
 
   end
 
-  def emit_opcode_call(node)
+  def emit_opcode_call(node,force_not = false)
     opcode_name = node.children[1]
 
     if method_label = self.local_method_names_to_labels["#{opcode_name}"]
@@ -266,8 +266,16 @@ class GtaScm::RubyToScmCompiler
       #   debugger
       # end
 
+      if !opcode_def
+        debugger
+      end
+
       if args.size != opcode_def.arguments.size
         raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
+      end
+
+      if force_not
+        opcode_name = :"not_#{opcode_name}"
       end
 
       args = nil if args.size == 0
@@ -381,6 +389,15 @@ class GtaScm::RubyToScmCompiler
         return [opcode_name.to_sym,[left_value,right_value]]
       elsif node.children[1].is_a?(Symbol)
         return emit_opcode_call(node)
+      end
+    elsif node.children.size == 2
+      if node.children[0].type == :send && node.children[1] == :!
+        # negated opcode call
+        return emit_opcode_call(node.children[0],true)
+      # elsif node.children[1].is_a?(Symbol)
+      #   return emit_opcode_call(node)
+      else
+        raise "???"
       end
     else
       debugger
