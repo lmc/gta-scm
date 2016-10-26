@@ -69,6 +69,10 @@ class GtaScm::RubyToScmCompiler
 
       [ emit_opcode_call(node) ]
 
+    when :break
+
+      [ emit_break(node) ]
+
     else
       debugger
       raise "unknown node type #{node.type.inspect}"
@@ -79,13 +83,28 @@ class GtaScm::RubyToScmCompiler
     ttt
   end
 
+  attr_accessor :loop_stack
   def emit_loop(loop_node,block_node)
-    label = generate_label!
-    [
-      [:labeldef, label],
-      *transform_node(block_node),
-      [:goto,[[:label,label]]]
-    ]
+    loop_start = generate_label!
+    loop_exit = generate_label!
+
+      self.loop_stack ||= []
+    begin
+      self.loop_stack << {start: loop_start, exit: loop_exit}
+      [
+        [:labeldef, loop_start],
+        *transform_node(block_node),
+        [:goto,[[:label,loop_start]]],
+        [:labeldef, loop_exit]
+      ]
+    ensure
+      self.loop_stack.pop
+    end
+  end
+
+  def emit_break(node)
+    loop_exit = self.loop_stack.last[:exit]
+    return [:goto, [[:label, loop_exit]]]
   end
 
   def emit_block(node)

@@ -219,6 +219,26 @@ describe GtaScm::RubyToScmCompiler do
         (labeldef label_1)
         (wait ((int32 1)))
         (goto ((label label_1)))
+        (labeldef label_2)
+        LISP
+      }
+    end
+    context "loops with break" do
+      let(:ruby){ <<-RUBY
+        a = 0
+        loop do
+          wait(50)
+          break
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (labeldef label_1)
+        (wait ((int32 50)))
+        (goto ((label label_2)))
+        (goto ((label label_1)))
+        (labeldef label_2)
         LISP
       }
     end
@@ -268,20 +288,21 @@ describe GtaScm::RubyToScmCompiler do
           (set_lvar_int ((lvar 0 waiting_for) (int32 0)))
           (andor ((int8 0)))
           (is_player_playing ((dmavar 8)))
-          (goto_if_false ((label label_2)))
+          (goto_if_false ((label label_3)))
           (get_char_coordinates ((dmavar 12) (lvar 1 x) (lvar 2 y) (lvar 3 z)))
           (get_game_timer ((lvar 4 current_time)))
           (andor ((int8 0)))
           (is_int_lvar_greater_than_number ((lvar 4 current_time) (int32 5000)))
-          (goto_if_false ((label label_3)))
+          (goto_if_false ((label label_4)))
           (add_one_off_sound ((lvar 1 x) (lvar 2 y) (lvar 3 z) (int32 1056)))
           (terminate_this_script)
-          (goto ((label label_4)))
-          (labeldef label_3)
-          (add_val_to_int_lvar ((lvar 0 waiting_for) (int32 100)))
+          (goto ((label label_5)))
           (labeldef label_4)
-          (labeldef label_2)
+          (add_val_to_int_lvar ((lvar 0 waiting_for) (int32 100)))
+          (labeldef label_5)
+          (labeldef label_3)
           (goto ((label label_1)))
+          (labeldef label_2)
         LISP
       }
     end
