@@ -183,7 +183,8 @@ class GtaScm::RubyToScmCompiler
   end
 
   ASSIGNMENT_OPERATORS = {
-    :cset => [],
+    :cast_int => [],
+    :cast_float => [],
     :"=" => ["set","to"],
     :+ => ["add","to"],
     :- => ["sub","from"],
@@ -300,6 +301,40 @@ class GtaScm::RubyToScmCompiler
       args = nil if args.size == 0
       [opcode_name,args].compact
     end
+  end
+
+  def emit_cast_opcode_call(node)
+    opcode_name = "cset_"
+
+    case node.children[1].children[1]
+    when :to_i
+      left_type = :int
+      right_type = :float
+    when :to_f
+      left_type = :float
+      right_type = :int
+    else
+      raise "unknown cast!"
+    end
+    
+    if node.type == :lvasgn
+      left_value = lvar(node.children[0],left_type)
+      opcode_name << "lvar_#{left_type}_"
+    else
+      raise "can only handle lvasng"
+    end
+
+    opcode_name << "to_"
+
+    if node.children[1].children[0].type == :lvar
+      right_value = lvar(node.children[1].children[0].children[0],right_type)
+      opcode_name << "lvar_#{right_type}"
+
+    else
+      raise "can only handle lvars"
+    end
+
+    [opcode_name.to_sym,[left_value,right_value]]
   end
 
   def emit_assignment_opcode_call(opcode_call_node,variable_node,assign_type = nil)

@@ -66,7 +66,11 @@ describe GtaScm::RubyToScmCompiler do
 
     context "type-casting" do
       let(:ruby){"a = 1.0; b = a.to_i"}
-      it { is_expected.to eql "(cset_lvar_int_to_lvar_float ((lvar 1 b) (lvar 0 a)))" }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_float ((lvar 0 a) (float32 1.0)))
+        (cset_lvar_int_to_lvar_float ((lvar 1 b) (lvar 0 a)))
+        LISP
+      }
     end
 
     # context "decomposing operations" do
