@@ -14,6 +14,10 @@ tz = 0.0
 
 heading = 0.0
 
+firing_arc = 10.0
+
+t_accum = 0.0
+
 wait(8_000)
 
 # FIXME: better uses to test this: rewards, missions, utilities, etc.
@@ -63,7 +67,8 @@ loop do
       tx,ty,tz = get_offset_from_char_in_world_coords( $_12, 0.0, 0.0, 0.0 )
       ox,oy,oz = get_offset_from_car_in_world_coords( plane, 0.0, 2.0, -1.0 )
 
-      set_car_heading(plane,180.0)
+      t_accum += 0.2
+      set_car_heading(plane,t_accum)
       heading = get_car_heading(plane)
 
       dx = tx
@@ -74,7 +79,7 @@ loop do
 
       # FIXME: can we put denormalised coords into this?
       # FIXME: does this work at all?
-      angle = get_angle_between_2d_vectors(dx,dy,0.0,-1.0)
+      angle = get_angle_between_2d_vectors(dx,dy,0.0,1.0)
 
       if dx > 0.0
         tmp = 180.0
@@ -83,25 +88,24 @@ loop do
         angle += tmp
       end
 
-      angle += 270.0
+      # angle += 360.0
+      # heading += 360.0
 
-      # 350
-      # 10
-      # += 360
-      # 710
-      # 370
-
-      angle += 360.0
-      heading += 360.0
-
-      if angle > 720.0
-        angle -= 360.0
-      end
-      if heading > 720.0
-        heading -= 360.0
-      end
+      # if angle > 720.0
+      #   angle -= 360.0
+      # end
+      # if heading > 720.0
+      #   heading -= 360.0
+      # end
 
       difference_in_angle = 0.0
+
+      if heading < firing_arc
+        heading += 360.0
+      end
+      if angle < firing_arc
+        angle += 360.0
+      end
 
       # FIXME: correctly handle when ie. angles = 5/355 (ie. should be a small difference, but is large)
       if angle > heading
@@ -112,8 +116,9 @@ loop do
         difference_in_angle -= angle
       end
 
-      if difference_in_angle < 10.0
+      if difference_in_angle < firing_arc
         shoot = 1
+        fire_single_bullet(ox,oy,oz,tx,ty,tz,1)
       else
         shoot = 0
       end
