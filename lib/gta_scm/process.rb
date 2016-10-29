@@ -258,10 +258,10 @@ class GtaScm::Process
     self.launch!
     loop do
       self.detect_pid!
-      puts process.pid.inspect
+      # puts process.pid.inspect
       mem_kb = `ps -o rss= -p #{self.pid}`.strip.to_i
-      puts mem_kb
-      if mem_kb > 80_000
+      # puts mem_kb
+      if mem_kb > 40_000
         sleep 1.0
         break
       end

@@ -57,6 +57,7 @@
 
 (start_new_script ((label ruby_test) (end_var_args)))
 (start_new_script ((label test) (end_var_args)))
+(start_new_script ((label ruby_garage_menu) (end_var_args)))
 (terminate_this_script)
 
 (start_new_script ((label blip_nearest_snapshot_bootstrap) (int16 0) (int16 0) (int8 1) (int32 -1) (float32 10.0) (int16 255) (int16 255) (int16 255) (end_var_args)))
@@ -87,8 +88,13 @@
 % (Include "blip-nearest-snapshot-manager")
 
 (labeldef ruby_test)
-(script_name ((string8 "rubytst")))
-(IncludeRuby "test")
+(terminate_this_script)
+% (script_name ((string8 "rubytst")))
+% (IncludeRuby "test")
+
+(labeldef ruby_garage_menu)
+(script_name ((string8 "rgrgmen")))
+(IncludeRuby "garage-manager")
 
 
 (labeldef test)

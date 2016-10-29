@@ -77,7 +77,7 @@ loop do
       dy = ty
       dy -= oy
 
-      # FIXME: can we put denormalised coords into this?
+      # FIXME: can we put coords as denormalised vectors into this?
       # FIXME: does this work at all?
       angle = get_angle_between_2d_vectors(dx,dy,0.0,1.0)
 

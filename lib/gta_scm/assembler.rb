@@ -214,7 +214,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           args = Hash[tokens[2..-1]]
 
           # debugger
-          ruby = File.read("#{self.input_dir}/#{file}.scmrb")
+          ruby = File.read("#{self.input_dir}/#{file}.scm.rb")
           parsed = Parser::CurrentRuby.parse(ruby)
 
           iscm = GtaScm::Scm.load_string("san-andreas","")
