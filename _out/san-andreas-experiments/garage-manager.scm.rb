@@ -1,7 +1,8 @@
 tmp_car_id = 429
 tmp_car_col_1 = 81
 tmp_car_col_2 = 42
-tmp_car_spare = 0
+tmp_car_variation = 4
+tmp_car_dirt = 15
 tmp_packed = 0
 tmp_pack_idx = 0
 tmp_pack_idx2 = 0
@@ -14,10 +15,11 @@ tmp_pack_tmp = 0
 # cop car = 65732
 MAX_CARS = 4
 cars_1 = 197456
-cars_2 = 96589
+cars_2 = 16873805
 # cars_3 = 67092
 cars_3 = -1
-cars_4 = 65732
+# cars_4 = 65732
+cars_4 = 251754829
 cars_current = 0
 cars_index = 1
 cars_gxt_car_id = 0
@@ -28,13 +30,13 @@ menu_active = 0
 menu_debounce = 0
 line_index = 0
 menu_selected = 0
+menu_variation = -1
 
 car = 0
 spawn_x = 0.0
 spawn_y = 0.0
 spawn_z = 0.0
 spawn_heading = 0.0
-spawn_variation = 0
 
 read_cars_array = routine do
   if cars_index == 1
@@ -83,7 +85,10 @@ pack_int = routine do
       tmp_pack_tmp = tmp_car_col_2
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 24
-      tmp_pack_tmp = tmp_car_spare
+      tmp_pack_tmp = tmp_car_variation
+      tmp_pack_idx2 = 0
+    elsif tmp_pack_idx == 28
+      tmp_pack_tmp = tmp_car_dirt
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 32
       break
@@ -122,8 +127,12 @@ unpack_int = routine do
       tmp_car_col_2 = tmp_pack_tmp
       tmp_pack_tmp = 0
       tmp_pack_idx2 = 0
+    elsif tmp_pack_idx == 28
+      tmp_car_variation = tmp_pack_tmp
+      tmp_pack_tmp = 0
+      tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 32
-      tmp_car_spare = tmp_pack_tmp
+      tmp_car_dirt = tmp_pack_tmp
       break
     end
 
@@ -135,6 +144,7 @@ unpack_int = routine do
 
   end
 end
+
 
 spawn_car = routine do
   read_cars_array()
@@ -153,17 +163,17 @@ spawn_car = routine do
     delete_car(car)
   end
 
-  set_car_model_components(tmp_car_id,spawn_variation,spawn_variation)
+  if tmp_car_variation < 15
+    set_car_model_components(tmp_car_id,tmp_car_variation,-1)
+  end
+  # set_car_model_components(tmp_car_id,menu_variation,-1)
+
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
   change_car_colour(car,tmp_car_col_1,tmp_car_col_2)
+  set_vehicle_dirt_level(car,14.0)
   mark_car_as_no_longer_needed(car)
 
-  spawn_variation += 1
-  if spawn_variation > 5
-    spawn_variation = 0
-  end
-  
 end
 
 CARID2GXT_ROUTINE = 57453
@@ -220,7 +230,14 @@ show_menu = routine do
     end
   end
 
-  set_active_menu_item(menu,0)
+  line_index += 1
+  set_menu_item_with_number(menu,0,line_index,"",0)
+  line_index += 1
+  set_menu_item_with_number(menu,0,line_index,"CARDB1",0)
+  line_index += 1
+  set_menu_item_with_number(menu,0,line_index,"NUMBER",menu_variation)
+
+  set_active_menu_item(menu,menu_selected)
 
 end
 
@@ -234,6 +251,8 @@ end
 
 handle_menu_input = routine do
   menu_selected = get_menu_item_selected(menu)
+  menu_options = menu_selected
+  menu_options -= MAX_CARS
   cars_index = menu_selected
   cars_index += 1
 
@@ -241,12 +260,25 @@ handle_menu_input = routine do
 
     if is_button_pressed(0,16) # X = accept (spawn)
       TIMER_A = 0
-      read_cars_array()
-      if cars_current == -1
-        add_one_off_sound(0.0,0.0,0.0,1137)
-      else
+
+      if menu_options == 1 || menu_options == 2
+        menu_variation += 1
+        if menu_variation > 5
+          menu_variation = -1
+        end
         add_one_off_sound(0.0,0.0,0.0,1138)
-        spawn_car()
+        hide_menu()
+        show_menu()
+      else
+
+        read_cars_array()
+        if cars_current == -1
+          add_one_off_sound(0.0,0.0,0.0,1137)
+        else
+          add_one_off_sound(0.0,0.0,0.0,1138)
+          spawn_car()
+        end
+
       end
 
     elsif is_button_pressed(0,15) # triangle = cancel
@@ -260,7 +292,12 @@ handle_menu_input = routine do
         car = store_car_char_is_in_no_save( $_12 )
         tmp_car_id = get_car_model(car)
         tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
-        tmp_car_spare = 0
+        if menu_variation == -1
+          tmp_car_variation = 15
+        else
+          tmp_car_variation = menu_variation
+        end
+        tmp_car_dirt = 0
         pack_int()
         cars_current = tmp_packed
         write_cars_array()

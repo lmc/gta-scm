@@ -477,6 +477,10 @@ class GtaScm::RubyToScmCompiler
         if assign_type == :gvasgn
           args << gvar(variable_node.to_s.gsub('$',''))
         else
+          if !variable_node.children or !opcode_def.arguments.last
+            debugger
+            "ff"
+          end
           args << lvar( variable_node.children[0] , opcode_def.arguments.last[:type] )
         end
       end
