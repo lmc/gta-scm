@@ -14,14 +14,21 @@ tmp_pack_tmp = 0
 # taxi = 67092 (packed car id 20 (orig 420))
 # cop car = 65732
 MAX_CARS = 4
-cars_1 = 197456
-cars_2 = 16873805
-# cars_3 = 67092
-cars_3 = -1
-# cars_4 = 65732
-cars_4 = 251754829
-cars_current = 0
-cars_index = 1
+$_7128_cars_1 = 197456
+$_7132_cars_2 = 16873805
+$_7136_cars_3 = -1
+$_7140_cars_4 = 251754829
+$_7120_cars_current = 0
+$_7124_cars_index = 1
+
+# $_7120_cars_current - $_7120_cars_current
+# $_7124_cars_index - $_7124_cars_index
+# $_7128 - $_7128_cars_1
+# $_7132 - $_7132_cars_2
+# $_7136 - $_7136_cars_3
+# $_7140 - $_7140_cars_4
+# $_7120_cars_current = 0
+# $_7124_cars_index = 1
 cars_gxt_car_id = 0
 # cars_gxt = ""
 
@@ -39,27 +46,27 @@ spawn_z = 0.0
 spawn_heading = 0.0
 
 read_cars_array = routine do
-  if cars_index == 1
-    cars_current = cars_1
-  elsif cars_index == 2
-    cars_current = cars_2
-  elsif cars_index == 3
-    cars_current = cars_3
-  elsif cars_index == 4
-    cars_current = cars_4
+  if $_7124_cars_index == 1
+    $_7120_cars_current = $_7128_cars_1
+  elsif $_7124_cars_index == 2
+    $_7120_cars_current = $_7132_cars_2
+  elsif $_7124_cars_index == 3
+    $_7120_cars_current = $_7136_cars_3
+  elsif $_7124_cars_index == 4
+    $_7120_cars_current = $_7140_cars_4
   end
 end
 read_cars_array()
 
 write_cars_array = routine do
-  if cars_index == 1
-    cars_1 = cars_current
-  elsif cars_index == 2
-    cars_2 = cars_current
-  elsif cars_index == 3
-    cars_3 = cars_current
-  elsif cars_index == 4
-    cars_4 = cars_current
+  if $_7124_cars_index == 1
+    $_7128_cars_1 = $_7120_cars_current
+  elsif $_7124_cars_index == 2
+    $_7132_cars_2 = $_7120_cars_current
+  elsif $_7124_cars_index == 3
+    $_7136_cars_3 = $_7120_cars_current
+  elsif $_7124_cars_index == 4
+    $_7140_cars_4 = $_7120_cars_current
   end
 end
 write_cars_array()
@@ -149,7 +156,7 @@ end
 spawn_car = routine do
   read_cars_array()
 
-  tmp_packed = cars_current
+  tmp_packed = $_7120_cars_current
   unpack_int()
 
   spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 5.0, 0.0 )
@@ -198,15 +205,15 @@ show_menu = routine do
   MENU_ALIGNMENT = 1
   menu = create_menu( MENU_HEADER , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
 
-  cars_index = 1
+  $_7124_cars_index = 1
   line_index = 1
   loop do
 
-    # set cars_current to cars[cars_index]
+    # set $_7120_cars_current to cars[$_7124_cars_index]
     read_cars_array()
 
-    # unpack the cars_current into tmp_car_id
-    tmp_packed = cars_current
+    # unpack the $_7120_cars_current into tmp_car_id
+    tmp_packed = $_7120_cars_current
     unpack_int()
 
     # call car_id -> gxt string routine for tmp_car_id (results in $str_7112)
@@ -220,12 +227,14 @@ show_menu = routine do
     end
 
     # set menu item string to car name
-    line_index = cars_index
+    line_index = $_7124_cars_index
     line_index -= 1
     set_menu_item_with_number(menu,0,line_index,$str_7112,0)
 
-    cars_index += 1
-    if cars_index > MAX_CARS
+    # FIXME: compiler bug on this
+    # $_7124_cars_index += 1
+    add_val_to_int_var($_7124_cars_index,1)
+    if $_7124_cars_index > MAX_CARS
       break
     end
   end
@@ -253,8 +262,10 @@ handle_menu_input = routine do
   menu_selected = get_menu_item_selected(menu)
   menu_options = menu_selected
   menu_options -= MAX_CARS
-  cars_index = menu_selected
-  cars_index += 1
+  $_7124_cars_index = menu_selected
+  # $_7124_cars_index += 1
+  add_val_to_int_var($_7124_cars_index,1)
+
 
   if TIMER_A > 200
 
@@ -272,7 +283,7 @@ handle_menu_input = routine do
       else
 
         read_cars_array()
-        if cars_current == -1
+        if $_7120_cars_current == -1
           add_one_off_sound(0.0,0.0,0.0,1137)
         else
           add_one_off_sound(0.0,0.0,0.0,1138)
@@ -299,7 +310,7 @@ handle_menu_input = routine do
         end
         tmp_car_dirt = 0
         pack_int()
-        cars_current = tmp_packed
+        $_7120_cars_current = tmp_packed
         write_cars_array()
         hide_menu()
         show_menu()
@@ -311,7 +322,7 @@ handle_menu_input = routine do
     elsif is_button_pressed(0,17) # circle = delete
       TIMER_A = 0
       add_one_off_sound(0.0,0.0,0.0,1138)
-      cars_current = -1
+      $_7120_cars_current = -1
       write_cars_array()
       hide_menu()
       show_menu()

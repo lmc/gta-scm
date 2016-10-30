@@ -187,6 +187,19 @@ class GtaScm::RubyToScmCompiler
       type = self.constants_to_types[ right.children[1] ]
     end
 
+    if node.type == :gvasgn && node.children[1].type == :gvar
+      # FIXME: handle types here
+      left = gvar(node.children[0],:int)
+      right = gvar(node.children[1].children[0],:int)
+      return [ [:set_var_int_to_var_int,[left,right]] ]
+    end
+    if node.type == :lvasgn && node.children[1].type == :gvar
+      # FIXME: handle types here
+      left = lvar(node.children[0],:int)
+      right = gvar(node.children[1].children[0],:int)
+      return [ [:set_lvar_int_to_var_int,[left,right]] ]
+    end
+
     # FIXME: handle :str here
 
     # debugger
@@ -301,6 +314,15 @@ class GtaScm::RubyToScmCompiler
         opcode_name << "#{right_var_type}_lvar"
       end
       right_value = lvar(right.children[0],right_var_type)
+    elsif right_type == :gvar
+      right_var_type = self.gvar_names_to_types[ right.children[0] ]
+      debugger
+      if operator == :"="
+        opcode_name << "var_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_var"
+      end
+      right_value = gvar(right.children[0],right_var_type)
     elsif right_type == :const
       opcode_name << "val"
       right_var_type = self.constants_to_types[ right.children[1] ]
@@ -356,7 +378,12 @@ class GtaScm::RubyToScmCompiler
       # end
 
       if operator == :"="
-        left_var_type = self.lvar_names_to_types[ right.children[0] ]
+        if node.children[1].type == :lvar
+          left_var_type = self.lvar_names_to_types[ right.children[0] ]
+        else
+          left_var_type = self.gvar_names_to_types[ right.children[0] ]          
+        end
+        # debugger
         opcode_name << "var_#{left_var_type}"
       else
         opcode_name << "#{left_var_type}_var"
@@ -586,7 +613,7 @@ class GtaScm::RubyToScmCompiler
 
     # TODO: handle bool check of variable `if var` (node.children[0].type == :lvar)
 
-    if [:send,:and].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
+    if [:send,:and].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:gvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
         [:andor,[[:int8, andor_id]]],
@@ -721,7 +748,7 @@ class GtaScm::RubyToScmCompiler
     name = name.to_s.gsub(/\A\$/,'').to_sym
 
     # debugger
-    if matches = name.to_s.match(/\A_(\d+)\z/)
+    if matches = name.to_s.match(/\A_(\d+)/)
       return [:dmavar, matches[1].to_i]
     end
 
