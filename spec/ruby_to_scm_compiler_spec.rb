@@ -324,15 +324,30 @@ describe GtaScm::RubyToScmCompiler do
   end
 
   describe "strings" do
-    let(:ruby) { <<-RUBY
-        a = "TEST"
-        print_help_forever(a)
-      RUBY
-    }
-    it { is_expected.to eql <<-LISP.strip_heredoc.strip
-
-    LISP
-    }
+    context "variables" do
+      let(:ruby) { <<-RUBY
+          a = "TEST"
+          b = "what"
+          print_help_forever(a)
+        RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_text_label ((lvar_string8 1 a) (string8 "TEST")))
+        (set_lvar_text_label ((lvar_string8 3 b) (string8 "what")))
+        (print_help_forever ((lvar_string8 1 a)))
+      LISP
+      }
+    end
+    context "immediates" do
+      let(:ruby) { <<-RUBY
+          print_help_forever("TEST")
+        RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (print_help_forever ((string8 "TEST")))
+      LISP
+      }
+    end
   end
 
   describe "elsif" do
@@ -353,7 +368,37 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
     }
     it { is_expected.to eql <<-LISP.strip_heredoc.strip
-
+      (labeldef label_1)
+      (set_lvar_int ((lvar 0 tmp_pack_idx) (int32 0)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (andor ((int8 0)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 8)))
+      (goto_if_false ((label label_3)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (goto ((label label_4)))
+      (labeldef label_3)
+      (andor ((int8 0)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 16)))
+      (goto_if_false ((label label_5)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (goto ((label label_6)))
+      (labeldef label_5)
+      (andor ((int8 0)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 24)))
+      (goto_if_false ((label label_7)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (goto ((label label_8)))
+      (labeldef label_7)
+      (andor ((int8 0)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 32)))
+      (goto_if_false ((label label_9)))
+      (goto ((label label_2)))
+      (labeldef label_9)
+      (labeldef label_8)
+      (labeldef label_6)
+      (labeldef label_4)
+      (goto ((label label_1)))
+      (labeldef label_2)
     LISP
     }
   end

@@ -211,6 +211,18 @@ class GtaScm::RubyToScmCompiler
       end
       return [[:"set_#{var_type}_float" , [var , right_val ]]]
     end
+    if type == :str
+      right_val = [:string8, node.children[1].children[0] ]
+      var = case var_type
+      when :var
+        gvar(node.children[0],:string)
+      when :lvar
+        lvar(node.children[0],:string)
+      else
+        raise("???")
+      end
+      return [[:"set_#{var_type}_text_label" , [var , right_val ]]]
+    end
     if type == :lvar
       return [emit_operator_assign(node)]
     end
@@ -584,6 +596,8 @@ class GtaScm::RubyToScmCompiler
     when :int, :float
       type = {int: :int32, float: :float32}[node.type]
       [type,node.children[0]]
+    when :str
+      [:string8,node.children[0]]
     when :lvar
       lvar(node.children[0])
     when :gvar
@@ -593,6 +607,7 @@ class GtaScm::RubyToScmCompiler
       else
         gvar(name)
       end
+
     else
       debugger
       raise "emit_value ??? #{node.inspect}"
@@ -646,13 +661,25 @@ class GtaScm::RubyToScmCompiler
       self.lvar_names_to_ids[name]
     else
       self.generate_lvar_counter += 1
+      if type == :string
+        # skip one extra var for string8 (2 vars worth)
+        self.generate_lvar_counter += 1
+      end
       self.lvar_names_to_ids[name] = self.generate_lvar_counter
       if type
         self.lvar_names_to_types[name] = type
       end
       self.lvar_names_to_ids[name]
     end
-    [:lvar, id, name]
+
+    type ||= self.lvar_names_to_types[name]
+
+    # debugger
+    if type == :string
+      [:lvar_string8, id, name]
+    else
+      [:lvar, id, name]
+    end
   end
 
   attr_accessor :gvar_names_to_ids
