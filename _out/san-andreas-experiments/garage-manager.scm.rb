@@ -21,22 +21,12 @@ $_7140_cars_4 = 251754829
 $_7120_cars_current = 0
 $_7124_cars_index = 1
 
-# $_7120_cars_current - $_7120_cars_current
-# $_7124_cars_index - $_7124_cars_index
-# $_7128 - $_7128_cars_1
-# $_7132 - $_7132_cars_2
-# $_7136 - $_7136_cars_3
-# $_7140 - $_7140_cars_4
-# $_7120_cars_current = 0
-# $_7124_cars_index = 1
 cars_gxt_car_id = 0
-# cars_gxt = ""
 
 menu = 0
 menu_active = 0
 menu_debounce = 0
 line_index = 0
-menu_variation = -1
 menu_selected = 0
 menu_selected_2 = 0
 menu_selected_3 = 0
@@ -47,7 +37,6 @@ spawn_y = 0.0
 spawn_z = 0.0
 spawn_heading = 0.0
 
-car_creator_active = 0
 car_creator_saved_car = -1
 stats_index = 0
 stats_current = -1
@@ -223,7 +212,6 @@ spawn_car = routine do
   if tmp_car_variation < 15
     set_car_model_components(tmp_car_id,tmp_car_variation,-1)
   end
-  # set_car_model_components(tmp_car_id,menu_variation,-1)
 
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
@@ -310,13 +298,6 @@ show_garage_menu = routine do
     end
   end
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"",0)
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM012",0)
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"NUMBER",menu_variation)
-
   if car_creator_saved_car == -1
     car_creator_saved_car = -1
   else
@@ -328,6 +309,7 @@ show_garage_menu = routine do
 
 end
 
+
 show_car_creator_menu = routine do
   menu_active = 3
 
@@ -335,15 +317,22 @@ show_car_creator_menu = routine do
   set_player_control($_8,0)
   print_help_forever("GSCM013")
 
-  car_creator_active = 1
+  request_model(tmp_car_id)
+  wait(100)
+  load_all_models_now()
+  wait(100)
+  tmp, tmp, tmp, spawn_w, spawn_h, tmp = get_model_dimensions(tmp_car_id)
 
-  spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 4.0 , 4.0, 0.0 )
+  mult_float_lvar_by_val(spawn_h,0.75)
+  add_val_to_float_lvar(spawn_h,2.0)
+
+  spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , spawn_w , spawn_h, 0.0 )
   spawn_heading = get_char_heading($_12)
-  spawn_heading += 225.0
+  spawn_heading += 190.0
 
   spawn_car()
 
-  menu = create_menu( "GSCM007" , MENU_X , MENU_Y , MENU_WIDTH , 2 , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
+  menu = create_menu( "GSCM007" , MENU_X , MENU_Y , 120.0 , 2 , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
 
   # if $_7120_cars_current == -1
   #   line_index = -1
@@ -383,11 +372,10 @@ show_car_creator_menu = routine do
 end
 
 hide_menu = routine do
-  menu_active = 0
-  if car_creator_active > 0
+  if menu_active == 3
     despawn_car()
-    car_creator_active = 0
   end
+  menu_active = 0
   clear_help()
   delete_menu(menu)
   # set_time_scale(1.0)
@@ -440,10 +428,6 @@ handle_menu_input = routine do
         TIMER_A = 0
 
         if menu_options == 1 || menu_options == 2
-          menu_variation += 1
-          if menu_variation > 5
-            menu_variation = -1
-          end
           add_one_off_sound(0.0,0.0,0.0,1138)
           hide_menu()
           show_garage_menu()
@@ -477,11 +461,6 @@ handle_menu_input = routine do
           car = store_car_char_is_in_no_save( $_12 )
           tmp_car_id = get_car_model(car)
           tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
-          if menu_variation == -1
-            tmp_car_variation = 15
-          else
-            tmp_car_variation = menu_variation
-          end
           tmp_car_dirt = 0
           pack_int()
           $_7120_cars_current = tmp_packed
