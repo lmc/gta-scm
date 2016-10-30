@@ -5,18 +5,58 @@
 (HeaderSegment5 ((padding (int8 3)) (mystery (int32 0))))
 (HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 43800)) (allocated_external_count (int8 62)) (unused_external_count (int8 2)) (padding2 (int16 0))))
 
-
-
-% (goto ((label rpc_header_epilogue)))
-% (labeldef rpc_header_prologue)
-% % 1024 = 256 vars
-% (Padding (1024))
-% (labeldef rpc_header_epilogue)
-
-
 (script_name ((string8 "MAIN")))
+(gosub ((label bootstrap)))
 
-% (wait ((int32 100000)))
+(do_fade ((int16 1000) (int8 1)))
+(start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
+(start_new_script ((label coords_display_bootstrap) (end_var_args)))
+(start_new_script ((label carid2gxt_test) (end_var_args)))
+
+(labeldef idle_loop)
+(wait ((int8 100)))
+(goto ((label idle_loop)))
+
+
+
+
+(labeldef debug_rpc_bootstrap)
+(wait ((int8 0)))
+(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars1-16")))
+
+(labeldef coords_display_bootstrap)
+(wait ((int8 0)))
+(IncludeAndAssemble "coords-display" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars2-16")))
+
+(labeldef ruby_garage_manager)
+(script_name ((string8 "rgrgman")))
+(IncludeRuby "garage-manager")
+
+(labeldef carid2gxt_test)
+(wait ((int16 5000)))
+% (set_lvar_text_label ((lvar_string8 1) (dmavar 3456)))
+
+
+(labeldef carid2gxt_test2)
+(wait ((int16 20)))
+
+(set_var_text_label ((dmavar 7112) (string8 "BUFFALO")))
+(set_var_int ((dmavar 7104) (int16 613)))
+(gosub ((label carid2gxt_addr)))
+
+
+(use_text_commands ((int8 0)))
+(set_text_scale ((float32 0.48) (float32 1.68)))
+(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
+(set_text_font ((int8 3)))
+(display_text ((float32 300.0) (float32 200.0) (var_string8 7112)))
+(goto ((label carid2gxt_test2)))
+
+(labeldef carid2gxt_addr)
+(Include "carid2gxt")
+
+
+(labeldef bootstrap)
 
 (do_fade ((int8 0) (int8 0)))
 
@@ -43,139 +83,6 @@
 (add_hospital_restart ((float32 2027.77001953125) (float32 -1420.52001953125) (float32 15.989999771118164) (float32 137.0) (int8 0)))
 (add_police_restart ((float32 1550.6800537109375) (float32 -1675.489990234375) (float32 14.510000228881836) (float32 90.0) (int8 0)))
 
-(do_fade ((int16 1000) (int8 1)))
-(start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
-(start_new_script ((label display_coordinates_bootstrap) (end_var_args)))
-% (start_new_script ((label sprite_init) (end_var_args)))
-% (start_new_script ((label sprite_view) (end_var_args)))
-% (start_new_script ((label display_gang_zones_bootstrap) (end_var_args)))
-% (start_new_script ((label checkpoint_test_bootstrap) (end_var_args)))
-% (start_new_script ((label gimme_car) (end_var_args)))
-
-
-% (request_model ((int16 413)))
-% (load_all_models_now)
-% (create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car)))
-% (create_car ((int16 413) (float32 0.0) (float32 0.0) (float32 0.0) (var test_car2)))
-
-
-(labeldef idle_loop)
-(wait ((int8 100)))
-(goto ((label idle_loop)))
-
-(labeldef debug_rpc_bootstrap)
-(script_name ((string8 "dbgrpc")))
-(wait ((int32 1000)))
-% (Include "debug-rpc")
-(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset (0 4852 1224)))
-
-(labeldef display_coordinates_bootstrap)
-% (script_name ((string8 "coords")))
-(wait ((int8 0)))
-(Include "coords-display")
-
-% (labeldef display_gang_zones_bootstrap)
-% (script_name ((string8 "gangzon")))
-% (wait ((int32 1000)))
-% (Include "gang-zone-display")
-
-% (labeldef checkpoint_test_bootstrap)
-% (script_name ((string8 "chkpnt")))
-% (wait ((int32 1000)))
-% (Include "checkpoint-test")
-
-
-
-
-
-
-% (labeldef sprite_init)
-% (set_var_int   ((var sprites_loaded) (int32 0)))
-% (use_text_commands ((int8 1)))
-
-% (load_texture_dictionary ((string8 "LD_RCE2")))
-% % 01089385 - 8f 03 04 07 0e 06 52 41 43 45 30 36
-% (load_sprite ((int8 7) (vlstring "RACE06")))
-% % 01089397 - 8f 03 04 08 0e 06 52 41 43 45 30 37
-% % (load_sprite ((int8 1) (vlstring "RACE07")))
-% % % 01089409 - 8f 03 04 09 0e 06 52 41 43 45 30 38
-% % (load_sprite ((int8 2) (vlstring "RACE08")))
-% % % 01089421 - 8f 03 04 0a 0e 06 52 41 43 45 30 39
-% % (load_sprite ((int8 3) (vlstring "RACE09")))
-% % % 01089433 - 8f 03 04 0b 0e 06 52 41 43 45 31 30
-% % (load_sprite ((int8 4) (vlstring "RACE10")))
-% % % 01089445 - 8f 03 04 0c 0e 06 52 41 43 45 31 31
-% % (load_sprite ((int8 5) (vlstring "RACE11")))
-% (set_var_int   ((var sprites_loaded) (int32 1)))
-% % (terminate_this_script)
-
-% (wait ((int16 3000)))
-
-
-% (labeldef sprite_view)
-% (wait ((int16 30)))
-% (andor ((int8 0)))
-%   (is_int_var_greater_than_number ((var sprites_loaded) (int32 0)))
-% (goto_if_false ((label sprite_view)))
-
-% (draw_sprite ((int8 7) (float32 160.0) (float32 112.0) (float32 320.0) (float32 224.0) (int16 150) (int16 150) (int16 150) (int16 255)))
-% (goto ((label sprite_view)))
-
-
-
-
-
-
-(labeldef gimme_car)
-
-(request_model ((int16 541)))
-(load_all_models_now)
-(create_car ((int16 541) (float32 2485.219970703125) (float32 -1662.9410400390625) (float32 13.729999542236328) (var test_car)))
-% pro car ideas
-% 018F IS_CAR_STUCK_ON_ROOF
-
-(terminate_this_script)
-
-(wait ((int16 1)))
-
-% 3079744 - scm size
-% 3079744 - 56257
-(PadUntil (3079744))
-
-% check how gang zones work re: percentage captured
-% max gang strength = 40
-% (set_zone_gang_strength ((string8 "GAN1") (int8 1) (int8 25)))
-
-% can you keep territory and turn off wars?
-% (set_gang_wars_active ((int8 0)))
-% (set_specific_zone_to_trigger_gang_war ((string8 "GLN1")))
-% (clear_specific_zones_to_trigger_gang_war)
-
-
-%(update_pickup_money_per_day ((var 2840) (var 2848)))
-% (create_protection_pickup ((float32 2502.10009765625) (float32 -1686.3800048828125) (float32 13.0) (int16 10000) (var 2848) (var 2840)))
-
-
-% (find_number_tags_tagged ((var 3204)))
-%photos
-% (get_int_stat ((int16 231) (var 3200)))
-% horseshoes
-% (get_int_stat ((int16 241) (var 3196)))
-% oyster
-% (get_int_stat ((int16 243) (var 3192)))
-
-% int stats get set when missions are complete
-% starting at (set_int_stat ((int16 302) (int8 1)))
-
-% get float day counter with 
-% int stat 134
-% + (hours) * 40 (= 960 max)
-
-% have assets/gangs pay out guns/ammo/vehicles?
-
-% radar blip : 55 SA radar impound.png  radar_impound LG_57 Car impound
-
-% auto-rollover detection/fixer
-
+(return)
 
 

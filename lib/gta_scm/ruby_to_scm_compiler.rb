@@ -184,6 +184,7 @@ class GtaScm::RubyToScmCompiler
       type = self.constants_to_types[ right.children[1] ]
     end
 
+    # FIXME: handle :str here
 
     # debugger
     if type == :int

@@ -323,6 +323,18 @@ describe GtaScm::RubyToScmCompiler do
     end
   end
 
+  describe "strings" do
+    let(:ruby) { <<-RUBY
+        a = "TEST"
+        print_help_forever(a)
+      RUBY
+    }
+    it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+    LISP
+    }
+  end
+
   describe "elsif" do
     let(:ruby) { <<-RUBY
         loop do

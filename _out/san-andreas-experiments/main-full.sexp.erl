@@ -55,7 +55,7 @@
 %  last oyster   : 12124 /4= 3031
 (terminate_all_scripts_with_this_name ((string8 "zfndcol")))
 
-(start_new_script ((label ruby_test) (end_var_args)))
+% (start_new_script ((label ruby_test) (end_var_args)))
 (start_new_script ((label test) (end_var_args)))
 (start_new_script ((label ruby_garage_menu) (end_var_args)))
 (terminate_this_script)
@@ -95,6 +95,9 @@
 (labeldef ruby_garage_menu)
 (script_name ((string8 "rgrgmen")))
 (IncludeRuby "garage-manager")
+
+% (labeldef ruby_garage_menu)
+% (IncludeRuby "carid2gxt")
 
 
 (labeldef test)
