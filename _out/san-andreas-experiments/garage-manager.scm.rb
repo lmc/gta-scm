@@ -203,9 +203,7 @@ end
 
 spawn_car = routine do
   request_model(tmp_car_id)
-  wait(100)
   load_all_models_now()
-  wait(100)
 
   despawn_car()
 
@@ -215,11 +213,20 @@ spawn_car = routine do
 
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
-  change_car_colour(car,tmp_car_col_1,tmp_car_col_2)
+  if tmp_car_col_1 > 0 && tmp_car_col_2 > 0
+    change_car_colour(car,tmp_car_col_1,tmp_car_col_2)
+  end
   set_vehicle_dirt_level(car,14.0)
   mark_car_as_no_longer_needed(car)
   mark_model_as_no_longer_needed(tmp_car_id)
 
+end
+
+set_factory_colours = routine do
+  tmp_car_col_1 = -1
+  tmp_car_col_2 = -1
+  spawn_car()
+  tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
 end
 
 
@@ -367,6 +374,9 @@ show_car_creator_menu = routine do
   set_menu_item_with_number(menu,0,line_index,"GSCM012",0)
   set_menu_item_with_number(menu,1,line_index,"NUMBER",tmp_car_variation)
 
+  line_index += 1
+  set_menu_item_with_number(menu,0,line_index,"GSCM015",0)
+
   set_active_menu_item(menu,menu_selected_3)
 
 end
@@ -405,7 +415,7 @@ handle_menu_input = routine do
         elsif menu_selected == 1
           hide_menu()
           # tmp_car_id = 541
-          tmp_car_id = 525
+          tmp_car_id = 596
           tmp_car_col_1 = 30
           tmp_car_col_2 = 2
           tmp_car_variation = 1
@@ -494,7 +504,8 @@ handle_menu_input = routine do
       menu_selected_3 = menu_selected
       stats_index = menu_selected
 
-      if is_button_pressed(0,16) # X = accept (spawn)
+      if is_button_pressed(0,14) # square = store
+
         TIMER_A = 0
         add_one_off_sound(0.0,0.0,0.0,1138)
         pack_int()
@@ -507,17 +518,31 @@ handle_menu_input = routine do
         add_one_off_sound(0.0,0.0,0.0,1054)
         hide_menu()
 
-      elsif is_button_pressed(0,14) # square = store
+      elsif is_button_pressed(0,16) # X = accept
         TIMER_A = 0
         add_one_off_sound(0.0,0.0,0.0,1054)
 
-        read_stats_array()
-        stats_current += 1
-        write_stats_array()
+        if menu_selected_3 > 1 && menu_selected_3 < 5
+          menu_selected_3 = menu_selected_3
+        else
+        end
 
-        hide_menu()
-        show_car_creator_menu()
-        
+        if menu_selected_3 == 5
+          set_factory_colours()
+          hide_menu()
+          show_car_creator_menu()
+        else
+          read_stats_array()
+          stats_current += 1
+          write_stats_array()
+
+          if menu_selected_3 < 2
+            set_factory_colours()
+          end
+
+          hide_menu()
+          show_car_creator_menu()
+        end
       elsif is_button_pressed(0,17) # circle = delete
         TIMER_A = 0
         add_one_off_sound(0.0,0.0,0.0,1054)
