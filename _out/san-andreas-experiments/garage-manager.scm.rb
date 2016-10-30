@@ -15,7 +15,8 @@ tmp_pack_tmp = 0
 MAX_CARS = 4
 cars_1 = 197456
 cars_2 = 96589
-cars_3 = 67092
+# cars_3 = 67092
+cars_3 = -1
 cars_4 = 65732
 cars_current = 0
 cars_index = 1
@@ -28,11 +29,12 @@ menu_debounce = 0
 line_index = 0
 menu_selected = 0
 
-spawn_car = 0
+car = 0
 spawn_x = 0.0
 spawn_y = 0.0
 spawn_z = 0.0
 spawn_heading = 0.0
+spawn_variation = 0
 
 read_cars_array = routine do
   if cars_index == 1
@@ -60,6 +62,9 @@ write_cars_array = routine do
 end
 write_cars_array()
 
+
+# car variation ids:
+# group 1 - bloodra/hotrin = 6 variations
 pack_int = routine do
   tmp_pack_idx = -1
   tmp_pack_idx2 = -1
@@ -144,14 +149,20 @@ spawn_car = routine do
   request_model(tmp_car_id)
   load_all_models_now()
 
-  if not is_car_dead(spawn_car)
-    delete_car(spawn_car)
+  if not is_car_dead(car)
+    delete_car(car)
   end
 
-  spawn_car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
-  set_car_heading(spawn_car,spawn_heading)
-  change_car_colour(spawn_car,tmp_car_col_1,tmp_car_col_2)
-  mark_car_as_no_longer_needed(spawn_car)
+  set_car_model_components(tmp_car_id,spawn_variation,spawn_variation)
+  car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
+  set_car_heading(car,spawn_heading)
+  change_car_colour(car,tmp_car_col_1,tmp_car_col_2)
+  mark_car_as_no_longer_needed(car)
+
+  spawn_variation += 1
+  if spawn_variation > 5
+    spawn_variation = 0
+  end
   
 end
 
@@ -189,8 +200,14 @@ show_menu = routine do
     unpack_int()
 
     # call car_id -> gxt string routine for tmp_car_id (results in $str_7112)
+    $_7112 = 0
+    $_7116 = 0
     $_7104 = tmp_car_id
     gosub(CARID2GXT_ROUTINE)
+
+    if $_7112 == 0
+      set_var_text_label($str_7112,"BJ_HIDE")
+    end
 
     # set menu item string to car name
     line_index = cars_index
@@ -213,33 +230,54 @@ hide_menu = routine do
   delete_menu(menu)
   # set_time_scale(1.0)
   set_player_control($_8,1)
-  wait(200)
 end
 
 handle_menu_input = routine do
   menu_selected = get_menu_item_selected(menu)
+  cars_index = menu_selected
+  cars_index += 1
 
   if TIMER_A > 200
 
     if is_button_pressed(0,16) # X = accept (spawn)
       TIMER_A = 0
-      add_one_off_sound(0.0,0.0,0.0,1057)
-      cars_index = menu_selected
-      cars_index += 1
-      spawn_car()
+      read_cars_array()
+      if cars_current == -1
+        add_one_off_sound(0.0,0.0,0.0,1137)
+      else
+        add_one_off_sound(0.0,0.0,0.0,1138)
+        spawn_car()
+      end
 
     elsif is_button_pressed(0,15) # triangle = cancel
       TIMER_A = 0
-      add_one_off_sound(0.0,0.0,0.0,1057)
+      add_one_off_sound(0.0,0.0,0.0,1054)
       hide_menu()
 
-    elsif is_button_pressed(0,15) # square = store
+    elsif is_button_pressed(0,14) # square = store
       TIMER_A = 0
-      add_one_off_sound(0.0,0.0,0.0,1057)
+      if is_char_in_any_car( $_12 )
+        car = store_car_char_is_in_no_save( $_12 )
+        tmp_car_id = get_car_model(car)
+        tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
+        tmp_car_spare = 0
+        pack_int()
+        cars_current = tmp_packed
+        write_cars_array()
+        hide_menu()
+        show_menu()
+        add_one_off_sound(0.0,0.0,0.0,1138)
+      else
+        add_one_off_sound(0.0,0.0,0.0,1137)
+      end
 
-    elsif is_button_pressed(0,15) # circle = delete
+    elsif is_button_pressed(0,17) # circle = delete
       TIMER_A = 0
-      add_one_off_sound(0.0,0.0,0.0,1057)
+      add_one_off_sound(0.0,0.0,0.0,1138)
+      cars_current = -1
+      write_cars_array()
+      hide_menu()
+      show_menu()
 
     end
 
@@ -271,12 +309,7 @@ loop do
       handle_menu_input()
     end
 
-    if is_char_in_any_car( $_12 )
-      car = store_car_char_is_in_no_save( $_12 )
-      tmp_car_id = get_car_model(car)
-      tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
-      pack_int()
-    end
+
   end
 
 end

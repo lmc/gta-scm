@@ -522,6 +522,12 @@ class GtaScm::RubyToScmCompiler
           left_var_type = self.lvar_names_to_types[ node.children[0].children[0] ]
           raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
           opcode_name << "#{left_var_type}_lvar"
+        elsif left_type == :gvar
+          left_value = gvar(node.children[0].children[0])
+          # left_var_type = self.gvar_names_to_types[ node.children[0].children[0] ]
+          # raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
+          left_var_type = :int
+          opcode_name << "#{left_var_type}_var"          
         else
           raise "can only handle lvars on left side"
         end
