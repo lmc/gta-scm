@@ -134,6 +134,14 @@ describe GtaScm::RubyToScmCompiler do
           LISP
         }
       end
+      context "local to dma assignment" do
+        let(:ruby){"local_var = 1; $_24 = local_var"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+            (set_lvar_int ((lvar 0 local_var) (int32 1)))
+            (set_var_int_to_lvar_int ((dmavar 24) (lvar 0 local_var)))
+          LISP
+        }
+      end
     end
 
     context "type-casting" do
@@ -170,6 +178,20 @@ describe GtaScm::RubyToScmCompiler do
           (goto_if_false ((label label_1)))
           (wait ((int32 1)))
           (labeldef label_1)
+          LISP
+        }
+      end
+      context "calls with constant" do
+        let(:ruby){"FOO = 1; gosub(FOO)"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (gosub ((int32 1)))
+          LISP
+        }
+      end
+      context "calls with string constant" do
+        let(:ruby){'FOO = "TEST"; gosub(FOO)'}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (gosub ((string8 "TEST")))
           LISP
         }
       end
@@ -335,6 +357,20 @@ describe GtaScm::RubyToScmCompiler do
         (set_lvar_text_label ((lvar_string8 1 a) (string8 "TEST")))
         (set_lvar_text_label ((lvar_string8 3 b) (string8 "what")))
         (print_help_forever ((lvar_string8 1 a)))
+      LISP
+      }
+    end
+    context "global variables" do
+      let(:ruby) { <<-RUBY
+          $a = "TEST"
+          $b = "what"
+          print_help_forever($a)
+        RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_var_text_label ((var_string8 a) (string8 "TEST")))
+        (set_var_text_label ((var_string8 b) (string8 "what")))
+        (print_help_forever ((var_string8 a)))
       LISP
       }
     end

@@ -12,6 +12,7 @@
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
 (start_new_script ((label coords_display_bootstrap) (end_var_args)))
 (start_new_script ((label carid2gxt_test) (end_var_args)))
+(start_new_script ((label ruby_garage_manager) (end_var_args)))
 
 (labeldef idle_loop)
 (wait ((int8 100)))
@@ -27,10 +28,6 @@
 (labeldef coords_display_bootstrap)
 (wait ((int8 0)))
 (IncludeAndAssemble "coords-display" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars2-16")))
-
-(labeldef ruby_garage_manager)
-(script_name ((string8 "rgrgman")))
-(IncludeRuby "garage-manager")
 
 (labeldef carid2gxt_test)
 (wait ((int16 5000)))
@@ -86,3 +83,7 @@
 (return)
 
 
+
+(labeldef ruby_garage_manager)
+(script_name ((string8 "rgrgman")))
+(IncludeRuby "garage-manager")

@@ -173,6 +173,10 @@ class GtaScm::RubyToScmCompiler
     right = node.children[1]
     right_val = nil
 
+    # if left.is_a?(Symbol) && left.to_s.match(/\A\$/)
+    #   return [emit_operator_assign(node)]
+    # end
+
     if right.type == :send
       return [emit_assignment_opcode_call(right, node)]
     end
@@ -604,10 +608,13 @@ class GtaScm::RubyToScmCompiler
       name = node.children[0].to_s.gsub(%r(^\$),'')
       if matches = name.match(%r(^_(\d+)))
         [:dmavar, matches[1].to_i]
+      elsif matches = name.match(%r(^str_(\d+)))
+        [:var_string8, matches[1].to_i]
       else
         gvar(name)
       end
-
+    when :const
+      self.constants_to_values[ node.children[1] ]
     else
       debugger
       raise "emit_value ??? #{node.inspect}"
@@ -683,21 +690,42 @@ class GtaScm::RubyToScmCompiler
   end
 
   attr_accessor :gvar_names_to_ids
+  attr_accessor :gvar_names_to_types
   attr_accessor :generate_gvar_counter
   def gvar(name,type = nil)
     self.gvar_names_to_ids ||= {}
+    self.gvar_names_to_types ||= {}
     self.generate_gvar_counter ||= 4
 
     name = name.to_s.gsub(/\A\$/,'').to_sym
+
+    # debugger
+    if matches = name.to_s.match(/\A_(\d+)\z/)
+      return [:dmavar, matches[1].to_i]
+    end
+
     id = if self.gvar_names_to_ids[name]
       self.gvar_names_to_ids[name]
     else
       self.generate_gvar_counter += 4
+
       self.gvar_names_to_ids[name] = self.generate_gvar_counter
+      self.gvar_names_to_types[name] = type
+
+      if type == :string
+        self.generate_gvar_counter += 4
+      end
 
       self.gvar_names_to_ids[name]
     end
-    [:var, name]
+
+    type ||= self.gvar_names_to_types[name]
+
+    if type == :string
+      [:var_string8, name]
+    else
+      [:var, name]
+    end
   end
 
 
