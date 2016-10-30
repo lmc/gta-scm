@@ -263,6 +263,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           n = GtaScm::Node::Raw.new( code.bytes )
           self.on_include(offset,n,tokens)
+          self.include_sizes[file] = n.size
           n
 
         when :IncludeAndAssemble

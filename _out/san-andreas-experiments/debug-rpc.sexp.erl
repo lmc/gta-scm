@@ -117,7 +117,7 @@
 (set_var_int ((var debug_rpc_int_arg_7) (int32 0)))
 (set_var_int ((var debug_rpc_syscall) (int32 0)))
 
-(add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1056)))
+(add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1057)))
 
 (goto ((label debug_rpc_worker_top)))
 

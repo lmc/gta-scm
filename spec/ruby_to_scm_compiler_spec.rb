@@ -345,6 +345,27 @@ describe GtaScm::RubyToScmCompiler do
     end
   end
 
+  describe "thread timers" do
+    context "timers" do
+      let(:ruby) { <<-RUBY
+          TIMER_A = 0
+          if TIMER_A > 200
+            wait(1)
+          end
+        RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 32 timer_a) (int32 0)))
+        (andor ((int8 0)))
+        (is_int_lvar_greater_than_number ((lvar 32 timer_a) (int32 200)))
+        (goto_if_false ((label label_1)))
+        (wait ((int32 1)))
+        (labeldef label_1)
+      LISP
+      }
+    end
+  end
+
   describe "strings" do
     context "variables" do
       let(:ruby) { <<-RUBY

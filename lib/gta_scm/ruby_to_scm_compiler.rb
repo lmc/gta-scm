@@ -61,7 +61,6 @@ class GtaScm::RubyToScmCompiler
     when :casgn
 
       record_constant_assign(node)
-      []
 
     when :op_asgn
 
@@ -243,10 +242,15 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :constants_to_values
   attr_accessor :constants_to_types
   def record_constant_assign(node)
-    self.constants_to_values ||= {}
-    self.constants_to_values[ node.children[1] ] = emit_value( node.children[2] )
-    self.constants_to_types ||= {}
-    self.constants_to_types[ node.children[1] ] = node.children[2].type
+    if node.children[1] == :TIMER_A
+      return [ [:set_lvar_int,[[:lvar,32,:timer_a],[:int32,node.children[2].children[0]]]] ]
+    else
+      self.constants_to_values ||= {}
+      self.constants_to_values[ node.children[1] ] = emit_value( node.children[2] )
+      self.constants_to_types ||= {}
+      self.constants_to_types[ node.children[1] ] = node.children[2].type
+      return []
+    end
   end
 
   ASSIGNMENT_OPERATORS = {
@@ -508,7 +512,12 @@ class GtaScm::RubyToScmCompiler
 
         opcode_name = "#{not_operator}is_"
 
-        if left_type == :lvar
+        if node.children[0].type == :const && node.children[0].children[1] == :TIMER_A
+          left_value = [:lvar, 32, :timer_a]
+          left_var_type = :int
+          left_type = :lvar
+          opcode_name << "#{left_var_type}_lvar"
+        elsif left_type == :lvar
           left_value = lvar(node.children[0].children[0])
           left_var_type = self.lvar_names_to_types[ node.children[0].children[0] ]
           raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
@@ -565,7 +574,9 @@ class GtaScm::RubyToScmCompiler
 
     andor_id, conditions = *emit_if_conditions( node.children[0] )
 
-    if node.children[0].type == :send && [:begin,:send,:if,:op_asgn,:lvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
+    # TODO: handle bool check of variable `if var` (node.children[0].type == :lvar)
+
+    if [:send,:and].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
         [:andor,[[:int8, andor_id]]],
