@@ -28,8 +28,7 @@ menu_active = 0
 menu_debounce = 0
 line_index = 0
 menu_selected = 0
-menu_selected_2 = 0
-menu_selected_3 = 0
+menu_selected_tmp = 0
 
 car = 0
 spawn_x = 0.0
@@ -52,7 +51,6 @@ read_cars_array = routine do
     $_7120_cars_current = $_7140_cars_4
   end
 end
-read_cars_array()
 
 write_cars_array = routine do
   if $_7124_cars_index == 1
@@ -65,7 +63,6 @@ write_cars_array = routine do
     $_7140_cars_4 = $_7120_cars_current
   end
 end
-write_cars_array()
 
 read_stats_array = routine do
   if stats_index == 0 || stats_index == 1
@@ -312,10 +309,15 @@ show_garage_menu = routine do
     set_menu_item_with_number(menu,0,line_index,"GSCM014",0)
   end
 
-  set_active_menu_item(menu,menu_selected_2)
+  if menu_selected > 199 && menu_selected < 299
+    menu_selected_tmp = menu_selected
+    menu_selected_tmp -= 200
+    set_active_menu_item(menu,menu_selected_tmp)
+  end
 
 end
 
+# FIXME: persist menu selection between rebuilds
 
 show_car_creator_menu = routine do
   menu_active = 3
@@ -325,9 +327,7 @@ show_car_creator_menu = routine do
   print_help_forever("GSCM013")
 
   request_model(tmp_car_id)
-  wait(100)
   load_all_models_now()
-  wait(100)
   tmp, tmp, tmp, spawn_w, spawn_h, tmp = get_model_dimensions(tmp_car_id)
 
   mult_float_lvar_by_val(spawn_h,0.75)
@@ -377,7 +377,11 @@ show_car_creator_menu = routine do
   line_index += 1
   set_menu_item_with_number(menu,0,line_index,"GSCM015",0)
 
-  set_active_menu_item(menu,menu_selected_3)
+  if menu_selected > 299 && menu_selected < 399
+    menu_selected_tmp = menu_selected
+    menu_selected_tmp -= 300
+    set_active_menu_item(menu,menu_selected_tmp)
+  end
 
 end
 
@@ -394,83 +398,89 @@ end
 
 handle_menu_input = routine do
   menu_selected = get_menu_item_selected(menu)
-  menu_options = menu_selected
-  menu_options -= MAX_CARS
-  $_7124_cars_index = menu_selected
-  # $_7124_cars_index += 1
-  add_val_to_int_var($_7124_cars_index,1)
+  menu_selected_tmp = menu_active
+  # menu_selected_tmp *= 100
+  mult_int_lvar_by_val(menu_selected_tmp,100)
+  # menu_selected += menu_selected_tmp
+  add_val_to_int_lvar(menu_selected,menu_selected_tmp)
 
+  # $_7124_cars_index = menu_selected
+  # # $_7124_cars_index += 1
+  # add_val_to_int_var($_7124_cars_index,1)
+
+  if menu_active == 2
+    $_7124_cars_index = menu_selected
+    sub_val_from_int_var($_7124_cars_index,200)
+    add_val_to_int_var($_7124_cars_index,1)
+  elsif menu_active == 3
+    stats_index = menu_selected
+    stats_index -= 300
+  end
 
   if TIMER_A > 200
-
-    if menu_active == 1
-
-      if is_button_pressed(0,16) # X = accept (spawn)
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1138)
-
-        if menu_selected == 0
-          hide_menu()
-          show_garage_menu()
-        elsif menu_selected == 1
-          hide_menu()
-          # tmp_car_id = 541
-          tmp_car_id = 596
-          tmp_car_col_1 = 30
-          tmp_car_col_2 = 2
-          tmp_car_variation = 1
-          tmp_car_dirt = 0
-          show_car_creator_menu()
-        end
-
-      elsif is_button_pressed(0,15) # triangle = cancel
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1054)
+    if is_button_pressed(0,16) # X = accept
+      TIMER_A = 0
+      if menu_selected == 100
         hide_menu()
-
-      end
-
-    elsif menu_active == 2
-
-      menu_selected_2 = menu_selected
-
-      if is_button_pressed(0,16) # X = accept (spawn)
-        TIMER_A = 0
-
-        if menu_options == 1 || menu_options == 2
-          add_one_off_sound(0.0,0.0,0.0,1138)
-          hide_menu()
-          show_garage_menu()
-        else
-
+        show_garage_menu()
+      elsif menu_selected == 101
+        hide_menu()
+        tmp_car_id = 541
+        tmp_car_col_1 = 30
+        tmp_car_col_2 = 8
+        tmp_car_variation = 0
+        tmp_car_dirt = 0
+        show_car_creator_menu()
+      elsif menu_selected > 199 && menu_selected < 205
+        if car_creator_saved_car == -1
           read_cars_array()
-          if $_7120_cars_current == -1
-            add_one_off_sound(0.0,0.0,0.0,1137)
-          else
-            add_one_off_sound(0.0,0.0,0.0,1138)
-            spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
-            spawn_heading = get_char_heading($_12)
-            spawn_heading += 90.0
-            read_cars_array()
-            tmp_packed = $_7120_cars_current
-            unpack_int()
-            spawn_car()
-          end
+          tmp_packed = $_7120_cars_current
+        else
+          tmp_packed = car_creator_saved_car
+          car_creator_saved_car = -1
+        end
+        if $_7120_cars_current == -1
+          add_one_off_sound(0.0,0.0,0.0,1137)
+        else
+          add_one_off_sound(0.0,0.0,0.0,1138)
+          spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
+          spawn_heading = get_char_heading($_12)
+          spawn_heading += 90.0
+          unpack_int()
+          spawn_car()
+          hide_menu()
+          show_garage_menu()
+        end
+      elsif menu_selected > 299 && menu_selected < 399
+        read_stats_array()
+        stats_current += 1
+        write_stats_array()
 
+        if menu_selected < 302
+          set_factory_colours()
+        end
+        if menu_selected == 305
+          set_factory_colours()
         end
 
-      elsif is_button_pressed(0,15) # triangle = cancel
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1054)
         hide_menu()
+        show_car_creator_menu()
+      end
+    elsif is_button_pressed(0,15) # triangle = cancel
+      TIMER_A = 0
+      hide_menu()
+      if menu_selected > 199
         show_menu()
+      end
+    elsif is_button_pressed(0,14) # square = store
+      TIMER_A = 0
 
-      elsif is_button_pressed(0,14) # square = store
-        TIMER_A = 0
+      if menu_active == 2
         if is_char_in_any_car( $_12 )
           car = store_car_char_is_in_no_save( $_12 )
           tmp_car_id = get_car_model(car)
           tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
+          tmp_car_variation = 0
           tmp_car_dirt = 0
           pack_int()
           $_7120_cars_current = tmp_packed
@@ -482,69 +492,33 @@ handle_menu_input = routine do
           if car_creator_saved_car == -1
             add_one_off_sound(0.0,0.0,0.0,1137)
           else
+            add_one_off_sound(0.0,0.0,0.0,1138)
             $_7120_cars_current = car_creator_saved_car
             car_creator_saved_car = -1
             write_cars_array()
             hide_menu()
             show_garage_menu()
-            add_one_off_sound(0.0,0.0,0.0,1138)
           end
         end
 
-      elsif is_button_pressed(0,17) # circle = delete
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1138)
-        $_7120_cars_current = -1
-        write_cars_array()
-        hide_menu()
-        show_garage_menu()
-      end
-    elsif menu_active == 3
+      elsif menu_active == 3
 
-      menu_selected_3 = menu_selected
-      stats_index = menu_selected
-
-      if is_button_pressed(0,14) # square = store
-
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1138)
         pack_int()
         car_creator_saved_car = tmp_packed
         hide_menu()
         show_garage_menu()
 
-      elsif is_button_pressed(0,15) # triangle = cancel
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1054)
+      end
+
+    elsif is_button_pressed(0,17) # circle = delete
+      TIMER_A = 0
+      if menu_active == 2
+        add_one_off_sound(0.0,0.0,0.0,1138)
+        $_7120_cars_current = -1
+        write_cars_array()
         hide_menu()
-
-      elsif is_button_pressed(0,16) # X = accept
-        TIMER_A = 0
-        add_one_off_sound(0.0,0.0,0.0,1054)
-
-        if menu_selected_3 > 1 && menu_selected_3 < 5
-          menu_selected_3 = menu_selected_3
-        else
-        end
-
-        if menu_selected_3 == 5
-          set_factory_colours()
-          hide_menu()
-          show_car_creator_menu()
-        else
-          read_stats_array()
-          stats_current += 1
-          write_stats_array()
-
-          if menu_selected_3 < 2
-            set_factory_colours()
-          end
-
-          hide_menu()
-          show_car_creator_menu()
-        end
-      elsif is_button_pressed(0,17) # circle = delete
-        TIMER_A = 0
+        show_garage_menu()
+      elsif menu_active == 3
         add_one_off_sound(0.0,0.0,0.0,1054)
 
         read_stats_array()
@@ -553,10 +527,9 @@ handle_menu_input = routine do
 
         hide_menu()
         show_car_creator_menu()
-
       end
+      
     end
-
   end
 
 end
@@ -588,6 +561,10 @@ loop do
 
   end
 
-end
 
-  unpack_int()
+  tmp1 = -1
+  tmp2 = -1
+  tmp3 = -1
+
+
+end
