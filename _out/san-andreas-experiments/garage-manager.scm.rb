@@ -176,7 +176,7 @@ spawn_car = routine do
 
 end
 
-CARID2GXT_ROUTINE = 57453
+CARID2GXT_ROUTINE = 57359
 # red bmx = 197456 (packed car id 81 (orig 481))
 # red supra = 96589 (packed car id 77 (orig 477))
 # taxi = 67092 (packed car id 20 (orig 420))
@@ -186,11 +186,11 @@ show_menu = routine do
   menu_active = 1
   # set_time_scale(0.0)
   set_player_control($_8,0)
-  print_help_forever("CLOTHA")
+  print_help_forever("GSCM003")
 
-  MENU_HEADER = "IE09"
+  MENU_HEADER = "GSCM001"
   MENU_X = 30.0
-  MENU_Y = 130.0
+  MENU_Y = 160.0
   MENU_WIDTH = 150.0
   MENU_COLUMNS = 1
   MENU_INTERACTIVE = 1
@@ -216,7 +216,7 @@ show_menu = routine do
     gosub(CARID2GXT_ROUTINE)
 
     if $_7112 == 0
-      set_var_text_label($str_7112,"BJ_HIDE")
+      set_var_text_label($str_7112,"GSCM004")
     end
 
     # set menu item string to car name
@@ -233,7 +233,7 @@ show_menu = routine do
   line_index += 1
   set_menu_item_with_number(menu,0,line_index,"",0)
   line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"CARDB1",0)
+  set_menu_item_with_number(menu,0,line_index,"GSCM002",0)
   line_index += 1
   set_menu_item_with_number(menu,0,line_index,"NUMBER",menu_variation)
 

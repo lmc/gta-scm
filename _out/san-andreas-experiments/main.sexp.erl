@@ -11,7 +11,7 @@
 (do_fade ((int16 1000) (int8 1)))
 (start_new_script ((label debug_rpc_bootstrap) (end_var_args)))
 (start_new_script ((label coords_display_bootstrap) (end_var_args)))
-(start_new_script ((label carid2gxt_test) (end_var_args)))
+(start_new_script ((label debug_helper) (end_var_args)))
 (start_new_script ((label ruby_garage_manager) (end_var_args)))
 
 (labeldef idle_loop)
@@ -29,29 +29,9 @@
 (wait ((int8 0)))
 (IncludeAndAssemble "coords-display" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars2-16")))
 
-(labeldef carid2gxt_test)
-(wait ((int16 5000)))
-% (set_lvar_text_label ((lvar_string8 1) (dmavar 3456)))
-
-
-(labeldef carid2gxt_test2)
-(wait ((int16 20)))
-
-(set_var_text_label ((dmavar 7112) (string8 "BUFFALO")))
-(set_var_int ((dmavar 7104) (int16 613)))
-(gosub ((label carid2gxt_addr)))
-
-
-(use_text_commands ((int8 0)))
-(set_text_scale ((float32 0.48) (float32 1.68)))
-(set_text_edge ((int8 2) (int8 0) (int8 0) (int8 0) (int16 255)))
-(set_text_font ((int8 3)))
-(display_text ((float32 300.0) (float32 200.0) (var_string8 7112)))
-(goto ((label carid2gxt_test2)))
-
 (labeldef carid2gxt_addr)
 (Include "carid2gxt")
-
+(gosub ((label carid2gxt_addr)))
 
 (labeldef bootstrap)
 
@@ -87,3 +67,13 @@
 (labeldef ruby_garage_manager)
 (script_name ((string8 "rgrgman")))
 (IncludeRuby "garage-manager")
+
+
+(labeldef debug_helper)
+
+(add_score ((dmavar 8) (int16 12000)))
+
+(labeldef debug_helper_loop)
+(wait ((int8 10)))
+(clear_wanted_level ((dmavar 8)))
+(goto ((label debug_helper_loop)))
