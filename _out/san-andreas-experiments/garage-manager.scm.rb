@@ -167,6 +167,9 @@ spawn_car = routine do
   load_all_models_now()
 
   if not is_car_dead(car)
+    if is_char_in_car($_12,car)
+      remove_char_from_car_maintain_position($_12,car)
+    end
     delete_car(car)
   end
 
