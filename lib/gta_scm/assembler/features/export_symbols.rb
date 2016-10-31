@@ -6,10 +6,14 @@ module GtaScm::Assembler::Feature::ExportSymbols
       attr_accessor :var_types
       attr_accessor :label_map
       attr_accessor :includes
+      attr_accessor :threads
+      attr_accessor :threads_lvars
     end
     self.var_types = Hash.new
     self.label_map = Hash.new
     self.includes = Array.new
+    self.threads = Hash.new
+    self.threads_lvars = Hash.new{|h,k| h[k] = {}}
   end
 
   def on_complete
@@ -28,14 +32,32 @@ module GtaScm::Assembler::Feature::ExportSymbols
     self.label_map[label] = offset
   end
 
+  def on_read_line(tokens,file_name,line_idx)
+    super
+
+    case tokens[0]
+    when :script_name
+      # debugger
+      self.threads[ tokens[1][0][1] ] = nil
+    when :set_lvar_int
+      if self.threads.size > 0
+        self.threads_lvars[ threads.keys.last ][ tokens[1][0][1] ] = [tokens[1][0][2],:int]
+      end
+    when :set_lvar_float
+      if self.threads.size > 0
+        self.threads_lvars[ threads.keys.last ][ tokens[1][0][1] ] = [tokens[1][0][2],:float]
+      end
+    end
+  end
+
   def on_node_emit(f,node,bin)
     super
 
     if node.is_a?(GtaScm::Node::Instruction)
-      if node.opcode == [0x04,0x00]
+      if node.opcode == [0x04,0x00] # set_var_int
         self.var_types[ node.arguments[0].value ] = :int
       end
-      if node.opcode == [0x05,0x00]
+      if node.opcode == [0x05,0x00] # set_var_float
         self.var_types[ node.arguments[0].value ] = :float
       end
       if node.opcode == [0x8c,0x00]
@@ -44,6 +66,9 @@ module GtaScm::Assembler::Feature::ExportSymbols
       end
       if node.opcode == [0x3e,0x03]
         self.var_types[ node.arguments[2].value ] = :string
+      end
+      if node.opcode == [0xa4,0x03] # script_name
+        self.threads[ node.arguments[0].value ] = node.offset
       end
     end
 
@@ -63,6 +88,17 @@ module GtaScm::Assembler::Feature::ExportSymbols
       self.label_map.each_pair do |label,offset|
         self.parent.label_map[label] = offset + self.code_offset
       end
+
+      self.threads.each_pair do |thread_name,offset|
+        if offset
+          self.parent.threads[thread_name] = offset + self.code_offset
+        else
+          self.parent.threads[thread_name] = nil
+        end
+      end
+      
+      self.parent.threads_lvars.merge!(self.threads_lvars)
+
     else
       File.open("#{self.symbols_name || "symbols"}.gta-scm-symbols","w") do |f|
         data = {}
@@ -92,9 +128,12 @@ module GtaScm::Assembler::Feature::ExportSymbols
           data[:variables][offset] = [ offset2name[offset], self.var_types[offset] ]
         end
 
+        data[:threads] = self.threads
+        data[:threads_lvars] = self.threads_lvars
+
         data[:labels] = self.label_map
 
-        f << data.to_json
+        f << JSON.pretty_generate(data)
       end
     end
   end

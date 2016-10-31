@@ -204,7 +204,8 @@ class GtaScm::RubyToScmCompiler
 
     # debugger
     if type == :int
-      right_val ||= [:int32,node.children[1].children[0]]
+      # right_val ||= [:int32,node.children[1].children[0]]
+      right_val ||= emit_value(node.children[1])
       left_var = case var_type
       when :var
         gvar(node.children[0],:int)
@@ -216,7 +217,8 @@ class GtaScm::RubyToScmCompiler
       return [[:"set_#{var_type}_int" , [left_var , right_val ]]]
     end
     if type == :float
-      right_val ||= [:float32,node.children[1].children[0]]
+      # right_val ||= [:float32,node.children[1].children[0]]
+      right_val ||= emit_value(node.children[1])
       var = case var_type
       when :var
         gvar(node.children[0],:float)
@@ -611,12 +613,19 @@ class GtaScm::RubyToScmCompiler
 
     andor_id, conditions = *emit_if_conditions( node.children[0] )
 
+    andor = [ [:andor,[[:int8, andor_id]]] ]
+
+    # if id == 0, we can omit the andor opcode
+    if andor_id == 0
+      andor = []
+    end
+
     # TODO: handle bool check of variable `if var` (node.children[0].type == :lvar)
 
     if [:send,:and].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:gvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
-        [:andor,[[:int8, andor_id]]],
+        *andor,
         *conditions,
         [:goto_if_false,[[:label, false_label]]],
         *transform_node(node.children[1]),
@@ -630,7 +639,7 @@ class GtaScm::RubyToScmCompiler
       false_label = generate_label!
       end_label = generate_label!
       [
-        [:andor,[[:int8, andor_id]]],
+        *andor,
         *conditions,
         [:goto_if_false,[[:label, false_label]]],
         *transform_node(node.children[1]),
@@ -645,9 +654,17 @@ class GtaScm::RubyToScmCompiler
 
   def emit_value(node)
     case node.type
-    when :int, :float
-      type = {int: :int32, float: :float32}[node.type]
-      [type,node.children[0]]
+    when :float
+      [:float32,node.children[0]]
+    when :int
+      int = node.children[0]
+      if int >= -128 && int <= 127
+        [:int8,int]
+      elsif int >= -32768 && int <= 32767
+        [:int16,int]
+      else
+        [:int32,int]
+      end
     when :str
       [:string8,node.children[0]]
     when :lvar

@@ -87,6 +87,10 @@ class GtaScm::Assembler::Base
     
   end
 
+  def on_read_line(tokens,file_name,line_idx)
+    
+  end
+
 end
 
 require 'gta_scm/assembler/feature'
@@ -168,6 +172,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     if line.present? and line.strip[0] == "("# and idx < 30
       offset = nodes.next_offset
       tokens = self.parser.parse1(line).to_ruby
+      self.on_read_line(tokens,file_name,line_idx)
       logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
       # TODO: we can calculate offset + lengths here as we go
       node = case tokens[0]
@@ -246,6 +251,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             self.on_feature_init()
           end
           iasm.symbols_name = "debug-rpc"
+          iasm.install_features!
 
           output = StringIO.new
           # iasm.assemble(iscm,file,output)

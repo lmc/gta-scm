@@ -1,3 +1,5 @@
+script_name("rgrgman")
+
 tmp_car_id = 429
 # potentially 8 bits spare if we pack car id into int8
 tmp_car_col_1 = 81

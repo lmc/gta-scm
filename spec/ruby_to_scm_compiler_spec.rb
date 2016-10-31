@@ -141,6 +141,13 @@ describe GtaScm::RubyToScmCompiler do
           LISP
         }
       end
+      context "floats" do
+        let(:ruby){"a = 0.0"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+            (set_lvar_float ((lvar 0 a) (float32 0.0)))
+          LISP
+        }
+      end
     end
 
     context "cross-scope assignment" do

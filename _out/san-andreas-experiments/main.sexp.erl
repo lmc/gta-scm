@@ -65,7 +65,7 @@
 
 
 (labeldef ruby_garage_manager)
-(script_name ((string8 "rgrgman")))
+% (script_name ((string8 "rgrgman")))
 (IncludeRuby "garage-manager")
 
 
@@ -76,4 +76,5 @@
 (labeldef debug_helper_loop)
 (wait ((int8 10)))
 (clear_wanted_level ((dmavar 8)))
+(set_lvar_int ((lvar 31) (int8 1)))
 (goto ((label debug_helper_loop)))
