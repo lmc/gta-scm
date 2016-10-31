@@ -6,18 +6,21 @@ tmp_car_dirt = 15
 tmp_packed = 0
 tmp_pack_idx = 0
 tmp_pack_idx2 = 0
-tmp_pack_tmp = 0
 
 # packed car values
 # red bmx = 197456 (packed car id 81 (orig 481))
 # red supra = 96589 (packed car id 77 (orig 477))
 # taxi = 67092 (packed car id 20 (orig 420))
 # cop car = 65732
-MAX_CARS = 4
+MAX_CARS = 8
 $_7128_cars_1 = -536329075
 $_7132_cars_2 = -533329747
 $_7136_cars_3 = 461380
 $_7140_cars_4 = -1
+$_7144_cars_5 = -1
+$_7148_cars_6 = -1
+$_7152_cars_7 = -1
+$_7156_cars_8 = -1
 $_7120_cars_current = 0
 $_7124_cars_index = 1
 
@@ -39,9 +42,6 @@ stats_current = -1
 tmp_i = 0
 tmp_f = 0.0
 
-tmp1 = -1
-tmp2 = -1
-
 read_cars_array = routine do
   if $_7124_cars_index == 1
     $_7120_cars_current = $_7128_cars_1
@@ -51,6 +51,14 @@ read_cars_array = routine do
     $_7120_cars_current = $_7136_cars_3
   elsif $_7124_cars_index == 4
     $_7120_cars_current = $_7140_cars_4
+  elsif $_7124_cars_index == 5
+    $_7120_cars_current = $_7144_cars_5
+  elsif $_7124_cars_index == 6
+    $_7120_cars_current = $_7148_cars_6
+  elsif $_7124_cars_index == 7
+    $_7120_cars_current = $_7152_cars_7
+  elsif $_7124_cars_index == 8
+    $_7120_cars_current = $_7146_cars_8
   end
 end
 
@@ -63,6 +71,14 @@ write_cars_array = routine do
     $_7136_cars_3 = $_7120_cars_current
   elsif $_7124_cars_index == 4
     $_7140_cars_4 = $_7120_cars_current
+  elsif $_7124_cars_index == 5
+    $_7144_cars_5 = $_7120_cars_current
+  elsif $_7124_cars_index == 6
+    $_7148_cars_6 = $_7120_cars_current
+  elsif $_7124_cars_index == 7
+    $_7152_cars_7 = $_7120_cars_current
+  elsif $_7124_cars_index == 8
+    $_7156_cars_8 = $_7120_cars_current
   end
 end
 
@@ -125,7 +141,7 @@ pack_int = routine do
   tmp_pack_idx = -1
   tmp_pack_idx2 = -1
   tmp_car_id -= 400
-  tmp_pack_tmp = tmp_car_id
+  tmp_i = tmp_car_id
 
   loop do
 
@@ -133,22 +149,22 @@ pack_int = routine do
     tmp_pack_idx2 += 1
 
     if tmp_pack_idx == 8
-      tmp_pack_tmp = tmp_car_col_1
+      tmp_i = tmp_car_col_1
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 16
-      tmp_pack_tmp = tmp_car_col_2
+      tmp_i = tmp_car_col_2
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 24
-      tmp_pack_tmp = tmp_car_variation
+      tmp_i = tmp_car_variation
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 28
-      tmp_pack_tmp = tmp_car_dirt
+      tmp_i = tmp_car_dirt
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 32
       break
     end
 
-    if is_local_var_bit_set_lvar(tmp_pack_tmp,tmp_pack_idx2)
+    if is_local_var_bit_set_lvar(tmp_i,tmp_pack_idx2)
       set_local_var_bit_lvar(tmp_packed,tmp_pack_idx)
     else
       clear_local_var_bit_lvar(tmp_packed,tmp_pack_idx)
@@ -161,7 +177,7 @@ end
 unpack_int = routine do
   tmp_pack_idx = -1
   tmp_pack_idx2 = -1
-  tmp_pack_tmp = 0
+  tmp_i = 0
 
   loop do
 
@@ -169,31 +185,31 @@ unpack_int = routine do
     tmp_pack_idx2 += 1
 
     if tmp_pack_idx == 8
-      tmp_car_id = tmp_pack_tmp
+      tmp_car_id = tmp_i
       tmp_car_id += 400
-      tmp_pack_tmp = 0
+      tmp_i = 0
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 16
-      tmp_car_col_1 = tmp_pack_tmp
-      tmp_pack_tmp = 0
+      tmp_car_col_1 = tmp_i
+      tmp_i = 0
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 24
-      tmp_car_col_2 = tmp_pack_tmp
-      tmp_pack_tmp = 0
+      tmp_car_col_2 = tmp_i
+      tmp_i = 0
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 28
-      tmp_car_variation = tmp_pack_tmp
-      tmp_pack_tmp = 0
+      tmp_car_variation = tmp_i
+      tmp_i = 0
       tmp_pack_idx2 = 0
     elsif tmp_pack_idx == 32
-      tmp_car_dirt = tmp_pack_tmp
+      tmp_car_dirt = tmp_i
       break
     end
 
     if is_local_var_bit_set_lvar(tmp_packed,tmp_pack_idx)
-      set_local_var_bit_lvar(tmp_pack_tmp,tmp_pack_idx2)
+      set_local_var_bit_lvar(tmp_i,tmp_pack_idx2)
     else
-      clear_local_var_bit_lvar(tmp_pack_tmp,tmp_pack_idx2)
+      clear_local_var_bit_lvar(tmp_i,tmp_pack_idx2)
     end
 
   end
@@ -250,7 +266,7 @@ CARID2GXT_ROUTINE = 57372
 # taxi = 67092 (packed car id 20 (orig 420))
 # cop car = 65732
 MENU_X = 30.0
-MENU_Y = 160.0
+MENU_Y = 150.0
 MENU_WIDTH = 150.0
 MENU_COLUMNS = 1
 MENU_INTERACTIVE = 1
@@ -320,13 +336,6 @@ show_garage_menu = routine do
     if $_7124_cars_index > MAX_CARS
       break
     end
-  end
-
-  if car_creator_saved_car == -1
-    car_creator_saved_car = -1
-  else
-    tmp_i += 1
-    set_menu_item_with_number(menu,0,tmp_i,"GSCM014",0)
   end
 
   if menu_selected_id > 199 && menu_selected_id < 299
