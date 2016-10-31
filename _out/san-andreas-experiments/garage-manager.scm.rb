@@ -1,6 +1,12 @@
 tmp_car_id = 429
+# potentially 8 bits spare if we pack car id into int8
 tmp_car_col_1 = 81
 tmp_car_col_2 = 42
+# 1 spare bit for nitro
+# 1 spare bit for hydraulics
+# 4 bits = custom wheels
+# 2 bits = variation
+# 2 bits = dirt
 tmp_car_variation = 4
 tmp_car_dirt = 15
 tmp_packed = 0
@@ -40,7 +46,10 @@ stats_index = 0
 stats_current = -1
 
 tmp_i = 0
+tmp_i2 = 0
 tmp_f = 0.0
+tmp_f2 = 0.0
+tmp_f3 = 0.0
 
 read_cars_array = routine do
   if $_7124_cars_index == 1
@@ -288,6 +297,12 @@ show_menu = routine do
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM007",0)
 
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM017",0)
+
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM020",0)
+
   set_active_menu_item(menu,0)
 
 end
@@ -416,6 +431,36 @@ show_car_creator_menu = routine do
 
 end
 
+show_gang_wars_menu = routine do
+  menu_active = 4
+  # set_time_scale(0.0)
+  set_player_control($_8,0)
+  print_help_forever("GSCM006")
+
+  menu = create_menu( "GSCM017" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
+
+
+  tmp_i = 0
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM018",0)
+
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM019",0)
+
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM021",0)
+
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM022",0)
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM023",0)
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM024",0)
+
+  set_active_menu_item(menu,0)
+
+end
+
+
 hide_menu = routine do
   if menu_active == 3
     despawn_car()
@@ -460,6 +505,11 @@ handle_menu_input = routine do
         tmp_car_variation = 0
         tmp_car_dirt = 0
         show_car_creator_menu()
+      elsif menu_selected_id == 102
+        hide_menu()
+        show_gang_wars_menu()
+      elsif menu_selected_id == 103
+        task_jetpack($_12)
       elsif menu_selected_id > 199 && menu_selected_id < 205
         if car_creator_saved_car == -1
           read_cars_array()
@@ -494,6 +544,32 @@ handle_menu_input = routine do
 
         hide_menu()
         show_car_creator_menu()
+      elsif menu_selected_id > 399 && menu_selected_id < 499
+        tmp_f, tmp_f2, tmp_f3 = get_char_coordinates($_12)
+        get_name_of_info_zone(tmp_f, tmp_f2, tmp_f3, $_7112)
+        if menu_selected_id == 400
+          set_gang_wars_active(1)
+        elsif menu_selected_id == 401
+          set_gang_wars_active(0)
+        elsif menu_selected_id == 402
+          set_gang_wars_active(0)
+          set_zone_gang_strength($str_7112,0,0)
+          set_zone_gang_strength($str_7112,1,0)
+          set_zone_gang_strength($str_7112,2,0)
+          set_gang_wars_active(1)
+        elsif menu_selected_id == 403
+          set_gang_wars_active(0)
+          set_zone_gang_strength($str_7112,0,40)
+          set_gang_wars_active(1)
+        elsif menu_selected_id == 404
+          set_gang_wars_active(0)
+          set_zone_gang_strength($str_7112,1,40)
+          set_gang_wars_active(1)
+        elsif menu_selected_id == 405
+          set_gang_wars_active(0)
+          set_zone_gang_strength($str_7112,2,40)
+          set_gang_wars_active(1)
+        end
       end
     elsif is_button_pressed(0,15) # triangle = cancel
       TIMER_A = 0

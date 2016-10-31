@@ -125,6 +125,24 @@ describe GtaScm::RubyToScmCompiler do
 
     end
 
+    context "smallest possible immediate size" do
+      context "ints" do
+        let(:ruby){"a = 0; b = 127; c = 128; d = -128; e = -129; f = 32767; g = 32768; h = -32768; i = -32769"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+            (set_lvar_int ((lvar 0 a) (int8 0)))
+            (set_lvar_int ((lvar 1 b) (int8 127)))
+            (set_lvar_int ((lvar 2 c) (int16 128)))
+            (set_lvar_int ((lvar 3 d) (int8 -128)))
+            (set_lvar_int ((lvar 4 e) (int16 -129)))
+            (set_lvar_int ((lvar 5 f) (int16 32767)))
+            (set_lvar_int ((lvar 6 g) (int32 32768)))
+            (set_lvar_int ((lvar 7 h) (int16 -32768)))
+            (set_lvar_int ((lvar 8 i) (int32 -32769)))
+          LISP
+        }
+      end
+    end
+
     context "cross-scope assignment" do
       context "local to global assignment" do
         let(:ruby){"local_var = 1; $global_var = local_var"}
