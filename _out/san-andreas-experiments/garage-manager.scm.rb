@@ -14,21 +14,17 @@ tmp_pack_tmp = 0
 # taxi = 67092 (packed car id 20 (orig 420))
 # cop car = 65732
 MAX_CARS = 4
-$_7128_cars_1 = 197456
-$_7132_cars_2 = 16873805
-$_7136_cars_3 = -1
-$_7140_cars_4 = 251754829
+$_7128_cars_1 = -536329075
+$_7132_cars_2 = -533329747
+$_7136_cars_3 = 461380
+$_7140_cars_4 = -1
 $_7120_cars_current = 0
 $_7124_cars_index = 1
 
-cars_gxt_car_id = 0
-
 menu = 0
 menu_active = 0
-menu_debounce = 0
-line_index = 0
 menu_selected = 0
-menu_selected_tmp = 0
+menu_selected_id = 0
 
 car = 0
 spawn_x = 0.0
@@ -39,6 +35,12 @@ spawn_heading = 0.0
 car_creator_saved_car = -1
 stats_index = 0
 stats_current = -1
+
+tmp_i = 0
+tmp_f = 0.0
+
+tmp1 = -1
+tmp2 = -1
 
 read_cars_array = routine do
   if $_7124_cars_index == 1
@@ -65,19 +67,21 @@ write_cars_array = routine do
 end
 
 read_stats_array = routine do
-  if stats_index == 0 || stats_index == 1
+  if stats_index == 0
     stats_current = tmp_car_id
   elsif stats_index == 2
     stats_current = tmp_car_col_1
   elsif stats_index == 3
     stats_current = tmp_car_col_2
-  elsif stats_index == 4
+  elsif stats_index == 6
     stats_current = tmp_car_variation
+  elsif stats_index == 7
+    stats_current = tmp_car_dirt
   end
 end
 
 write_stats_array = routine do
-  if stats_index == 0 || stats_index == 1
+  if stats_index == 0
     if stats_current < 400
       stats_current = 611
     elsif stats_current > 611
@@ -98,13 +102,20 @@ write_stats_array = routine do
       stats_current = 0
     end
     tmp_car_col_2 = stats_current
-  elsif stats_index == 4
+  elsif stats_index == 6
     if stats_current < 0
       stats_current = 5
     elsif stats_current > 5
       stats_current = 0
     end
     tmp_car_variation = stats_current
+  elsif stats_index == 7
+    if stats_current < 0
+      stats_current = 15
+    elsif stats_current > 15
+      stats_current = 0
+    end
+    tmp_car_dirt = stats_current
   end
 end
 
@@ -210,10 +221,16 @@ spawn_car = routine do
 
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
+
   if tmp_car_col_1 > 0 && tmp_car_col_2 > 0
     change_car_colour(car,tmp_car_col_1,tmp_car_col_2)
   end
-  set_vehicle_dirt_level(car,14.0)
+
+  if tmp_car_dirt < 15
+    tmp_f = tmp_car_dirt.to_f
+    set_vehicle_dirt_level(car,tmp_f)
+  end
+
   mark_car_as_no_longer_needed(car)
   mark_model_as_no_longer_needed(tmp_car_id)
 
@@ -227,7 +244,7 @@ set_factory_colours = routine do
 end
 
 
-CARID2GXT_ROUTINE = 57359
+CARID2GXT_ROUTINE = 57372
 # red bmx = 197456 (packed car id 81 (orig 481))
 # red supra = 96589 (packed car id 77 (orig 477))
 # taxi = 67092 (packed car id 20 (orig 420))
@@ -248,13 +265,12 @@ show_menu = routine do
 
   menu = create_menu( "GSCM005" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
 
-  line_index = -1
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM001",0)
+  tmp_i = 0
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM001",0)
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM007",0)
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM007",0)
 
   set_active_menu_item(menu,0)
 
@@ -266,10 +282,14 @@ show_garage_menu = routine do
   set_player_control($_8,0)
   print_help_forever("GSCM003")
 
-  menu = create_menu( "GSCM001" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
+  if car_creator_saved_car == -1
+    menu = create_menu( "GSCM001" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
+  else
+    menu = create_menu( "GSCM014" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
+  end
 
   $_7124_cars_index = 1
-  line_index = 1
+  tmp_i = 1
   loop do
 
     # set $_7120_cars_current to cars[$_7124_cars_index]
@@ -290,9 +310,9 @@ show_garage_menu = routine do
     end
 
     # set menu item string to car name
-    line_index = $_7124_cars_index
-    line_index -= 1
-    set_menu_item_with_number(menu,0,line_index,$str_7112,0)
+    tmp_i = $_7124_cars_index
+    tmp_i -= 1
+    set_menu_item_with_number(menu,0,tmp_i,$str_7112,0)
 
     # FIXME: compiler bug on this
     # $_7124_cars_index += 1
@@ -305,14 +325,14 @@ show_garage_menu = routine do
   if car_creator_saved_car == -1
     car_creator_saved_car = -1
   else
-    line_index += 1
-    set_menu_item_with_number(menu,0,line_index,"GSCM014",0)
+    tmp_i += 1
+    set_menu_item_with_number(menu,0,tmp_i,"GSCM014",0)
   end
 
-  if menu_selected > 199 && menu_selected < 299
-    menu_selected_tmp = menu_selected
-    menu_selected_tmp -= 200
-    set_active_menu_item(menu,menu_selected_tmp)
+  if menu_selected_id > 199 && menu_selected_id < 299
+    menu_selected = menu_selected_id
+    menu_selected -= 200
+    set_active_menu_item(menu,menu_selected)
   end
 
 end
@@ -328,12 +348,12 @@ show_car_creator_menu = routine do
 
   request_model(tmp_car_id)
   load_all_models_now()
-  tmp, tmp, tmp, spawn_w, spawn_h, tmp = get_model_dimensions(tmp_car_id)
+  tmp_f, tmp_f, tmp_f, spawn_x, spawn_y, tmp_f = get_model_dimensions(tmp_car_id)
 
-  mult_float_lvar_by_val(spawn_h,0.75)
-  add_val_to_float_lvar(spawn_h,2.0)
+  mult_float_lvar_by_val(spawn_x,0.75)
+  add_val_to_float_lvar(spawn_y,2.0)
 
-  spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , spawn_w , spawn_h, 0.0 )
+  spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , spawn_x , spawn_y, 0.0 )
   spawn_heading = get_char_heading($_12)
   spawn_heading += 190.0
 
@@ -341,46 +361,48 @@ show_car_creator_menu = routine do
 
   menu = create_menu( "GSCM007" , MENU_X , MENU_Y , 120.0 , 2 , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
 
+  set_menu_column_width(menu,0,120)
+  set_menu_column_width(menu,1,80)
+
   # if $_7120_cars_current == -1
-  #   line_index = -1
+  #   tmp_i = -1
   # else
   #   tmp_packed = $_7120_cars_current
   #   unpack_int()
   # end
 
-  line_index = -1
-
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM008",0)
+  tmp_i = 0
   $_7112 = 0
   $_7116 = 0
   $_7104 = tmp_car_id
   gosub(CARID2GXT_ROUTINE)
-  set_menu_item_with_number(menu,1,line_index,$str_7112,tmp_car_id)
+  set_menu_item_with_number(menu,0,tmp_i,$str_7112,tmp_car_id)
+  set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_id)
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM009",0)
-  set_menu_item_with_number(menu,1,line_index,"NUMBER",tmp_car_id)
+  tmp_i += 2
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM010",0)
+  set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_col_1)
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM010",0)
-  set_menu_item_with_number(menu,1,line_index,"NUMBER",tmp_car_col_1)
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM011",0)
+  set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_col_2)
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM011",0)
-  set_menu_item_with_number(menu,1,line_index,"NUMBER",tmp_car_col_2)
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM015",0)
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM012",0)
-  set_menu_item_with_number(menu,1,line_index,"NUMBER",tmp_car_variation)
+  tmp_i += 2
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM012",0)
+  set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_variation)
 
-  line_index += 1
-  set_menu_item_with_number(menu,0,line_index,"GSCM015",0)
+  tmp_i += 1
+  set_menu_item_with_number(menu,0,tmp_i,"GSCM016",0)
+  set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_dirt)
 
-  if menu_selected > 299 && menu_selected < 399
-    menu_selected_tmp = menu_selected
-    menu_selected_tmp -= 300
-    set_active_menu_item(menu,menu_selected_tmp)
+
+  if menu_selected_id > 299 && menu_selected_id < 399
+    menu_selected = menu_selected_id
+    menu_selected -= 300
+    set_active_menu_item(menu,menu_selected)
   end
 
 end
@@ -398,11 +420,11 @@ end
 
 handle_menu_input = routine do
   menu_selected = get_menu_item_selected(menu)
-  menu_selected_tmp = menu_active
+  menu_selected_id = menu_active
   # menu_selected_tmp *= 100
-  mult_int_lvar_by_val(menu_selected_tmp,100)
+  mult_int_lvar_by_val(menu_selected_id,100)
   # menu_selected += menu_selected_tmp
-  add_val_to_int_lvar(menu_selected,menu_selected_tmp)
+  add_val_to_int_lvar(menu_selected_id,menu_selected)
 
   # $_7124_cars_index = menu_selected
   # # $_7124_cars_index += 1
@@ -410,20 +432,18 @@ handle_menu_input = routine do
 
   if menu_active == 2
     $_7124_cars_index = menu_selected
-    sub_val_from_int_var($_7124_cars_index,200)
     add_val_to_int_var($_7124_cars_index,1)
   elsif menu_active == 3
     stats_index = menu_selected
-    stats_index -= 300
   end
 
   if TIMER_A > 200
     if is_button_pressed(0,16) # X = accept
       TIMER_A = 0
-      if menu_selected == 100
+      if menu_selected_id == 100
         hide_menu()
         show_garage_menu()
-      elsif menu_selected == 101
+      elsif menu_selected_id == 101
         hide_menu()
         tmp_car_id = 541
         tmp_car_col_1 = 30
@@ -431,7 +451,7 @@ handle_menu_input = routine do
         tmp_car_variation = 0
         tmp_car_dirt = 0
         show_car_creator_menu()
-      elsif menu_selected > 199 && menu_selected < 205
+      elsif menu_selected_id > 199 && menu_selected_id < 205
         if car_creator_saved_car == -1
           read_cars_array()
           tmp_packed = $_7120_cars_current
@@ -451,15 +471,15 @@ handle_menu_input = routine do
           hide_menu()
           show_garage_menu()
         end
-      elsif menu_selected > 299 && menu_selected < 399
+      elsif menu_selected_id > 299 && menu_selected_id < 399
         read_stats_array()
         stats_current += 1
         write_stats_array()
 
-        if menu_selected < 302
+        if menu_selected_id == 300
           set_factory_colours()
         end
-        if menu_selected == 305
+        if menu_selected_id == 304
           set_factory_colours()
         end
 
@@ -469,7 +489,7 @@ handle_menu_input = routine do
     elsif is_button_pressed(0,15) # triangle = cancel
       TIMER_A = 0
       hide_menu()
-      if menu_selected > 199
+      if menu_selected_id > 199
         show_menu()
       end
     elsif is_button_pressed(0,14) # square = store
@@ -541,10 +561,8 @@ loop do
   if is_player_playing( $_8 )
 
     if is_button_pressed(0,18) && is_button_pressed(0,19)
-      menu_debounce = 1
-    else
-      if menu_debounce == 1
-        menu_debounce = 0
+      if TIMER_A > 200
+        TIMER_A = 0
         add_one_off_sound(0.0,0.0,0.0,1056)
         if menu_active == 0
           show_menu()
@@ -560,11 +578,5 @@ loop do
 
 
   end
-
-
-  tmp1 = -1
-  tmp2 = -1
-  tmp3 = -1
-
 
 end

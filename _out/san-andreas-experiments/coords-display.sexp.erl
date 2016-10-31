@@ -67,7 +67,13 @@
 
 (labeldef display_coordinates_viewer)
 (script_name ((string8 "coordsv")))
+
+(labeldef display_coordinates_viewer_loop)
 (wait ((int16 30)))
+
+(andor ((int8 0)))
+(not_is_help_message_being_displayed)
+(goto_if_false ((label display_coordinates_viewer_loop)))
 
 (use_text_commands ((int8 0)))
 
@@ -138,4 +144,4 @@
 % (get_city_from_coords ((lvar 83) (lvar 84) (lvar 85) (lvar 58)))
 
 
-(goto ((label display_coordinates_viewer)))
+(goto ((label display_coordinates_viewer_loop)))
