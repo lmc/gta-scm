@@ -13,7 +13,7 @@ require 'zlib'
 crc32 = Zlib::crc32('input field value')
 
 DIR = "_out/sa-gxt"
-PATH = "./games/san-andreas/Text/american-rebuilt.gxt"
+PATH = "./games/san-andreas/Text/american.gxt"
 
 gxt_file = GtaScm::GxtFile.new( File.open(PATH,"r+") )
 

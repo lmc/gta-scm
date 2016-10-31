@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/read_scm_img
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/img_file'
+
+# img_file = GtaScm::ImgFile.open("./games/san-andreas/data/script/script.img")
+img_file = GtaScm::ImgFile.open("./games/san-andreas/data/script/script.img","r+")
+img_file_w = GtaScm::ImgFile.open("./_out/script.img","w")
+img_file.parse!
+img_file.rewind
+
+size = img_file.size
+img_file_w.seek(0)
+img_file_w << img_file.read
+img_file_w << "\0" * 2048
+img_file_w.close
+
+# logger.info img_file.data(0)[0..32].bytes
+# logger.info img_file.data(0)[-32..-1].bytes
+# logger.info img_file.data(1)[0..32].bytes
+
+# bytes = img_file.data(1)
+
+# scm = GtaScm::Scm.load_string("san-andreas",bytes)
+# scm.load_opcode_definitions!
+
+# parser = GtaScm::Parser.new(scm,0)
+# parser.load_opcode_definitions( scm.opcodes )
+# parser.parse_bare_instructions!
+
+# scm.load_from_parser(parser)
+
+# dis = GtaScm::Disassembler::Sexp.new(scm)
+# dis.disassemble( "./scm_img_1.sexp.erl" )
+

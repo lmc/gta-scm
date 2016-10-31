@@ -63,6 +63,7 @@ process.detect_pid_and_attach!
 thread_name = nil
 types = [:int] * 32
 lvar_names = [nil] * 32
+gvars = [7104,7108,7112,7128,7132,7136,7140]
 
 ARGV.each_with_index do |val,i|
   if i == 0
@@ -74,7 +75,7 @@ ARGV.each_with_index do |val,i|
 end
 
 # thread_name ||= 'wfndcol'
-thread_name ||= 'rubytst'
+thread_name ||= 'rgrgman'
 
 # process.os_pause!
 # process.os_resume!
@@ -240,7 +241,7 @@ screen = RuTui::Screen.new
     cols: [
       { title: "", length: 5 },
       { title: "", length: 6 },
-      { title: "", length: 12 },
+      { title: "", length: 35 },
       { title: "", length: 14 },
     ],
     header: false,
@@ -323,10 +324,19 @@ thr = ::Thread.new do
                 [ii.to_s,"int",lvars_int[ii].to_s,lvar_names[ii].to_s]
               when :float
                 [ii.to_s,"flt",lvars_float[ii].round(3).to_s,lvar_names[ii].to_s]
+              when :bin
+                [ii.to_s,"bin",lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
               else
                 nil
               end
             end.compact
+
+            data += gvars.map do |gvar|
+              type = gvar == 7112 ? :string8 : :int32
+              val = process.read_scm_var(gvar,type)
+              [gvar.to_s,"#{type}",val.to_s,"gvar #{gvar}"]
+            end
+
             locals.clear_highlight!
             locals.highlight( selected_lvar )
             locals.set_table(data)
@@ -407,6 +417,9 @@ thr2 = ::Thread.new do
     end
     if key == "f"
       types[ selected_lvar ] = :float
+    end
+    if key == "b"
+      types[ selected_lvar ] = :bin
     end
 
   end
