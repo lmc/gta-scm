@@ -671,8 +671,8 @@ class GtaScm::RubyToScmCompiler
       lvar(node.children[0])
     when :gvar
       name = node.children[0].to_s.gsub(%r(^\$),'')
-      if matches = name.match(%r(^_(\d+)))
-        [:dmavar, matches[1].to_i]
+      if matches = name.match(%r(^_(\d+)_?(.*)?))
+        [:dmavar, matches[1].to_i, matches[2].to_sym ]
       elsif matches = name.match(%r(^str_(\d+)))
         [:var_string8, matches[1].to_i]
       else
@@ -765,8 +765,8 @@ class GtaScm::RubyToScmCompiler
     name = name.to_s.gsub(/\A\$/,'').to_sym
 
     # debugger
-    if matches = name.to_s.match(/\A_(\d+)/)
-      return [:dmavar, matches[1].to_i]
+    if matches = name.to_s.match(/\A_(\d+)_?(.*)?/)
+      return [:dmavar, matches[1].to_i, matches[2].to_sym]
     end
 
     id = if self.gvar_names_to_ids[name]

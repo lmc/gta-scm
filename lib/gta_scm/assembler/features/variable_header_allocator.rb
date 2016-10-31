@@ -19,7 +19,7 @@ module GtaScm::Assembler::Feature::VariableHeaderAllocator
     adjust_jump_touchups!
   end
 
-  def notice_dmavar(address,type = nil)
+  def notice_dmavar(address,type = nil,tokens = nil)
     self.dmavar_uses << address
     if type
       size = type == :var_string8 ? 8 : 4

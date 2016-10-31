@@ -393,7 +393,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.use_touchup(node_offset,array_keys,touchup_name)
   end
 
-  def notice_dmavar(address,type = nil)
+  def notice_dmavar(address,type = nil,tokens = nil)
     # no-op
   end
 
@@ -536,7 +536,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         self.use_var_address(node.offset,[1,arg_idx,1],:"var_#{arg_tokens[1]}")
         arg.set( arg_tokens[0] , 0xCCCC )
       when :dmavar
-        self.notice_dmavar( arg_tokens[1] )
+        self.notice_dmavar( arg_tokens[1] , nil , arg_tokens )
         arg.set( :var , arg_tokens[1] )
       when :var_string8
         if arg_tokens[1].is_a?(Symbol)
