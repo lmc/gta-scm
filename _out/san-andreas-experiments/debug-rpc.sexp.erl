@@ -30,6 +30,10 @@
 (set_var_int ((var debug_rpc_syscall) (int32 0)))
 (set_var_int ((var debug_rpc_syscall_result) (int32 0)))
 
+% breakpoint
+(set_var_int ((var debug_breakpoint_enabled) (int32 0)))
+(set_var_int ((var debug_breakpoint_pc) (int32 0)))
+
 (terminate_this_script)
 
 
@@ -111,9 +115,9 @@
 (set_var_int ((var debug_rpc_int_arg_1) (int32 0)))
 (set_var_int ((var debug_rpc_int_arg_2) (int32 0)))
 (set_var_int ((var debug_rpc_int_arg_3) (int32 0)))
-(set_var_int ((var debug_rpc_int_arg_4) (int32 0)))
-(set_var_int ((var debug_rpc_int_arg_5) (int32 0)))
-(set_var_int ((var debug_rpc_int_arg_6) (int32 0)))
+% (set_var_int ((var debug_rpc_int_arg_4) (int32 0)))
+% (set_var_int ((var debug_rpc_int_arg_5) (int32 0)))
+% (set_var_int ((var debug_rpc_int_arg_6) (int32 0)))
 (set_var_int ((var debug_rpc_int_arg_7) (int32 0)))
 (set_var_int ((var debug_rpc_syscall) (int32 0)))
 
@@ -121,3 +125,17 @@
 
 (goto ((label debug_rpc_worker_top)))
 
+
+(labeldef debug_breakpoint)
+(set_var_int ((var debug_breakpoint_enabled) (int8 1)))
+
+(labeldef debug_breakpoint_idle)
+(wait ((int8 0)))
+(andor ((int8 0)))
+  (is_int_var_equal_to_number ((var debug_breakpoint_enabled) (int8 0)))
+(goto_if_false ((label debug_breakpoint_idle)))
+
+(set_var_int ((var debug_breakpoint_enabled) (int8 0)))
+(set_var_int ((var debug_breakpoint_pc) (int8 0)))
+(return)
+(goto ((label debug_breakpoint)))

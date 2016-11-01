@@ -83,10 +83,16 @@ class GtaScm::Process
 
   def os_pause!
     Ragweed::Wraposx::task_suspend(self.process.task)
+    @paused = true
+  end
+
+  def paused?
+    @paused
   end
 
   def os_resume!
     Ragweed::Wraposx::task_resume(self.process.task)
+    @paused = false
   end
 
   def scm_offset

@@ -72,7 +72,13 @@ class GtaScm::RubyToScmCompiler
 
     when :send
 
-      [ emit_opcode_call(node) ]
+      if node.children[1] == :debugger
+        emit_breakpoint()
+      else
+
+        [ emit_opcode_call(node) ]
+
+      end
 
     when :break
 
@@ -607,6 +613,16 @@ class GtaScm::RubyToScmCompiler
       node
     end
 
+  end
+
+  BREAKPOINT_PC = 56531
+  def emit_breakpoint
+    label = generate_label!
+    [
+      [:set_var_int,[[:dmavar,4492],[:label,label]]],
+      [:gosub,[[:int32, BREAKPOINT_PC]]],
+      [:labeldef,label]
+    ]
   end
 
   def emit_if(node)

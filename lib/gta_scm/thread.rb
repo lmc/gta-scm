@@ -446,4 +446,14 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     end
   end
 
+  def scm_return_stack
+    0.upto(7).map do |i|
+      if return_stack[i] == 0 || stack_counter <= i
+        nil
+      else
+        return_stack[i] - self.scm_offset
+      end
+    end.compact
+  end
+
 end

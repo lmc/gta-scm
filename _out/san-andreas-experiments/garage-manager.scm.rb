@@ -1,5 +1,7 @@
 script_name("rgrgman")
 
+BREAKPOINT_OFFSET = 56531
+
 tmp_car_id = 429
 # potentially 8 bits spare if we pack car id into int8
 tmp_car_col_1 = 81
@@ -246,6 +248,9 @@ spawn_car = routine do
     set_car_model_components(tmp_car_id,tmp_car_variation,-1)
   end
 
+  # gosub(BREAKPOINT_OFFSET)
+  debugger
+
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
 
@@ -271,7 +276,8 @@ set_factory_colours = routine do
 end
 
 
-CARID2GXT_ROUTINE = 57372
+# CARID2GXT_ROUTINE = 57372
+CARID2GXT_ROUTINE = 57414
 # red bmx = 197456 (packed car id 81 (orig 481))
 # red supra = 96589 (packed car id 77 (orig 477))
 # taxi = 67092 (packed car id 20 (orig 420))
