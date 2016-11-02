@@ -277,7 +277,7 @@ end
 
 
 # CARID2GXT_ROUTINE = 57372
-CARID2GXT_ROUTINE = 57414
+CARID2GXT_ROUTINE = 57496
 # red bmx = 197456 (packed car id 81 (orig 481))
 # red supra = 96589 (packed car id 77 (orig 477))
 # taxi = 67092 (packed car id 20 (orig 420))
