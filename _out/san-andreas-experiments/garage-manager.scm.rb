@@ -1,18 +1,20 @@
 script_name("rgrgman")
 
 BREAKPOINT_OFFSET = 56531
+CARID2GXT = [:label, :carid2gxt_addr]
 
-tmp_car_id = 429
+tmp_car_id = 0
 # potentially 8 bits spare if we pack car id into int8
-tmp_car_col_1 = 81
-tmp_car_col_2 = 42
+tmp_car_col_1 = 0
+tmp_car_col_2 = 0
 # 1 spare bit for nitro
 # 1 spare bit for hydraulics
 # 4 bits = custom wheels
 # 2 bits = variation
 # 2 bits = dirt
-tmp_car_variation = 4
-tmp_car_dirt = 15
+tmp_car_variation = 0
+tmp_car_dirt = 0
+
 tmp_packed = 0
 tmp_pack_idx = 0
 tmp_pack_idx2 = 0
@@ -40,12 +42,13 @@ menu_selected = 0
 menu_selected_id = 0
 
 car = 0
+car_creator_saved_car = -1
+
 spawn_x = 0.0
 spawn_y = 0.0
 spawn_z = 0.0
 spawn_heading = 0.0
 
-car_creator_saved_car = -1
 stats_index = 0
 stats_current = -1
 
@@ -71,7 +74,7 @@ read_cars_array = routine do
   elsif $_7124_cars_index == 7
     $_7120_cars_current = $_7152_cars_7
   elsif $_7124_cars_index == 8
-    $_7120_cars_current = $_7146_cars_8
+    $_7120_cars_current = $_7156_cars_8
   end
 end
 
@@ -249,7 +252,7 @@ spawn_car = routine do
   end
 
   # gosub(BREAKPOINT_OFFSET)
-  debugger
+  # debugger
 
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
@@ -276,8 +279,6 @@ set_factory_colours = routine do
 end
 
 
-# CARID2GXT_ROUTINE = 57372
-CARID2GXT_ROUTINE = 57496
 # red bmx = 197456 (packed car id 81 (orig 481))
 # red supra = 96589 (packed car id 77 (orig 477))
 # taxi = 67092 (packed car id 20 (orig 420))
@@ -342,7 +343,7 @@ show_garage_menu = routine do
     $_7112 = 0
     $_7116 = 0
     $_7104 = tmp_car_id
-    gosub(CARID2GXT_ROUTINE)
+    gosub(CARID2GXT)
 
     if $_7112 == 0
       set_var_text_label($str_7112,"GSCM004")
@@ -407,7 +408,7 @@ show_car_creator_menu = routine do
   $_7112 = 0
   $_7116 = 0
   $_7104 = tmp_car_id
-  gosub(CARID2GXT_ROUTINE)
+  gosub(CARID2GXT)
   set_menu_item_with_number(menu,0,tmp_i,$str_7112,tmp_car_id)
   set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_id)
 

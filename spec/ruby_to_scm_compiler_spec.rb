@@ -220,6 +220,13 @@ describe GtaScm::RubyToScmCompiler do
           LISP
         }
       end
+      context "with an array value" do
+        let(:ruby){'FOO = [:label,:my_routine]; gosub(FOO)'}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (gosub ((label my_routine)))
+          LISP
+        }
+      end
     end
 
     # context "decomposing operations" do

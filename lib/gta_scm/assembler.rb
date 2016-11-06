@@ -218,7 +218,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           file = tokens[1]
           args = Hash[tokens[2..-1]]
 
-          # debugger
+          debugger
           ruby = File.read("#{self.input_dir}/#{file}.scm.rb")
           parsed = Parser::CurrentRuby.parse(ruby)
 
@@ -304,6 +304,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iasm.parent = self
           iasm.code_offset = code_begin
           iasm.vars_to_use = vars_to_use
+          iasm.copy_touchups_from_parent!
 
           def iasm.install_features!
             class << self
@@ -427,17 +428,22 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               arr = arr[array_key]
             end
 
-            touchup_value = self.touchup_defines[touchup_name]
-            if !touchup_value
+            
+            if touchup_value = self.touchup_defines[touchup_name]
+              if touchup_name.to_s.match(/^label_/)
+                if self.code_offset
+                  touchup_value += self.code_offset
+                end
+              end
+            elsif touchup_value = self.parent.touchup_defines[touchup_name]
+              # all good ???
+            else
+              debugger
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 
 
-            if touchup_name.to_s.match(/^label_/)
-              if self.code_offset
-                touchup_value += self.code_offset
-              end
-            end
+
 
             o_touchup_value = touchup_value
 
@@ -580,6 +586,13 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   def last_header
     self.nodes.detect{|node| node.is_a?(GtaScm::Node::Header::Segment6)}
+  end
+
+  def copy_touchups_from_parent!
+    # debugger
+    self.touchup_defines = self.parent.touchup_defines.dup
+    # self.touchup_uses = self.parent.touchup_uses
+    # self.touchup_types = self.parent.touchup_types
   end
 
 end

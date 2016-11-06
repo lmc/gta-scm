@@ -263,8 +263,16 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :constants_to_values
   attr_accessor :constants_to_types
   def record_constant_assign(node)
+    # FIXME: use emit_value for timer assigns
     if node.children[1] == :TIMER_A
       return [ [:set_lvar_int,[[:lvar,32,:timer_a],[:int32,node.children[2].children[0]]]] ]
+    elsif node.children[1] == :TIMER_B
+      return [ [:set_lvar_int,[[:lvar,33,:timer_b],[:int32,node.children[2].children[0]]]] ]
+    elsif node.children[2].type == :array
+      # raw sexp
+      self.constants_to_values ||= {}
+      self.constants_to_values[ node.children[1] ] = node.children[2].children.map{|n| n.children[0] }
+      return []
     else
       self.constants_to_values ||= {}
       self.constants_to_values[ node.children[1] ] = emit_value( node.children[2] )

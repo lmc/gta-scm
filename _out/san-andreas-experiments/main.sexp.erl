@@ -31,7 +31,7 @@
 
 (labeldef carid2gxt_addr)
 (Include "carid2gxt")
-(gosub ((label carid2gxt_addr)))
+% (gosub ((label carid2gxt_addr)))
 
 (labeldef bootstrap)
 
@@ -66,7 +66,7 @@
 
 (labeldef ruby_garage_manager)
 % (script_name ((string8 "rgrgman")))
-(IncludeRuby "garage-manager")
+(IncludeRuby "garage-manager" (routines (carid2gxt)))
 
 
 (labeldef debug_helper)
