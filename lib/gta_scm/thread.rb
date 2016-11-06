@@ -354,6 +354,10 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     val = GtaScm::Types.bin2value(self[3],:int32)
     val
   end
+  def base_pc_scm
+    return nil if base_pc == 0
+    base_pc - self.scm_offset
+  end
 
   def stack_counter
     GtaScm::Types.bin2value(self[6],:int16)
@@ -439,10 +443,13 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
   0.upto(7) do |i|
     define_method(:"stack_#{i}") do
       if return_stack[i] == 0 || stack_counter <= i
-        "-"
+        nil
       else
         return_stack[i] - self.scm_offset
       end
+    end
+    define_method(:"stack_label_#{i}") do
+      nil
     end
   end
 
@@ -454,6 +461,29 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
         return_stack[i] - self.scm_offset
       end
     end.compact
+  end
+
+  def status
+    if !active?
+      "dead"
+    elsif is_mission > 0
+      "mission"
+    elsif is_external > 0
+      "external"
+    else
+      "normal"
+    end
+  end
+
+  def status_icon
+    {
+      "dead" => "❌",
+      "normal" => "✓"
+    }[self.status]
+  end
+
+  def thread_id_name
+    "#{thread_id}#{name == 'noname' ? '' : " #{name}"}"
   end
 
 end

@@ -218,7 +218,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           file = tokens[1]
           args = Hash[tokens[2..-1]]
 
-          debugger
+          # debugger
           ruby = File.read("#{self.input_dir}/#{file}.scm.rb")
           parsed = Parser::CurrentRuby.parse(ruby)
 
@@ -438,7 +438,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             elsif touchup_value = self.parent.touchup_defines[touchup_name]
               # all good ???
             else
-              debugger
+              # debugger
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 

@@ -68,6 +68,8 @@ class GtaScm::Process
       self.regions[ Range.new(start_offset,end_offset) ] = name
     end
 
+    self.thread_symbols = symbols["threads_lvars"]
+
     # self.load_rpc_region!
   end
 
@@ -335,6 +337,10 @@ class GtaScm::Process
         set position of window "Grand Theft Auto San Andreas" of application process "Grand Theft Auto San Andreas" to {#{coords[0]}, #{coords[1]}}
       end
     TEXT
+  end
+
+  def stack_label(stack_entry)
+    
   end
 
 
