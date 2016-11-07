@@ -442,7 +442,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 
-
+            if self.touchup_types[touchup_name] == :mission_jump
+              touchup_value *= -1
+            end
 
 
             o_touchup_value = touchup_value
@@ -535,6 +537,13 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         end
 
         arg.set( :int32, 0xAAAAAAAA )
+      when :mission_label
+        if arg_tokens[1].to_s.match(/label__/)
+        else
+          self.use_touchup(node.offset,[1,arg_idx,1],:"label_#{arg_tokens[1]}",:mission_jump)
+        end
+        arg.set( :int32, 0xAAAAAAAA )
+
       when :labelvar
         self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1])
         arg.set( :var, 0xBBBB )
