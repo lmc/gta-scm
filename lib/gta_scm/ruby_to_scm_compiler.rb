@@ -378,7 +378,7 @@ class GtaScm::RubyToScmCompiler
         debugger
         raise "variable type mismatch (already declared as #{left_var_type}, assigning as #{right_type})"
       end
-    elsif left_type = :gvasgn
+    elsif left_type == :gvasgn
       # debugger
       node
 

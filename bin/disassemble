@@ -8,7 +8,7 @@
 # NEXT:
 # ID integers from .ide files
 
-USE_CACHE = true
+USE_CACHE = false
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"

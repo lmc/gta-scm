@@ -43,6 +43,7 @@ class GtaScm::Node::Header::Externals < GtaScm::Node::Header
         [:externals,
           self[1][3].map.each_with_index do |external,idx|
             [
+              [:int8,idx],
               [:string20, external[0].value(:string24) || ""],
               [:int32,    external[1].value(:int32)],
               [:int32,    external[2].value(:int32)],
@@ -75,6 +76,9 @@ class GtaScm::Node::Header::Externals < GtaScm::Node::Header
     # externals names
     self[1][3] = GtaScm::ByteArray.new
     data[:externals].each do |external|
+      # self[1][3] << GtaScm::Node::Raw.new( (external[1][1].ljust(19,"\000")+"\000")[0..20].bytes )
+      # self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[2][1] , :int32 ).bytes )
+      # self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[3][1] , :int32 ).bytes )
       self[1][3] << GtaScm::Node::Raw.new( (external[0][1].ljust(19,"\000")+"\000")[0..20].bytes )
       self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[1][1] , :int32 ).bytes )
       self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[2][1] , :int32 ).bytes )

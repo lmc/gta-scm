@@ -162,9 +162,18 @@ class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
       @largest_line = node.hex.size if node.hex.size > @largest_line
     end
     if self.options[:emit_bytecode_comments]
-      output.puts("% #{offset.to_s.rjust(8,"0")} - #{node.hex}")
+      mission_offset = self.mission_offset_comment(offset)
+      output.puts("% #{offset.to_s.rjust(8,"0")}#{mission_offset} - #{node.hex}")
     end
     output.puts(line)
+  end
+
+  def mission_offset_comment(offset)
+    if mission = self.scm.mission_for_offset(offset)
+      " (#{offset - mission[1]})"
+    else
+      ""
+    end
   end
 
   def extension
