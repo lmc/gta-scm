@@ -24,6 +24,12 @@ support variable names + auto mem allocation
 support gxt replacement/insertion
 =end
 
+
+external = ARGV[5] == "external=1"
+
+# puts "external: #{external}"
+# exit
+
 asm = GtaScm::Assembler::Sexp.new(ARGV[1])
 path = ARGV[4]
 if path == "GAME"
@@ -33,6 +39,7 @@ if path == "GAME"
   path = "#{GAME_PATH}/data/script/main.scm"
   logger.notice "Compiling into game dir..."
 end
+asm.external = external
 asm.assemble(scm,ARGV[2],path)
 
 # gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))

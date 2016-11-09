@@ -303,17 +303,17 @@ show_menu = routine do
   tmp_i = 0
   set_menu_item_with_number(menu,0,tmp_i,"GSCM001",0)
 
-  debugger
+  # debugger
 
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM007",0)
 
-  debugger
+  # debugger
 
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM017",0)
 
-  debugger
+  # debugger
 
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM020",0)

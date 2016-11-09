@@ -11,6 +11,7 @@ class GtaScm::Assembler::Base
   attr_accessor :input_dir
 
   attr_accessor :parent
+  attr_accessor :external
 
   attr_accessor :parser
   attr_accessor :nodes
@@ -126,6 +127,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     # logger.info "Complete, final size: #{File.size(out_path)} bytes"
     logger.info "Complete"
     logger.info self.include_sizes.inspect
+    if out_path.is_a?(String)
+      logger.info "total size: #{File.size(out_path)}"
+    end
 
     file_vars = {}
     seen_vars = {}
@@ -240,6 +244,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
           iasm.parent = self
+          iasm.external = self.external
           iasm.code_offset = offset
           def iasm.install_features!
             class << self
@@ -302,6 +307,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
           iasm.parent = self
+          iasm.external = self.external
           iasm.code_offset = code_begin
           iasm.vars_to_use = vars_to_use
           iasm.copy_touchups_from_parent!
@@ -434,9 +440,20 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
                 if self.code_offset
                   touchup_value += self.code_offset
                 end
+                if self.external
+                  touchup_value *= -1
+                end
               end
-            elsif touchup_value = self.parent.touchup_defines[touchup_name]
+            elsif self.parent && touchup_value = self.parent.touchup_defines[touchup_name]
               # all good ???
+              if touchup_name.to_s.match(/^label_/)
+                # if self.code_offset
+                #   touchup_value += self.code_offset
+                # end
+                if self.external
+                  touchup_value *= -1
+                end
+              end
             else
               # debugger
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
