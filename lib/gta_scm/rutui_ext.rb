@@ -18,6 +18,13 @@ require 'timeout'
 # end
 
 class RuTui::Table
+  def initialize_with_highlight_fg(options)
+    initialize_without_highlight_fg(options)
+    @hover_fg = options[:hover_fg]
+  end
+  alias initialize_without_highlight_fg initialize
+  alias initialize initialize_with_highlight_fg
+
   # make highlight method actually work like the developer intended (arg absent = get, arg present = set)
   def highlight(line_id = nil)
     return @highlight if line_id.nil?
@@ -35,6 +42,74 @@ class RuTui::Table
   def row_count
     @table.size
   end
+
+  def create
+    obj = []
+    if @header
+      obj << ascii_table_line if @ascii
+      _obj = []
+      _obj << RuTui::Pixel.new(@pixel.fg,@bg,"|") if @ascii
+      @cols.each_with_index do |col, index|
+        _obj << nil
+        fg = @pixel.fg
+        fg = @cols[index][:title_color] if !@cols[index].nil? and !@cols[index][:title_color].nil?
+        chars = "".to_s.split("")
+        chars = "#{ col[:title] }".to_s.split("") if !col.nil? and !col[:title].nil?
+        chars.each_with_index do |e, char_count|
+          _obj << RuTui::Pixel.new(fg,@bg,e)
+        end
+        (@meta[:max_widths][index]-chars.size+0).times do |i|
+          _obj << nil
+        end
+        _obj << nil
+        _obj << RuTui::Pixel.new(@pixel.fg,@bg,"|") if @ascii
+      end
+      obj << _obj
+    end
+    obj << ascii_table_line if @ascii
+    @table.each_with_index do |line, lindex|
+      # CHANGED: fg color highlight too
+      fg = @pixel.fg
+      bg = @bg
+      fg = @hover_fg if lindex == @highlight and @highlight_direction == :horizontal
+      bg = @hover if lindex == @highlight and @highlight_direction == :horizontal
+      _obj = []
+      _obj << RuTui::Pixel.new(@pixel.fg,@pixel.bg,"|") if @ascii
+      line.each_with_index do |col, index|
+        # fg = @fg
+        fg = @cols[index][:color] if !@cols[index].nil? and !@cols[index][:color].nil?
+
+        if @highlight_direction == :vertical
+          if index == @highlight
+            bg = @hover
+          else
+            bg = @bg
+          end
+        end
+
+
+        chars = col.to_s.split("")
+        _obj << nil
+        max_chars = nil
+        max_chars = @cols[index][:max_length]+1 if !@cols[index].nil? and !@cols[index][:max_length].nil?
+        max_chars = @cols[index][:length]+1 if !@cols[index].nil? and !@cols[index][:length].nil?
+        chars.each_with_index do |e, char_count|
+          break if !max_chars.nil? and char_count >= max_chars
+          _obj << RuTui::Pixel.new(fg,bg,e)
+        end
+        (@meta[:max_widths][index]-chars.size+1).times do |i|
+          _obj << nil
+        end
+
+        bg = @bg if @highlight_direction == :vertical
+        _obj << RuTui::Pixel.new(@pixel.fg,@pixel.bg,"|") if @ascii
+      end
+      obj << _obj
+    end
+    obj << ascii_table_line if @ascii
+    @obj = obj
+  end
+
 end
 
 class RuTui::Screen
