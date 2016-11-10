@@ -20,6 +20,8 @@ require 'rutui'
 require 'gta_scm/rutui_ext'
 
 SIZE = RuTui::Screen.size
+# puts SIZE
+# exit
 
 RuTui::Theme.create :scm, {
   :background => RuTui::Pixel.new(236,234,":"),
@@ -41,6 +43,7 @@ class GtaScm::Panel
   attr_accessor :height
   attr_accessor :elements
   attr_accessor :settings
+  attr_accessor :controller
 
   def initialize(x,y,width,height)
     self.x = x
@@ -57,11 +60,49 @@ class GtaScm::Panel
     end
   end
 
+  def update(process,is_attached)
+    
+  end
+
+  def input(key,is_attached)
+    
+  end
+
   def dx(xo)
     self.x + xo
   end
   def dy(yo)
     self.y + yo
+  end
+
+  def panel_list(data,empty_row)
+    list_height = self.height - 2
+    data = data[0..list_height]
+    while data.size < list_height
+      data << empty_row
+    end
+    data
+  end
+end
+
+class GtaScm::ThreadSelectorPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.settings[:thread_id] = 95
+  end
+
+  def input(key,is_attached)
+    case key
+    when "w"
+      self.settings[:thread_id] += 1
+      self.settings[:key] = "w"
+    when "s"
+      self.settings[:thread_id] -= 1
+      self.settings[:key] = "s"
+    end
+
+    self.settings[:thread_id] = 95 if self.settings[:thread_id] >= 96
+    self.settings[:thread_id] = 0  if self.settings[:thread_id] <= 0
   end
 end
 
@@ -81,7 +122,7 @@ class GtaScm::LvarsPanel < GtaScm::Panel
       header: false,
       hover: RuTui::Theme.get(:highlight),
     })
-    self.settings[:thread_id] ||= 95
+    # self.settings[:thread_id] ||= 95
     self.settings[:lvars_count] = 32
     self.settings[:types] = [:int] * self.settings[:lvars_count]
     self.settings[:names] = [""] * self.settings[:lvars_count]
@@ -91,6 +132,8 @@ class GtaScm::LvarsPanel < GtaScm::Panel
     if !is_attached
       return
     end
+
+    self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
     if thread = process.threads[self.settings[:thread_id]]
       lvars_int   = thread.local_variables_ints
@@ -109,33 +152,122 @@ class GtaScm::LvarsPanel < GtaScm::Panel
         end
       end.compact
 
-      data << ["#{self.settings[:thread_id]}","#{$key}","#{self.settings[:key]}",""]
+      # data << ["#{self.settings[:thread_id]}","#{$key}","#{self.settings[:key]}",""]
       # self.settings[:thread_id] -= 1
 
       self.elements[:table].set_table(data)
     end
   end
+end
 
-  def input(key,is_attached)
+
+class GtaScm::ThreadListPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.elements[:table] = RuTui::Table.new({
+      x: self.dx(0),
+      y: self.dy(0),
+      table: [[""]],
+      cols: [
+        { title: "", length: 10 },
+      ],
+      header: false,
+      hover: RuTui::Theme.get(:highlight),
+    })
+    # self.settings[:thread_id] ||= 95
+    self.settings[:selected_row] = 0
+  end
+
+  def update(process,is_attached)
     if !is_attached
       return
     end
 
-    case key
-    when "w"
-      self.settings[:thread_id] += 1
-      self.settings[:key] = "w"
-    when "s"
-      self.settings[:thread_id] -= 1
-      self.settings[:key] = "s"
-    end
+    self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
-    self.settings[:thread_id] = 95 if self.settings[:thread_id] >= 96
-    self.settings[:thread_id] = 0  if self.settings[:thread_id] <= 0
+    data = self.panel_list( process.threads.reverse.select(&:active?).map.each_with_index do |thread,idx|
+      if thread.thread_id == self.settings[:thread_id]
+        self.settings[:selected_row] = idx
+      end
+      [
+        "#{thread.status_icon} #{thread.name}"
+      ]
+    end, [""])
+
+    self.elements[:table].clear_highlight!
+    self.elements[:table].highlight( self.settings[:selected_row] )
+    self.elements[:table].set_table(data)
   end
 end
 
-$panels[:lvars] = GtaScm::LvarsPanel.new(0,0,50,40)
+
+class GtaScm::ThreadInfoPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.elements[:table] = RuTui::Table.new({
+      x: self.dx(0),
+      y: self.dy(0),
+      table: [["",""]],
+      cols: [
+        { title: "", length: 10 },
+        { title: "", length: 12 },
+      ],
+      header: false,
+      hover: RuTui::Theme.get(:highlight),
+    })
+    # self.settings[:thread_id] ||= 95
+  end
+
+  def update(process,is_attached)
+    if !is_attached
+      return
+    end
+
+    self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
+
+    if thread = process.threads[self.settings[:thread_id]]
+      data = [
+        ["ID","#{thread.thread_id}"],
+        ["Name","#{thread.name}"],
+        ["PC","#{thread.scm_pc}"],
+        ["Base PC","#{thread.base_pc_scm}"],
+        ["Wake Time","#{thread.wake_time}"],
+        ["Timer A","#{thread.timer_a}"],
+        ["Timer B","#{thread.timer_b}"],
+        ["BranchRes","#{thread.branch_result}"],
+        ["Mission","#{thread.is_mission}"],
+        ["External","#{thread.is_external}"],
+        ["BranchRes2","#{thread.branch_result2}"],
+        ["NotFlag","#{thread.not_flag}"],
+        ["DaState","#{thread.death_arrest_state}"],
+        ["DaExecd","#{thread.death_arrest_executed}"],
+        ["SkipPC","#{thread.scene_skip_pc}"],
+        ["MissionFlg","#{thread.mission_flag}"],
+        ["Unknown1","#{thread.unknown1}"],
+        ["Unknown2","#{thread.unknown2}"],
+        ["Stack","#{thread.scm_return_stack[0]}"],
+        ["","#{thread.scm_return_stack[1]}"],
+        ["","#{thread.scm_return_stack[2]}"],
+        ["","#{thread.scm_return_stack[3]}"],
+        ["","#{thread.scm_return_stack[4]}"],
+        ["","#{thread.scm_return_stack[5]}"],
+        ["","#{thread.scm_return_stack[6]}"],
+        ["","#{thread.scm_return_stack[7]}"]
+      ]
+
+      self.elements[:table].set_table(data)
+    end
+  end
+end
+
+
+$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,0,0)
+$panels[:thread_list] = GtaScm::ThreadListPanel.new(0,SIZE[0]-45,10,45)
+$panels[:thread_list].controller = $panels[:thread_selector]
+$panels[:lvars] = GtaScm::LvarsPanel.new(10+2+2,SIZE[0]-32-2,50,32)
+$panels[:lvars].controller = $panels[:thread_selector]
+$panels[:thread_info] = GtaScm::ThreadInfoPanel.new(75,0,22,40)
+$panels[:thread_info].controller = $panels[:thread_selector]
 
 
 screen = RuTui::Screen.new
