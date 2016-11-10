@@ -1,21 +1,21 @@
 require 'timeout'
 
 # implement non-blocking reads
-class RuTui::Input
-  class << self
-    alias getc_orig getc
-  end
+# class RuTui::Input
+#   class << self
+#     alias getc_orig getc
+#   end
 
-  def self.getc
-    begin
-      # Timeout.timeout(0.3) do
-        getc_orig
-      # end
-    rescue Timeout::Error
-      nil
-    end
-  end
-end
+#   def self.getc
+#     begin
+#       # Timeout.timeout(0.3) do
+#         getc_orig
+#       # end
+#     rescue Timeout::Error
+#       nil
+#     end
+#   end
+# end
 
 class RuTui::Table
   # make highlight method actually work like the developer intended (arg absent = get, arg present = set)

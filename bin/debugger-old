@@ -1,0 +1,536 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/thread_monitor [thread name] [lvar types...]
+# sudo ./bin/thread_monitor 
+
+# portrait terminal = ~50 cols, 60 rows
+# widest with game at 800x500 = 125 cols
+
+# Process
+# launch/kill
+# pause/resume
+
+# Thread list
+# id/name/pc/wake/active
+# can scroll list?
+# can tag threads to be pinned to top of list
+
+# Character
+# x/y/z/heading
+# current zone
+# current car model/id
+# current weapon model/id
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+print "\033]0;GtaScm Debugger\a"
+print "\n"
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+
+process.detect_pid_and_attach!
+
+# if process.attached?
+#   # puts "killing process"
+#   # process.kill!
+# else
+#   puts "launching process"
+#   process.launch!
+#   loop do
+#     process.detect_pid!
+#     # puts process.pid.inspect
+#     mem_kb = `ps -o rss= -p #{process.pid}`.strip.to_i
+#     if mem_kb > 100_000
+#       break
+#     end
+#     sleep 0.1
+#   end
+#   sleep 1.0
+#   puts "process.skip_cutscenes!"
+#   process.skip_cutscenes!
+#   sleep 6.0
+#   puts "process.toggle_fullscreen!"
+#   process.toggle_fullscreen!
+# end
+# exit
+
+thread_name = nil
+types = [:int] * 32
+lvar_names = [nil] * 32
+gvars = [7104,7108,7112,7128,7132,7136,7140,41812]
+
+ARGV.each_with_index do |val,i|
+  if i == 0
+    thread_name = val
+  else
+    lvar,type = val.split(":")
+    types[lvar.to_i] = type.to_sym
+  end
+end
+
+# thread_name ||= 'wfndcol'
+thread_name ||= 'rgrgman'
+
+# process.os_pause!
+# process.os_resume!
+
+# process.threads.each_with_index do |thread,thread_id|
+#   if thread.active? && thread.pc > 0
+#     puts "#{thread_id}: #{thread.active? ? "o" : "-"} #{thread.name.ljust(8," ")} PC=#{thread.pc - process.scm_offset} ADDR=#{thread.offset}, PREV=#{thread.prev_thread_pointer} NEXT=#{thread.next_thread_pointer}"
+#   end
+# end
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+
+SIZE = RuTui::Screen.size
+
+# if File.exist?("#{thread_name}.gta-scm-symbols")
+#   process.load_thread_symbols!("#{thread_name}","#{thread_name}.gta-scm-symbols")
+# end
+
+RuTui::Theme.create :scm, {
+  :background => RuTui::Pixel.new(236,234,":"),
+  :border     => RuTui::Pixel.new(103,234,"-"),
+  :textcolor  => 250,
+  :highlight  => 89,
+  :rainbow    => [1,3,11,2,4,5]
+}
+RuTui::Theme.use :scm
+
+# NEXT:
+# scroll through list of threads
+# global variable viewer/editor
+# injector/region mapper
+
+assembler_args = ["san-andreas", "_out/san-andreas-experiments", "main", "Sexp", "GAME"]
+inject_args = ["_out/san-andreas-experiments/","blip-nearest-snapshot-manager","7104","198000"]
+rpc_args = ["2","#{thread_name}"]
+
+# screen = RuTui::Screen.new.tap do |screen|
+screen = RuTui::Screen.new
+
+  left_col = 0
+  right_col = 8
+
+  otexts = {}
+  texts = {}
+  row = 0
+
+  otexts[:process_status] = RuTui::Text.new(x: left_col, y: row, text: "")
+  screen.add(otexts[:process_status])
+  row += 1
+
+  otexts[:process_keys] = RuTui::Text.new(x: left_col, y: row, text: "")
+  otexts[:process_keys].set_text("l: Assemble, k: Inject code, j: RPC kill-thread".center(50))
+  screen.add(otexts[:process_keys])
+  row += 1
+  row += 1
+
+  # otexts[:breakpoint_status] = RuTui::Text.new(x: left_col, y: row, text: "Breakpoint")
+  # screen.add(otexts[:breakpoint_status])
+  # row += 1
+
+  # otexts[:breakpoint_keys] = RuTui::Text.new(x: left_col, y: row, text: "")
+  # otexts[:breakpoint_keys].set_text("p: continue".center(50))
+  # screen.add(otexts[:breakpoint_keys])
+  # row += 1
+  # otexts[:breakpoint_enabled] = RuTui::Text.new(x: left_col, y: row, text: "")
+  # otexts[:breakpoint_enabled].set_text("")
+  # screen.add(otexts[:breakpoint_enabled])
+  # row += 1
+  # row += 1
+
+  # regions_table = RuTui::Table.new({
+  #   x: 0,
+  #   y: row,
+  #   table: [["","","",""]],
+  #   cols: [
+  #     { title: "Begin", length: 6 },
+  #     { title: "Size", length: 6 },
+  #     { title: "#", length: 1 },
+  #     { title: "Filename", length: 24 },
+  #   ],
+  #   header: false,
+  #   hover: 4
+  # })
+  # screen.add(regions_table)
+  # row += 11
+
+  otexts[:threads_title] = RuTui::Text.new(x: left_col, y: row, text: "")
+  otexts[:threads_title].bg = 7
+  otexts[:threads_title].fg = 0
+  otexts[:threads_title].set_text("Thread - q/a: prev/next".center(50))
+  screen.add(otexts[:threads_title])
+  row += 1
+
+  start_of_thread_row = row
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Index:"))
+  texts[:thread_id] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:thread_id])
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Name:"))
+  texts[:name] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:name])
+  row += 1
+  row += 1
+
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Base PC:"))
+  # texts[:base_pc] = RuTui::Text.new(x: right_col, y: row, text: "")
+  # screen.add(texts[:base_pc])
+  # row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "PC:"))
+  texts[:scm_pc] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:scm_pc])
+  row += 1
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Wake:"))
+  texts[:wake_time] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:wake_time])
+  row += 1
+
+  # NEXT: compress other thread flags/info into one line here (OR underneath left "Stack:" text)
+
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Status:"))
+  # texts[:status] = RuTui::Text.new(x: right_col, y: row, text: "")
+  # screen.add(texts[:status])
+  # row += 1
+
+  # row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "TimerA:"))
+  texts[:timer_a] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:timer_a])
+  row += 1
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "TimerB:"))
+  texts[:timer_b] = RuTui::Text.new(x: right_col, y: row, text: "")
+  screen.add(texts[:timer_b])
+
+  row = start_of_thread_row
+  left_col  += 24
+  right_col += 24
+
+  screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Stack:"))
+  # texts[:stack_counter] = RuTui::Text.new(x: right_col, y: row, text: "")
+  # screen.add(texts[:stack_counter])
+  # row += 1
+  0.upto(7) do |i|
+    texts[:"stack_#{i}"] = RuTui::Text.new(x: right_col, y: row, text: "")
+    screen.add(texts[:"stack_#{i}"])
+    row += 1
+  end
+  row += 1
+
+  otexts[:lvars_title] = RuTui::Text.new(x: 0, y: row, text: "")
+  otexts[:lvars_title].bg = 7
+  otexts[:lvars_title].fg = 0
+  otexts[:lvars_title].set_text("Local variables - w/s: up/down, f/i: type".center(50))
+  screen.add(otexts[:lvars_title])
+  row += 1
+
+  ref = RuTui::Theme.get(:border)
+  pixel_vert = RuTui::Pixel.new(ref.fg,ref.bg,"|")
+  pixel_end = RuTui::Pixel.new(ref.fg,ref.bg,"+")
+
+  # screen.add_static(RuTui::Line.new(x: 0, y: 2, length: 50))
+  # screen.add_static(RuTui::Line.new(x: 0, y: 35, length: 50, endpixel: pixel_end))
+  # screen.add_static(RuTui::Line.new(x: 0, y: 2, length: 33, direction: :vertical, pixel: pixel_vert, endpixel: pixel_end))
+
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row, text: "Regions:"))
+  # screen.add_static(RuTui::Text.new(x: left_col, y: row+1, text: "p/l: up/down, o: kill threads, i: inject code"))
+
+  locals = RuTui::Table.new({
+    # x: 24,
+    # y: 2,
+    x: 0,
+    y: row,
+    table: [["","","",""]],
+    cols: [
+      { title: "", length: 5 },
+      { title: "", length: 6 },
+      { title: "", length: 12 },
+      { title: "", length: 14 },
+    ],
+    header: false,
+    hover: RuTui::Theme.get(:highlight),
+  })
+  screen.add(locals)
+
+# end
+
+thread_list = nil
+do_assemble = 0
+assemble_timer = 0.0
+assemble_started_at = nil
+assemble_process = nil
+assemble_status = nil
+# debugger
+if false
+# if SIZE[0] > 50
+  thread_list = RuTui::Table.new({
+    # x: 24,
+    # y: 2,
+    x: 50,
+    y: 0,
+    table: [["123","",""]],
+    cols: [
+      { title: "", length: 2 },
+      { title: "", length: 8 },
+      { title: "", length: 2 },
+    ],
+    header: false,
+    hover: RuTui::Theme.get(:highlight),
+  })
+  screen.add(thread_list)
+end
+
+
+current_thread = nil
+
+if process.attached?
+  current_thread = process.threads.detect{|t| t.name == thread_name}.andand.thread_id || process.threads.last.thread_id
+end
+selected_screen = :thread
+selected_lvar = -1
+regions = []
+
+# regions << { begin: 197_000, end: 200_000, filename: "blip-nearest-snapshot-manager" }
+process.regions.each_pair do |range,range_name|
+  regions << { begin: range.begin, end: range.end, filename: range_name }
+end
+regions.sort_by! {|r| r[:begin] }
+# regions << { begin: 194269 , end: 194766, filename: "debug-rpc" }
+# regions << { begin: 194766 , end: 195601, filename: "coords-display" }
+# regions << { begin: 195601 , end: 196187, filename: "blip-nearest-snapshot" }
+# regions << { begin: 196_500 , end: 200_000, filename: "blip-nearest-snapshot-manager" }
+
+
+
+RuTui::ScreenManager.add :thread, screen
+RuTui::ScreenManager.set_current :thread
+
+# do_breakpoint = true
+
+thr = ::Thread.new do
+  loop do
+    begin
+
+      if selected_screen == :thread
+
+        process.detect_pid_and_attach!
+        if process.attached?
+
+          if current_thread.nil?
+            current_thread = process.threads.detect{|t| t.name == thread_name }.andand.thread_id || process.threads.last.thread_id
+          end
+
+          breakpoint_enabled = process.read_scm_var( process.scm_var_offset_for("var_debug_breakpoint_enabled") , :int32 )
+          if breakpoint_enabled == 1
+            # process.os_pause!
+            breakpoint_pc = process.read_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , :int32 )
+            breakpoint_thread = process.threads.detect{|t| t.scm_return_stack.last == breakpoint_pc }
+            if breakpoint_thread
+              text = "Breakpoint - #{breakpoint_thread.thread_id} #{breakpoint_thread.name} #{breakpoint_pc} - p: resume".center(50)
+            else
+              text = "Breakpoint - ??? #{breakpoint_pc} - p: resume".center(50)
+            end
+            otexts[:process_status].fg = 16
+            otexts[:process_status].bg = 226
+            otexts[:process_status].set_text(text)
+            # otexts[:breakpoint_enabled].set_text("BREAKPOINT HIT")
+          else
+            text = "Process: Attached, PID: #{process.pid} - m: kill".center(50)
+            otexts[:process_status].fg = 16
+            otexts[:process_status].bg = 10
+            otexts[:process_status].set_text(text)
+          end
+
+          if do_assemble == 2
+            text = "Assembling now".center(50)
+            otexts[:process_status].fg = 16
+            otexts[:process_status].bg = 1
+            otexts[:process_status].set_text(text)
+          end
+
+          if thread_list
+            data = process.threads.select(&:active?).reverse.map do |thread|
+              [thread.thread_id,thread.name,thread.status_icon]
+            end
+            thread_list.set_table(data)
+          end
+
+          if thread = process.threads[current_thread]
+
+            if thread_symbols = process.thread_symbols[thread.name]
+              thread_symbols.each_pair do |lvar,info|
+                if info[1]
+                  types[ lvar.to_i ] = info[1].to_sym
+                end
+                if info[0]
+                  lvar_names[ lvar.to_i ] = info[0]
+                end
+              end
+            else
+              types = [:int] * 32
+              lvar_names = [""] * 32
+            end
+
+            lvars_int   = thread.local_variables_ints
+            lvars_float = thread.local_variables_floats
+
+            vars_each = 32
+            i = 0
+            range = ( (i * vars_each) ... ((i + 1) * vars_each) )
+            data = vars_each.times.map do |ii|
+              ii += (vars_each * i)
+              case types[ii]
+              when :int
+                [ii.to_s,"int",lvars_int[ii].to_s,lvar_names[ii].to_s]
+              when :float
+                [ii.to_s,"flt",lvars_float[ii].round(3).to_s,lvar_names[ii].to_s]
+              when :bin
+                [ii.to_s,"bin",lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
+              else
+                nil
+              end
+            end.compact
+
+            data += gvars.map do |gvar|
+              type = gvar == 7112 ? :string8 : :int32
+              val = process.read_scm_var(gvar,type)
+              [gvar.to_s,"#{type}",val.to_s,"gvar #{gvar}"]
+            end
+
+            locals.clear_highlight!
+            locals.highlight( selected_lvar )
+            locals.set_table(data)
+
+            texts.each_pair do |name,text|
+              text.set_text( thread.send(name).to_s )
+            end
+          end
+
+          # data = regions.map do |region|
+          #   thread_count = process.threads.select{|t| t.active? && Range.new(region[:begin],region[:end],false).include?(t.scm_pc) }.size
+          #   # region.values_at(:begin,:end,:name) + ["?","?"]
+          #   [region[:begin],(region[:end]-region[:begin]),"#{thread_count}",region[:filename]]
+          # end
+          # regions_table.set_table(data)
+
+        else
+
+          # not attached
+          text = "Process: Detached - n: launch".center(50)
+          otexts[:process_status].fg = 16
+          otexts[:process_status].bg = 9
+          otexts[:process_status].set_text(text)
+
+        end
+      end
+
+      RuTui::ScreenManager.draw
+      # `stty -echo`
+    # rescue
+
+    ensure
+      sleep 0.2
+      do_breakpoint = true
+    end
+  end
+end
+
+thr2 = ::Thread.new do
+  loop do |key|
+    key = RuTui::Input.getc
+
+    break if key == :ctrl_c # CTRL+C
+
+    if key == "n"
+      if !process.attached?
+        process.launch_and_ready!
+      end
+    end
+
+    if key == "m"
+      if process.attached?
+        process.kill!
+      end
+    end
+
+    if key == "q"
+      current_thread -= 1
+      current_thread = 0 if current_thread < 0
+    end
+    
+    if key == "a"
+      current_thread += 1
+      current_thread = 95 if selected_lvar > 95
+    end
+    
+    if key == "w"
+      selected_lvar -= 1
+      selected_lvar = 0 if selected_lvar < 0
+    end
+    
+    if key == "s"
+      selected_lvar += 1
+      selected_lvar = 31 if selected_lvar > 31
+    end
+
+    if key == "i"
+      types[ selected_lvar ] = :int
+    end
+    if key == "f"
+      types[ selected_lvar ] = :float
+    end
+    if key == "b"
+      types[ selected_lvar ] = :bin
+    end
+    if key == "l"
+      do_assemble = 1
+    end
+
+    if key == "p"
+      process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_enabled") , 0 , :int32 )
+      # process.os_resume!# if process.paused?
+      # do_breakpoint = false
+    end
+
+  end
+end
+
+thr3 = ::Thread.new do
+  loop do |key|
+    if do_assemble == 1
+      do_assemble = 2
+      assemble_started_at = Time.now
+      cmd = "bundle exec #{ENV['PWD']}/bin/assemble #{assembler_args.join(" ")}"
+      # exec(cmd)
+      # `#{cmd}`
+      pipe = IO.popen(cmd)
+      Process.waitpid2(pipe.pid)
+      pipe.close
+      # assemble_process = PWD
+      do_assemble = 3
+    end
+    sleep 0.1
+  end
+end
+
+
+thr.join
+thr2.join
+thr3.join
+
+print RuTui::Ansi.clear_color + RuTui::Ansi.clear
