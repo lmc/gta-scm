@@ -164,8 +164,8 @@ screen = RuTui::Screen.new
   # row += 11
 
   otexts[:threads_title] = RuTui::Text.new(x: left_col, y: row, text: "")
-  otexts[:threads_title].bg = 7
-  otexts[:threads_title].fg = 0
+  otexts[:threads_title].bg = 0
+  otexts[:threads_title].fg = 7
   otexts[:threads_title].set_text("Thread - q/a: prev/next".center(50))
   screen.add(otexts[:threads_title])
   row += 1

@@ -475,10 +475,18 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     end
   end
 
+  def nice_name
+    return "" if self.status == "dead" && self.name == "noname"
+    self.name
+  end
+
   def status_icon
+    return "" if self.status == "dead" && self.name == "noname"
     {
-      "dead" => "❌",
-      "normal" => "✓"
+      "dead" => "x",
+      "external" => "E",
+      "mission" => "M",
+      "normal" => "."
     }[self.status]
   end
 

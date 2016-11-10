@@ -77,7 +77,7 @@ class GtaScm::Panel
 
   def panel_list(data,empty_row)
     list_height = self.height - 2
-    data = data[0..list_height]
+    data = data[0...list_height]
     while data.size < list_height
       data << empty_row
     end
@@ -88,7 +88,26 @@ end
 class GtaScm::ThreadSelectorPanel < GtaScm::Panel
   def initialize(*)
     super
+    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    set_text
     self.settings[:thread_id] = 95
+  end
+
+  def set_text(process = nil)
+    if process
+      str = "Threads (#{process.threads.select(&:active?).size}) - w/s: prev/next"
+    else
+      str = "Threads - w/s: prev/next"
+    end
+    str = str.center(self.width)
+    self.elements[:text].bg = 8
+    self.elements[:text].fg = 0
+    self.elements[:text].set_text(str)
+  end
+
+  def update(process,is_attached)
+    return if !is_attached
+    self.set_text(process)
   end
 
   def input(key,is_attached)
@@ -112,12 +131,10 @@ class GtaScm::LvarsPanel < GtaScm::Panel
     self.elements[:table] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(0),
-      table: [["","","",""]],
+      table: [["",""]],
       cols: [
-        { title: "", length: 5 },
-        { title: "", length: 6 },
+        { title: "", length: 17 },
         { title: "", length: 12 },
-        { title: "", length: 14 },
       ],
       header: false,
       hover: RuTui::Theme.get(:highlight),
@@ -125,7 +142,7 @@ class GtaScm::LvarsPanel < GtaScm::Panel
     # self.settings[:thread_id] ||= 95
     self.settings[:lvars_count] = 32
     self.settings[:types] = [:int] * self.settings[:lvars_count]
-    self.settings[:names] = [""] * self.settings[:lvars_count]
+    self.settings[:names] = [nil] * self.settings[:lvars_count]
   end
 
   def update(process,is_attached)
@@ -136,17 +153,37 @@ class GtaScm::LvarsPanel < GtaScm::Panel
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
     if thread = process.threads[self.settings[:thread_id]]
+
+      if thread_symbols = process.thread_symbols[thread.name]
+        thread_symbols.each_pair do |lvar,info|
+          if info[1]
+            self.settings[:types][ lvar.to_i ] = info[1].to_sym
+          end
+          if info[0]
+            self.settings[:names][ lvar.to_i ] = info[0]
+          end
+        end
+      else
+        types = [:int] * 32
+        lvar_names = [nil] * 32
+      end
+
+
       lvars_int   = thread.local_variables_ints
       lvars_float = thread.local_variables_floats
 
       data = self.settings[:lvars_count].times.map do |ii|
+        label = self.settings[:names][ii] || "#{self.settings[:types][ii]} lvar #{ii}"
         case self.settings[:types][ii]
         when :int
-          [ii.to_s,"int",lvars_int[ii].to_s,self.settings[:names][ii].to_s]
+          # [ii.to_s,"int",lvars_int[ii].to_s,self.settings[:names][ii].to_s]
+          [label,lvars_int[ii].to_s]
         when :float
-          [ii.to_s,"flt",lvars_float[ii].round(3).to_s,self.settings[:names][ii].to_s]
+          # [ii.to_s,"flt",lvars_float[ii].round(3).to_s,self.settings[:names][ii].to_s]
+          [label,lvars_float[ii].round(3).to_s]
         when :bin
-          [ii.to_s,"bin",lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
+          # [ii.to_s,"bin",lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
+          [label,lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
         else
           nil
         end
@@ -185,12 +222,12 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
 
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
-    data = self.panel_list( process.threads.reverse.select(&:active?).map.each_with_index do |thread,idx|
+    data = self.panel_list( process.threads.reverse.map.each_with_index do |thread,idx|
       if thread.thread_id == self.settings[:thread_id]
         self.settings[:selected_row] = idx
       end
       [
-        "#{thread.status_icon} #{thread.name}"
+        "#{thread.status_icon} #{thread.nice_name}"
       ]
     end, [""])
 
@@ -204,18 +241,35 @@ end
 class GtaScm::ThreadInfoPanel < GtaScm::Panel
   def initialize(*)
     super
-    self.elements[:table] = RuTui::Table.new({
+    # self.elements[:table2] = RuTui::Table.new({
+    #   x: self.dx(0),
+    #   y: self.dy(9),
+    #   table: [[""]*11],
+    #   cols: ([{ title: "", length: 1 }] * 9)+[{ title: "", length: 4 }] * 2,
+    #   header: false,
+    #   hover: RuTui::Theme.get(:highlight),
+    # })
+    self.elements[:table1] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(0),
       table: [["",""]],
       cols: [
-        { title: "", length: 10 },
+        { title: "", length: 17 },
         { title: "", length: 12 },
       ],
       header: false,
       hover: RuTui::Theme.get(:highlight),
     })
-    # self.settings[:thread_id] ||= 95
+    self.elements[:table3] = RuTui::Table.new({
+      x: self.dx(20),
+      y: self.dy(10),
+      table: [[""]],
+      cols: [
+        { title: "", length: 12 },
+      ],
+      header: false,
+      hover: RuTui::Theme.get(:highlight),
+    })
   end
 
   def update(process,is_attached)
@@ -226,48 +280,72 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
     if thread = process.threads[self.settings[:thread_id]]
-      data = [
+      data1 = [
         ["ID","#{thread.thread_id}"],
         ["Name","#{thread.name}"],
+        ["",""],
         ["PC","#{thread.scm_pc}"],
         ["Base PC","#{thread.base_pc_scm}"],
+        ["",""],
         ["Wake Time","#{thread.wake_time}"],
         ["Timer A","#{thread.timer_a}"],
         ["Timer B","#{thread.timer_b}"],
-        ["BranchRes","#{thread.branch_result}"],
-        ["Mission","#{thread.is_mission}"],
-        ["External","#{thread.is_external}"],
-        ["BranchRes2","#{thread.branch_result2}"],
-        ["NotFlag","#{thread.not_flag}"],
-        ["DaState","#{thread.death_arrest_state}"],
-        ["DaExecd","#{thread.death_arrest_executed}"],
-        ["SkipPC","#{thread.scene_skip_pc}"],
-        ["MissionFlg","#{thread.mission_flag}"],
-        ["Unknown1","#{thread.unknown1}"],
-        ["Unknown2","#{thread.unknown2}"],
-        ["Stack","#{thread.scm_return_stack[0]}"],
-        ["","#{thread.scm_return_stack[1]}"],
-        ["","#{thread.scm_return_stack[2]}"],
-        ["","#{thread.scm_return_stack[3]}"],
-        ["","#{thread.scm_return_stack[4]}"],
-        ["","#{thread.scm_return_stack[5]}"],
-        ["","#{thread.scm_return_stack[6]}"],
-        ["","#{thread.scm_return_stack[7]}"]
+      ]
+      # data2 = [
+      #   ["BranchRes","#{thread.branch_result}"],
+      #   ["Mission","#{thread.is_mission}"],
+      #   ["External","#{thread.is_external}"],
+      #   ["BranchRes2","#{thread.branch_result2}"],
+      #   ["NotFlag","#{thread.not_flag}"],
+      #   ["DaState","#{thread.death_arrest_state}"],
+      #   ["DaExecd","#{thread.death_arrest_executed}"],
+      #   ["SkipPC","#{thread.scene_skip_pc}"],
+      #   ["MissionFlg","#{thread.mission_flag}"],
+      #   ["Unknown1","#{thread.unknown1}"],
+      #   ["Unknown2","#{thread.unknown2}"],
+      # ]
+      # data2 = [[
+      #   "#{thread.branch_result}",
+      #   "#{thread.is_mission}",
+      #   "#{thread.is_external}",
+      #   "#{thread.branch_result2}",
+      #   "#{thread.not_flag}",
+      #   "#{thread.death_arrest_state}",
+      #   "#{thread.death_arrest_executed}",
+      #   "#{thread.scene_skip_pc}",
+      #   "#{thread.mission_flag}",
+      #   "#{thread.unknown1}",
+      #   "#{thread.unknown2}",
+      # ]]
+      data3 = [
+        ["#{thread.scm_return_stack[0]}"],
+        ["#{thread.scm_return_stack[1]}"],
+        ["#{thread.scm_return_stack[2]}"],
+        ["#{thread.scm_return_stack[3]}"],
+        ["#{thread.scm_return_stack[4]}"],
+        ["#{thread.scm_return_stack[5]}"],
+        ["#{thread.scm_return_stack[6]}"],
+        ["#{thread.scm_return_stack[7]}"]
       ]
 
-      self.elements[:table].set_table(data)
+      self.elements[:table1].clear_highlight!
+      self.elements[:table1].set_table(data1)
+      # self.elements[:table2].clear_highlight!
+      # self.elements[:table2].set_table(data2)
+      self.elements[:table3].clear_highlight!
+      self.elements[:table3].set_table(data3)
     end
   end
 end
 
 
-$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,0,0)
-$panels[:thread_list] = GtaScm::ThreadListPanel.new(0,SIZE[0]-45,10,45)
-$panels[:thread_list].controller = $panels[:thread_selector]
-$panels[:lvars] = GtaScm::LvarsPanel.new(10+2+2,SIZE[0]-32-2,50,32)
-$panels[:lvars].controller = $panels[:thread_selector]
-$panels[:thread_info] = GtaScm::ThreadInfoPanel.new(75,0,22,40)
+$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,50,0)
+$panels[:thread_info] = GtaScm::ThreadInfoPanel.new(10+4,1,22,50)
 $panels[:thread_info].controller = $panels[:thread_selector]
+$panels[:thread_list] = GtaScm::ThreadListPanel.new(0,1,10,58)
+$panels[:thread_list].controller = $panels[:thread_selector]
+$panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-34,48,32)
+$panels[:lvars].controller = $panels[:thread_selector]
 
 
 screen = RuTui::Screen.new
