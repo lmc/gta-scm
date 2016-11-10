@@ -63,7 +63,7 @@ process.detect_pid_and_attach!
 thread_name = nil
 types = [:int] * 32
 lvar_names = [nil] * 32
-gvars = [7104,7108,7112,7128,7132,7136,7140]
+gvars = [7104,7108,7112,7128,7132,7136,7140,41812]
 
 ARGV.each_with_index do |val,i|
   if i == 0

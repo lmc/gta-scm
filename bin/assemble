@@ -26,6 +26,7 @@ support gxt replacement/insertion
 
 
 external = ARGV[5] == "external=1"
+externals = ARGV[5].present? ? [ARGV[5].split("=")] : []
 
 # puts "external: #{external}"
 # exit

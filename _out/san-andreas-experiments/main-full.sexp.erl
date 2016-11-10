@@ -156,6 +156,7 @@
 
 (labeldef external_loader_idle)
 (wait ((int8 0)))
+(get_number_of_instances_of_streamed_script ((int8 78) (dmavar 41812)))
 (goto ((label external_loader_idle)))
 
 % insert rest of mission code (missions use relative jumps, so they can be relocated freely)

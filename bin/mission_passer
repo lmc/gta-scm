@@ -11,36 +11,138 @@ require 'gta_scm/thread'
 process = GtaScm::Process.new
 process.load_symbols!("symbols.gta-scm-symbols")
 
-process.load_thread_symbols!("bnsm","bnsm.gta-scm-symbols")
-
 process.detect_pid_and_attach!
 
-MISSIONS = [
-  ["intro",200467,200740],
-  ["intro",200924,200967],
-  ["intro",202686,206817],
+$current_mission_bytecode = nil
+$current_keypresses = {}
+$current_keypresses = {}
+$current_patchsites = []
 
-  ["intro1",207319,218131],
-
+DEBUG_OPCODE = [
+  0xd6, 0x00, 0x04, 0x00, # andor
+  0x35, 0x07, 0x04,       # ps2 key pressed int8
 ]
 
 loop do
+  any_missions = false
   process.threads.each do |thread|
-    if mission = MISSIONS.detect {|m| thread.name == m[0] && thread.scm_pc == m[1] }
-      puts "detected #{mission.inspect}"
+    if thread.is_mission == 1
+      any_missions = true
 
-      case mission[2]
-      when :press_enter
-        puts "pressing enter!"
-        process.press_enter!
-      else
-        skip_pc = mission[2]
-        thread.scm_pc = skip_pc
-        offset = process.thread_control_block_offset + (thread.thread_id * thread.size)
-        puts "writing new pc #{skip_pc} (#{thread.pc}) to thread #{thread.thread_id} at #{offset} (size: #{thread.size})"
-        process.write(offset,thread.to_binary)
+      if !$current_mission_bytecode
+        puts "found mission thread #{thread.thread_id} #{thread.name} (scm base: #{thread.base_pc_scm}, abs: #{thread.base_pc})"
+        puts "getting mission bytecode"
+        $current_mission_bytecode = process.read(thread.base_pc,69_000).bytes
+        $current_mission_bytecode.each_with_index do |_,i|
+          if $current_mission_bytecode[i...(i+7)] == DEBUG_OPCODE
+            inst_andor = $current_mission_bytecode[i..(i+3)]
+            inst_keypress = $current_mission_bytecode[(i+4)..(i+7)]
+            inst_goto_false = $current_mission_bytecode[(i+8)..(i+14)]
+            puts "found debug opcode at #{i}"
+            $current_patchsites << i
+            puts inst_andor.inspect
+            puts inst_keypress.inspect
+            puts inst_goto_false.inspect
+
+            # puts "keypress id is: #{inst_keypress.last.chr}"
+            # puts "normal jump is #{GtaScm::Types.bin2value(inst_goto_false[3..7].map(&:chr).join,:int32)}"
+            # puts "end of check is #{i+15}"
+
+            $current_keypresses[inst_keypress.last.chr] = i
+
+            # wait7 = [0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]
+            # wait4 = [0x01, 0x00, 0x04, 0x00]
+
+            # noop = (wait7 + wait4 + wait4).map(&:chr).join
+
+            # puts "writing #{noop.inspect} to #{i} (#{thread.base_pc + i})"
+            # process.write( thread.base_pc + i , noop )
+          end
+        end
+        puts "bytecode search complete"
       end
+
+      if $current_keypresses.size > 0
+        puts "Debug keys available:"
+        $current_keypresses.each_pair do |key,offset|
+          puts "  #{key} - #{offset}"
+        end
+        keypress = gets.strip
+        # if offset = $current_keypresses[keypress]
+        #   puts "patching branch at #{offset}"
+        #   wait7 = [0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]
+        #   wait4 = [0x01, 0x00, 0x04, 0x00]
+
+        #   noop = (wait7 + wait4 + wait4).map(&:chr).join
+
+        #   puts "writing no-op #{noop.inspect} to #{offset} (#{thread.base_pc + offset})"
+        #   process.write( thread.base_pc + offset , noop )
+        #   sleep 5.0
+        # end
+        $current_patchsites.each do |offset|
+          puts "patching branch at #{offset}"
+          wait7 = [0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]
+          wait4 = [0x01, 0x00, 0x04, 0x00]
+          noop = (wait7 + wait4 + wait4).map(&:chr).join
+          puts "writing no-op #{noop.inspect} to #{offset} (#{thread.base_pc + offset})"
+          process.write( thread.base_pc + offset , noop )
+        end
+      end
+
     end
+  end
+  if any_missions
+
+  else
+    $current_mission_bytecode = nil
+    $current_keypresses = {}
+    $current_patchsites = []
   end
   sleep 0.5
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# MISSIONS = [
+#   ["intro",200467,200740],
+#   ["intro",200924,200967],
+#   ["intro",202686,206817],
+
+#   ["intro1",207319,218131],
+
+# ]
+
+# loop do
+#   process.threads.each do |thread|
+#     if mission = MISSIONS.detect {|m| thread.name == m[0] && thread.scm_pc == m[1] }
+#       puts "detected #{mission.inspect}"
+
+#       case mission[2]
+#       when :press_enter
+#         puts "pressing enter!"
+#         process.press_enter!
+#       else
+#         skip_pc = mission[2]
+#         thread.scm_pc = skip_pc
+#         offset = process.thread_control_block_offset + (thread.thread_id * thread.size)
+#         puts "writing new pc #{skip_pc} (#{thread.pc}) to thread #{thread.thread_id} at #{offset} (size: #{thread.size})"
+#         process.write(offset,thread.to_binary)
+#       end
+#     end
+#   end
+#   sleep 0.5
+# end
