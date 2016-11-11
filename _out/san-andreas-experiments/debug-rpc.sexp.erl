@@ -32,6 +32,7 @@
 
 % breakpoint
 (set_var_int ((var debug_breakpoint_enabled) (int32 0)))
+% breakpoints enabled globally? (set = 0 to disable)
 (set_var_int ((var debug_breakpoint_pc) (int32 0)))
 
 (terminate_this_script)
@@ -129,25 +130,15 @@
 % pause game as best we can, wait for external debugger to set debug_breakpoint_enabled = false
 (labeldef debug_breakpoint)
 (set_var_int ((var debug_breakpoint_enabled) (int8 1)))
-% (set_time_scale ((float32 0.0)))
-% (use_text_commands ((int8 0)))
-% (set_text_centre ((int8 1)))
-% (set_text_wrapx ((float32 1000.0)))
-% (set_text_scale ((float32 0.6146000027656555) (float32 2.4960999488830566)))
-% (set_text_colour ((int16 255) (int16 255) (int16 0) (int16 255)))
-% (display_text ((float32 320.0) (float32 1.0) (string8 "GSCMDB0")))
-% (wait ((int8 0)))
 
 (labeldef debug_breakpoint_idle)
 % (wait ((int8 0)))
 
 (andor ((int8 21)))
   (is_int_var_equal_to_number ((var debug_breakpoint_enabled) (int8 0)))
-  (is_button_pressed ((int8 0) (int8 13)))
+  (is_int_var_equal_to_number ((var debug_breakpoint_pc) (int8 0)))
 (goto_if_false ((label debug_breakpoint_idle)))
 
 (set_var_int ((var debug_breakpoint_enabled) (int8 0)))
-(set_var_int ((var debug_breakpoint_pc) (int8 0)))
-(set_time_scale ((float32 1.0)))
 (return)
 (goto ((label debug_breakpoint)))

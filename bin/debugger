@@ -35,6 +35,11 @@ RuTui::Theme.create :scm, {
 }
 RuTui::Theme.use :scm
 
+# NEXT:
+# process stats
+# rpc/tool list
+# breakpoint viewer
+
 $panels = {}
 
 $exit = false
@@ -87,6 +92,53 @@ class GtaScm::Panel
     data
   end
 end
+
+
+class GtaScm::ProcessPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    set_text
+    self.settings[:pid] = nil
+  end
+
+  def set_text(process = nil)
+    if self.settings[:pid]
+      str = "Process attached (PID: #{self.settings[:pid]}) - k: kill"
+    else
+      str = "Process detached - l: launch"
+    end
+    str = str.center(self.width)
+    self.elements[:text].bg = 7
+    self.elements[:text].fg = 0
+    self.elements[:text].set_text(str)
+  end
+
+  def update(process,is_attached)
+    # return if !is_attached
+    if is_attached
+      self.settings[:pid] = process.pid
+    else
+      self.settings[:pid] = nil
+    end
+    self.set_text(process)
+  end
+
+  def input(key,is_attached,process)
+    # return if !self.settings[:pid]
+    case key
+    when "l"
+      if !process.attached?
+        process.launch_and_ready!
+      end
+    when "k"
+      if process.attached?
+        process.kill!
+      end
+    end
+  end
+end
+
 
 class GtaScm::ThreadSelectorPanel < GtaScm::Panel
   def initialize(*)
@@ -341,7 +393,9 @@ class GtaScm::MissionSkipperPanel < GtaScm::Panel
         ]
       end
       # data = [["","thread: #{thread.thread_id} #{thread.name}"]] + data
-      self.elements[:table].set_table(data)
+      if data.present?
+        self.elements[:table].set_table(data)
+      end
       set_text(process)
     else
       self.settings[:bytecode] = nil
@@ -371,6 +425,79 @@ class GtaScm::MissionSkipperPanel < GtaScm::Panel
     end
   end
 end
+
+
+
+class GtaScm::BreakpointPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
+    self.settings[:breakpoint_enabled] = false
+    set_text
+  end
+
+  def set_text(process = nil)
+    
+  end
+
+  def _set_text(str,str2)
+    self.elements[:header].bg = 7
+    self.elements[:header].fg = 0
+    self.elements[:header].set_text(str.center(self.width))
+    self.elements[:text].set_text(str2.center(self.width))
+  end
+
+  def update(process,is_attached)
+    if !is_attached
+      return
+    end
+
+    self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , :int32 )
+    self.settings[:breakpoint_waiting] = process.read_scm_var( process.scm_var_offset_for("var_debug_breakpoint_enabled") , :int32 )
+    str_enable = self.settings[:breakpoint_enabled] == 1 ? "o: disable" : "o: enable"
+
+    if self.settings[:breakpoint_waiting] == 1
+      breakpoint_handler = process.scm_label_offset_for("debug_breakpoint")
+
+      breakpoint_thread = process.threads.detect{|t|
+        (breakpoint_handler..(breakpoint_handler+64)).include?(t.scm_pc)
+      }
+
+      if breakpoint_thread
+        breakpoint_gosub = breakpoint_thread.scm_return_stack.last
+        str = "Breakpoint - i: resume, #{str_enable}"
+        str2 = "#{breakpoint_thread.thread_id} #{breakpoint_thread.name} #{breakpoint_gosub}"
+        _set_text(str,str2)
+      else
+        str = "Breakpoint - i: resume, #{str_enable}"
+        str2 = "unknown thread"
+        _set_text(str,str2)
+      end
+    else
+      str = "Breakpoint - #{str_enable}"
+      str2 = ""
+      _set_text(str,str2)
+    end
+  end
+
+  def input(key,is_attached,process)
+    if key == "i"
+      process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_enabled") , 0 , :int32 )
+    end
+    if key == "o"
+      if self.settings[:breakpoint_enabled] == 1
+        self.settings[:breakpoint_enabled] = 0
+        process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , 0 , :int32 )
+      else
+        self.settings[:breakpoint_enabled] = 1
+        process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , 1 , :int32 )
+        end
+    end
+  end
+end
+
+
 
 class GtaScm::ThreadListPanel < GtaScm::Panel
   def initialize(*)
@@ -402,7 +529,7 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
         self.settings[:selected_row] = idx
       end
       [
-        "#{thread.status_icon} #{thread.nice_name.ljust(8," ")}"
+        "#{thread.status_icon} #{(thread.nice_name||"").ljust(8," ")}"
       ]
     end, self.height , [""])
 
@@ -459,7 +586,7 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
 
     if thread = process.threads[self.settings[:thread_id]]
       data1 = [
-        ["#{thread.thread_id.to_s.rjust(2,"0")} #{thread.name.ljust(7," ")}","#{thread.status}"],
+        ["#{thread.thread_id.to_s.rjust(2,"0")} #{(thread.name || "").ljust(7," ")}","#{thread.status}"],
         ["",""],
         ["PC","#{thread.scm_pc}"],
         ["Base PC","#{thread.base_pc_scm}"],
@@ -520,6 +647,7 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
 end
 
 
+$panels[:process] = GtaScm::ProcessPanel.new(50,0,50,0)
 $panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,50,0)
 $panels[:thread_info] = GtaScm::ThreadInfoPanel.new(10+4,1,22,50)
 $panels[:thread_info].controller = $panels[:thread_selector]
@@ -528,7 +656,8 @@ $panels[:thread_list].controller = $panels[:thread_selector]
 $panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,36,32)
 $panels[:lvars].controller = $panels[:thread_selector]
 $panels[:gvars] = GtaScm::GvarsPanel.new(50,SIZE[0]-35,40,32)
-$panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50,SIZE[0]-44,28,32)
+# $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50,SIZE[0]-44,28,32)
+$panels[:breakpoint] = GtaScm::BreakpointPanel.new(50,2,50,4)
 
 
 screen = RuTui::Screen.new
@@ -545,7 +674,11 @@ thr = ::Thread.new do
     break if $exit
 
     begin
-      process.detect_pid_and_attach!
+      begin
+        process.detect_pid_and_attach!
+      rescue
+        #whatevs
+      end
 
       is_attached = false
       if process.attached?

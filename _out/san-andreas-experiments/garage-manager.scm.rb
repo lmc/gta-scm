@@ -1,6 +1,7 @@
 script_name("rgrgman")
 
 BREAKPOINT_OFFSET = 56531
+BREAKPOINT = [:int32,194710]
 CARID2GXT = [:label, :carid2gxt_addr]
 
 tmp_car_id = 0
@@ -251,9 +252,6 @@ spawn_car = routine do
     set_car_model_components(tmp_car_id,tmp_car_variation,-1)
   end
 
-  # gosub(BREAKPOINT_OFFSET)
-  # debugger
-
   car = create_car(tmp_car_id, spawn_x, spawn_y, spawn_z)
   set_car_heading(car,spawn_heading)
 
@@ -303,17 +301,11 @@ show_menu = routine do
   tmp_i = 0
   set_menu_item_with_number(menu,0,tmp_i,"GSCM001",0)
 
-  # debugger
-
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM007",0)
 
-  # debugger
-
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM017",0)
-
-  # debugger
 
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM020",0)
@@ -524,6 +516,7 @@ handle_menu_input = routine do
         hide_menu()
         show_gang_wars_menu()
       elsif menu_selected_id == 103
+        gosub(BREAKPOINT)
         task_jetpack($_12)
       elsif menu_selected_id > 199 && menu_selected_id < 205
         if car_creator_saved_car == -1
