@@ -20,19 +20,7 @@
 % == Patches ==========================
 
 % insert initial MAIN code
-(IncludeBin ("games/san-andreas/data/script/main.scm" 55976 61763))
-
-% replace goto at bottom of main loop with a goto to our extension
-(goto ((label main_loop_ext)))
-
-% more MAIN code
-(IncludeBin ("games/san-andreas/data/script/main.scm" 61770 88020))
-
-% replace gosub in save thread to our extension
-(gosub ((label save_thread_ext)))
-
-% rest of MAIN code
-(IncludeBin ("games/san-andreas/data/script/main.scm" 88027 194125))
+(IncludeBin ("games/san-andreas/data/script/main.scm" 55976 56728))
 
 % =====================================
 
@@ -43,6 +31,7 @@
 % we run at the end of the main loop in the MAIN thread
 (labeldef main_loop_ext)
 
+% TODO: replace with clean shutdown check in save hook?
 % check if watchdog timer has stopped updating (new game or thread killed)
 (get_game_timer ((dmavar 21136)))
 (set_var_int_to_var_int ((dmavar 7080) (dmavar 21136)))
@@ -54,7 +43,7 @@
 
 % if watchdog timer has stopped updating, re-spawn thread
 (get_game_timer ((dmavar 7084)))
-(terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
+% (terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
 (start_new_script ((label watchdog) (end_var_args)))
 
 % jump back to start of main loop
@@ -69,6 +58,8 @@
 
 % we run as a gosub from the PSAVE1 thread
 (labeldef save_thread_ext)
+
+% TODO: set `terminating` global var, for threads to shut down cleanly with
 
 % kill threads that will have PCs in undefined code if scm file is uninstalled
 (terminate_all_scripts_with_this_name ((string8 "xdbgrpc")))
@@ -125,7 +116,6 @@
 
 
 
-
 % == External Loader ==================
 
 % load external scripts from script.img
@@ -165,6 +155,22 @@
 
 
 
+(PadUntil (57945))
+(IncludeBin ("games/san-andreas/data/script/main.scm" 57945 61763))
+
+% replace goto at bottom of main loop with a goto to our extension
+(goto ((label main_loop_ext)))
+
+% more MAIN code
+(IncludeBin ("games/san-andreas/data/script/main.scm" 61770 88020))
+
+% replace gosub in save thread to our extension
+(gosub ((label save_thread_ext)))
+
+% rest of MAIN code
+(IncludeBin ("games/san-andreas/data/script/main.scm" 88027 194125))
+
+
 % == Missions =========================
 
 % insert rest of mission code (missions use relative jumps, so they can be relocated freely)
@@ -172,4 +178,3 @@
 (IncludeBin ("games/san-andreas/data/script/main.scm" 194125 3079744))
 
 % =====================================
-
