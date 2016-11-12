@@ -295,6 +295,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       [21136,:int ,"game timer"],
       [7080,:int ,"watchdog check time"],
       [7084,:int ,"watchdog timer"],
+      [7088,:int ,"extscript 78 count"],
     ].each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
