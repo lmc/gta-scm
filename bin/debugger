@@ -291,8 +291,10 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       [100  ,:int ,"stat"],
       [160  ,:int ,"day of week"],
       [616  ,:int ,"language"],
-      [21136,:int ,"game timer"],
       [1636,:int ,"mission_flag"],
+      [21136,:int ,"game timer"],
+      [7080,:int ,"watchdog check time"],
+      [7084,:int ,"watchdog timer"],
     ].each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
@@ -498,6 +500,51 @@ class GtaScm::BreakpointPanel < GtaScm::Panel
 end
 
 
+class GtaScm::CodeInjectorPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    self.elements[:header].bg = 7
+    self.elements[:header].fg = 0
+    self.elements[:header].set_text("Code Injector".center(self.width))
+    self.elements[:table] = RuTui::Table.new({
+      x: self.dx(0),
+      y: self.dy(1),
+      table: [["","","",""]],
+      cols: [
+        { title: "Filename", length: 8 },
+        { title: "Offset", length: 6 },
+        { title: "Thread", length: 7 },
+        { title: "Lvar", length: 4 },
+      ],
+      header: true,
+      hover: RuTui::Theme.get(:highlight),
+      hover_fg: RuTui::Theme.get(:highlight_fg),
+    })
+
+    self.settings[:injectors] = [
+      ["inject",196_000,"injectd",0]
+    ]
+  end
+
+  def update(process,is_attached)
+    if !is_attached
+      return
+    end
+
+    data = self.settings[:injectors].map do |injector|
+      [injector[0],injector[1].to_s,injector[2],injector[3].to_s]
+    end
+    self.elements[:table].set_table(data)
+
+  end
+
+  def input(key,is_attached,process)
+
+  end
+end
+
+
 
 class GtaScm::ThreadListPanel < GtaScm::Panel
   def initialize(*)
@@ -647,7 +694,7 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
 end
 
 
-$panels[:process] = GtaScm::ProcessPanel.new(50,0,50,0)
+$panels[:process] = GtaScm::ProcessPanel.new(50+1,0,50,0)
 $panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,50,0)
 $panels[:thread_info] = GtaScm::ThreadInfoPanel.new(10+4,1,22,50)
 $panels[:thread_info].controller = $panels[:thread_selector]
@@ -655,9 +702,10 @@ $panels[:thread_list] = GtaScm::ThreadListPanel.new(0,1,10,58)
 $panels[:thread_list].controller = $panels[:thread_selector]
 $panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,36,32)
 $panels[:lvars].controller = $panels[:thread_selector]
-$panels[:gvars] = GtaScm::GvarsPanel.new(50,SIZE[0]-35,40,32)
-# $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50,SIZE[0]-44,28,32)
-$panels[:breakpoint] = GtaScm::BreakpointPanel.new(50,2,50,4)
+$panels[:gvars] = GtaScm::GvarsPanel.new(50+1,SIZE[0]-35,40,32)
+# $panels[:breakpoint] = GtaScm::BreakpointPanel.new(50+1,2,50,4)
+$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(50+1,4,50,4)
+$panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50+1,10,28,32)
 
 
 screen = RuTui::Screen.new
@@ -672,6 +720,8 @@ RuTui::ScreenManager.set_current :default
 thr = ::Thread.new do
   loop do
     break if $exit
+
+    start = Time.now
 
     begin
       begin
@@ -693,7 +743,8 @@ thr = ::Thread.new do
 
       RuTui::ScreenManager.draw
     ensure
-      sleep 0.2
+      sleep_time = (start + 0.5) - Time.now
+      sleep(sleep_time) if sleep_time > 0.0
     end
 
   end
@@ -704,6 +755,8 @@ thr2 = ::Thread.new do
     break if $exit
 
     key = RuTui::Input.getc
+
+    sleep 0.1
 
     $key = key
 
