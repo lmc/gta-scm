@@ -275,7 +275,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       table: [["",""]],
       cols: [
         { title: "", length: 5 },
-        { title: "", length: 13 },
+        { title: "", length: 23 },
         { title: "", length: 12 },
       ],
       header: false,
@@ -287,15 +287,23 @@ class GtaScm::GvarsPanel < GtaScm::Panel
     self.settings[:names] = []
 
     [
-      [172  ,:int ,"interior"],
-      [100  ,:int ,"stat"],
-      [160  ,:int ,"day of week"],
-      [616  ,:int ,"language"],
-      [1636,:int ,"mission_flag"],
-      [21136,:int ,"game timer"],
-      [7080,:int ,"watchdog check time"],
-      [7084,:int ,"watchdog timer"],
-      [7088,:int ,"extscript 78 count"],
+      # [172  ,:int ,"interior"],
+      # [100  ,:int ,"stat"],
+      # [160  ,:int ,"day of week"],
+      # [616  ,:int ,"language"],
+      # [1636,:int ,"mission_flag"],
+      # [21136,:int ,"game timer"],
+
+      # [7084,:int ,"watchdog timer"],
+      # [7088,:int ,"extscript 78 count"],
+      [4484,:int ,"watchdog check"],
+      [4488,:int ,"watchdog timer"],
+      [4492,:int ,"extscript 78 count"],
+      [4496,:int ,"code state"],
+      [3428,:int ,"code version"],
+      [3432,:int ,"save version"],
+      [7088,:int ,"debug enabled"],
+      [7084,:int ,"debug feedback enabled"],
     ].each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
@@ -737,7 +745,7 @@ $panels[:thread_list] = GtaScm::ThreadListPanel.new(0,1,10,58)
 $panels[:thread_list].controller = $panels[:thread_selector]
 $panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,36,32)
 $panels[:lvars].controller = $panels[:thread_selector]
-$panels[:gvars] = GtaScm::GvarsPanel.new(50+1,SIZE[0]-35,40,32)
+$panels[:gvars] = GtaScm::GvarsPanel.new(50+1,SIZE[0]-35,50,32)
 # $panels[:breakpoint] = GtaScm::BreakpointPanel.new(50+1,2,50,4)
 $panels[:code_injector] = GtaScm::CodeInjectorPanel.new(50+1,4,50,4)
 $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50+1,15,28,32)

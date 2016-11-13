@@ -3,26 +3,28 @@
 (script_name ((string8 "xdbgrpc")))
 
 % args for syscalls
-(set_var_int ((dmavar 7036 debug_rpc_int_arg_0) (int8 0)))
-(set_var_int ((dmavar 7040 debug_rpc_int_arg_1) (int8 0)))
-(set_var_int ((dmavar 7044 debug_rpc_int_arg_2) (int8 0)))
-(set_var_int ((dmavar 7048 debug_rpc_int_arg_3) (int8 0)))
-(set_var_int ((dmavar 7052 debug_rpc_int_arg_4) (int8 0)))
-(set_var_int ((dmavar 7056 debug_rpc_int_arg_5) (int8 0)))
-(set_var_int ((dmavar 7060 debug_rpc_int_arg_6) (int8 0)))
-(set_var_int ((dmavar 7064 debug_rpc_int_arg_7) (int8 0)))
+% (set_var_int ((dmavar 7036 debug_rpc_int_arg_0) (int8 0)))
+% (set_var_int ((dmavar 7040 debug_rpc_int_arg_1) (int8 0)))
+% (set_var_int ((dmavar 7044 debug_rpc_int_arg_2) (int8 0)))
+% (set_var_int ((dmavar 7048 debug_rpc_int_arg_3) (int8 0)))
+% % (set_var_int ((dmavar 7052 debug_rpc_int_arg_4) (int8 0)))
+% % (set_var_int ((dmavar 7056 debug_rpc_int_arg_5) (int8 0)))
+% % (set_var_int ((dmavar 7060 debug_rpc_int_arg_6) (int8 0)))
+% (set_var_int ((dmavar 7064 debug_rpc_int_arg_7) (int8 0)))
 
-% load args then set this to do a debug rpc call
-(set_var_int ((dmavar 7068 debug_rpc_syscall) (int8 0)))
-(set_var_int ((dmavar 7072 debug_rpc_syscall_result) (int8 0)))
+% % load args then set this to do a debug rpc call
+% (set_var_int ((dmavar 7068 debug_rpc_syscall) (int8 0)))
+% (set_var_int ((dmavar 7072 debug_rpc_syscall_result) (int8 0)))
 
-% breakpoint
-(set_var_int ((dmavar 7076 debug_breakpoint_enabled) (int8 0)))
-% breakpoints enabled globally? (set = 0 to disable)
-(set_var_int ((dmavar 7080 debug_breakpoint_pc) (int8 0)))
+% % breakpoint
+% (set_var_int ((dmavar 7076 debug_breakpoint_enabled) (int8 0)))
+% % breakpoints enabled globally? (set = 0 to disable)
+% (set_var_int ((dmavar 7080 debug_breakpoint_pc) (int8 0)))
 
-% feedback on?
-(set_var_int ((dmavar 7084 debug_rpc_feedback_enabled) (int8 1)))
+% feedback on
+% (set_var_int ((dmavar 7084 debug_rpc_feedback_enabled) (int8 1)))
+% self-terminate var
+% (set_var_int ((dmavar 7088 debug_rpc_enabled) (int8 1)))
 
 (goto ((label debug_rpc_worker_top)))
 
@@ -43,6 +45,10 @@
 
 (labeldef debug_rpc_worker_top)
 (wait ((int8 0)))
+
+(andor ((int8 0)))
+  (is_int_var_greater_than_number ((dmavar 7088 debug_rpc_enabled) (int8 0)))
+(goto_if_false ((label debug_rpc_worker_terminate)))
 
 (andor ((int8 0)))
   (is_int_var_greater_than_number ((dmavar 7068 debug_rpc_syscall) (int8 0)))
@@ -101,15 +107,18 @@
 (set_var_int ((dmavar 7040 debug_rpc_int_arg_1) (int8 0)))
 (set_var_int ((dmavar 7044 debug_rpc_int_arg_2) (int8 0)))
 (set_var_int ((dmavar 7048 debug_rpc_int_arg_3) (int8 0)))
-(set_var_int ((dmavar 7052 debug_rpc_int_arg_4) (int8 0)))
-(set_var_int ((dmavar 7056 debug_rpc_int_arg_5) (int8 0)))
-(set_var_int ((dmavar 7060 debug_rpc_int_arg_6) (int8 0)))
+% (set_var_int ((dmavar 7052 debug_rpc_int_arg_4) (int8 0)))
+% (set_var_int ((dmavar 7056 debug_rpc_int_arg_5) (int8 0)))
+% (set_var_int ((dmavar 7060 debug_rpc_int_arg_6) (int8 0)))
 (set_var_int ((dmavar 7064 debug_rpc_int_arg_7) (int8 0)))
 (set_var_int ((dmavar 7068 debug_rpc_syscall) (int8 0)))
 
 (add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1057)))
 
 (goto ((label debug_rpc_worker_top)))
+
+(labeldef debug_rpc_worker_terminate)
+(terminate_this_script)
 
 
 

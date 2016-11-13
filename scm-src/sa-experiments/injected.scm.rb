@@ -8,6 +8,8 @@ end
 
 test = -1
 test2 = 1
+TIMER_A = 0
+wait(2000)
 
 loop do
   
@@ -18,5 +20,9 @@ loop do
   end
 
   test2 += 1
+
+  if TIMER_A > 5000
+    should_terminate = 1
+  end
 
 end
