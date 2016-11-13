@@ -27,6 +27,9 @@
 
 
 % == Main Loop Extension ==============
+% Global vars used:
+% 4484 - watchdog timeout
+% 4488 - watchdog timer
 
 % we run at the end of the main loop in the MAIN thread
 (labeldef main_loop_ext)
@@ -34,15 +37,15 @@
 % TODO: replace with clean shutdown check in save hook?
 % check if watchdog timer has stopped updating (new game or thread killed)
 (get_game_timer ((dmavar 21136)))
-(set_var_int_to_var_int ((dmavar 7080) (dmavar 21136)))
-(sub_val_from_int_var ((dmavar 7080) (int16 1000)))
+(set_var_int_to_var_int ((dmavar 4484 watchdog_timeout) (dmavar 21136)))
+(sub_val_from_int_var ((dmavar 4484 watchdog_timeout) (int16 1000)))
 
 (andor ((int8 0)))
-(is_int_var_greater_than_int_var ((dmavar 7080) (dmavar 7084)))
+(is_int_var_greater_than_int_var ((dmavar 4484 watchdog_timeout) (dmavar 4488 watchdog_timer)))
 (goto_if_false ((label main_loop_ext_end)))
 
 % if watchdog timer has stopped updating, re-spawn thread
-(get_game_timer ((dmavar 7084)))
+(get_game_timer ((dmavar 4488 watchdog_timer)))
 % (terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
 (start_new_script ((label watchdog) (end_var_args)))
 
@@ -83,7 +86,7 @@
 (labeldef watchdog)
 (wait ((int8 0)))
 (script_name ((string8 "xwtchdg")))
-(get_game_timer ((dmavar 7084)))
+(get_game_timer ((dmavar 4488 watchdog_timer)))
 
 % wait for intro/init missions to run to get free variables
 (andor ((int8 0)))
@@ -101,7 +104,7 @@
 % idle loop, just keep timer updated
 (labeldef watchdog_loop)
 (wait ((int8 0)))
-(get_game_timer ((dmavar 7084)))
+(get_game_timer ((dmavar 4488 watchdog_timer)))
 (goto ((label watchdog_loop)))
 
 % =====================================
@@ -109,7 +112,20 @@
 
 
 % == Debug RPC ==================
-
+% Global vars used:
+% 7036 - debug_rpc_int_arg_0
+% 7040 - debug_rpc_int_arg_1
+% 7044 - debug_rpc_int_arg_2
+% 7048 - debug_rpc_int_arg_3
+% 7052 - debug_rpc_int_arg_4
+% 7056 - debug_rpc_int_arg_5
+% 7060 - debug_rpc_int_arg_6
+% 7064 - debug_rpc_int_arg_7
+% 7068 - debug_rpc_syscall
+% 7072 - debug_rpc_syscall_result
+% 7076 - debug_breakpoint_enabled
+% 7080 - debug_breakpoint_pc
+% 7084 - debug_rpc_feedback_enabled
 (labeldef debug_rpc)
 (IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars1-16")))
 % =====================================

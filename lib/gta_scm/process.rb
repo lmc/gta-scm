@@ -158,22 +158,22 @@ class GtaScm::Process
 
     syscall_args = parse_rpc_args(rpc_args)
 
-    if self.read_scm_var( :var_debug_rpc_syscall , :int32 ) != 0
+    if self.read_scm_var( :debug_rpc_syscall , :int32 ) != 0
       raise "rpc id is already set (execution in progress?)"
     end
 
     puts "performing rpc id #{syscall_id} with args #{syscall_args.inspect}"
     syscall_args.each_with_index do |arg,idx|
-      self.write_scm_var( :"var_debug_rpc_int_arg_#{idx}" , arg , nil )
+      self.write_scm_var( :"debug_rpc_int_arg_#{idx}" , arg , nil )
     end
-    self.write_scm_var( :"var_debug_rpc_syscall" , syscall_id , :int32 )
+    self.write_scm_var( :"debug_rpc_syscall" , syscall_id , :int32 )
 
     # puts "waiting for result"
-    until self.read_scm_var( :"var_debug_rpc_syscall" , :int32 ) == 0
+    until self.read_scm_var( :"debug_rpc_syscall" , :int32 ) == 0
       sleep 1.0 / 30
     end
 
-    result = self.read_scm_var( :"var_debug_rpc_syscall_result" , :int32 )
+    result = self.read_scm_var( :"debug_rpc_syscall_result" , :int32 )
     # puts "result: #{result.inspect}"
     result
   end

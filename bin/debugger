@@ -456,8 +456,8 @@ class GtaScm::BreakpointPanel < GtaScm::Panel
       return
     end
 
-    self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , :int32 )
-    self.settings[:breakpoint_waiting] = process.read_scm_var( process.scm_var_offset_for("var_debug_breakpoint_enabled") , :int32 )
+    self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , :int32 )
+    self.settings[:breakpoint_waiting] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_enabled") , :int32 )
     str_enable = self.settings[:breakpoint_enabled] == 1 ? "o: disable" : "o: enable"
 
     if self.settings[:breakpoint_waiting] == 1
@@ -486,15 +486,15 @@ class GtaScm::BreakpointPanel < GtaScm::Panel
 
   def input(key,is_attached,process)
     if key == "i"
-      process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_enabled") , 0 , :int32 )
+      process.write_scm_var( process.scm_var_offset_for("debug_breakpoint_enabled") , 0 , :int32 )
     end
     if key == "o"
       if self.settings[:breakpoint_enabled] == 1
         self.settings[:breakpoint_enabled] = 0
-        process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , 0 , :int32 )
+        process.write_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , 0 , :int32 )
       else
         self.settings[:breakpoint_enabled] = 1
-        process.write_scm_var( process.scm_var_offset_for("var_debug_breakpoint_pc") , 1 , :int32 )
+        process.write_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , 1 , :int32 )
         end
     end
   end
