@@ -507,16 +507,17 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
-    self.elements[:header].set_text("Code Injector".center(self.width))
+    self.elements[:header].set_text("Code Injector - u: inject, j: kill".center(self.width))
     self.elements[:table] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(1),
-      table: [["","","",""]],
+      table: [["","","","",""]],
       cols: [
         { title: "Filename", length: 8 },
         { title: "Offset", length: 6 },
         { title: "Thread", length: 7 },
-        { title: "Lvar", length: 4 },
+        { title: "Gvar", length: 5 },
+        { title: "Status", length: 8 },
       ],
       header: true,
       hover: RuTui::Theme.get(:highlight),
@@ -524,7 +525,7 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
     })
 
     self.settings[:injectors] = [
-      ["inject",196_000,"injectd",0]
+      ["inject",195_000,"injectd",7092]
     ]
   end
 
@@ -534,14 +535,47 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
     end
 
     data = self.settings[:injectors].map do |injector|
-      [injector[0],injector[1].to_s,injector[2],injector[3].to_s]
+      thread = process.threads.detect{|t| t.name == injector[2] }
+      status = thread ? thread.status : "nothread"
+      [injector[0],injector[1].to_s,injector[2],injector[3].to_s,"#{status}"]
     end
     self.elements[:table].set_table(data)
 
   end
 
   def input(key,is_attached,process)
+    if key == "u"
+      dir = "scm-src/sa-experiments"
+      filename = self.settings[:injectors][0][0]
+      # VARS_OFFSET = 7092
+      code_offset = self.settings[:injectors][0][1].to_i
+      scm = GtaScm::Scm.load_string("san-andreas","")
+      scm.load_opcode_definitions!
+      asm = GtaScm::Assembler::Sexp.new(dir)
+      asm.code_offset = code_offset
+      def asm.install_features!
+        class << self
+          include GtaScm::Assembler::Feature::VariableAllocator
+          include GtaScm::Assembler::Feature::VariableHeaderAllocator
+        end
+        self.on_feature_init()
+      end
+      def asm.variables_range
+        # (VARS_OFFSET..(VARS_OFFSET+1024))
+        0..4
+      end
+      output = StringIO.new
+      asm.assemble(scm,filename,output)
+      output.rewind
+      code = output.read
+      process.write(process.scm_offset + code_offset, code)
+      process.rpc(1,code_offset,"injectd")
+    end
 
+    if key == "j"
+      thread_name = self.settings[:injectors][0][2]
+      process.rpc(2,"#{thread_name}")
+    end
   end
 end
 
@@ -706,7 +740,7 @@ $panels[:lvars].controller = $panels[:thread_selector]
 $panels[:gvars] = GtaScm::GvarsPanel.new(50+1,SIZE[0]-35,40,32)
 # $panels[:breakpoint] = GtaScm::BreakpointPanel.new(50+1,2,50,4)
 $panels[:code_injector] = GtaScm::CodeInjectorPanel.new(50+1,4,50,4)
-$panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50+1,10,28,32)
+$panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50+1,15,28,32)
 
 
 screen = RuTui::Screen.new

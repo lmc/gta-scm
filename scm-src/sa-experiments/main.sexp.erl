@@ -155,6 +155,8 @@
 
 
 
+% == Patches ==========================
+
 (PadUntil (57945))
 (IncludeBin ("games/san-andreas/data/script/main.scm" 57945 61763))
 
@@ -169,6 +171,19 @@
 
 % rest of MAIN code
 (IncludeBin ("games/san-andreas/data/script/main.scm" 88027 194125))
+
+% =====================================
+
+
+
+% == Free Space =======================
+
+(labeldef main_code_end)
+(wait ((int8 0)))
+(goto ((label main_code_end)))
+
+% =====================================
+
 
 
 % == Missions =========================

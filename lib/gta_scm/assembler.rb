@@ -246,6 +246,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iasm.parent = self
           iasm.external = self.external
           iasm.code_offset = offset
+          iasm.code_offset += self.code_offset if self.code_offset
           def iasm.install_features!
             class << self
               include GtaScm::Assembler::Feature::VariableAllocator

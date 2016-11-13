@@ -100,6 +100,8 @@ module GtaScm::Assembler::Feature::ExportSymbols
       self.parent.allocated_vars.merge!(self.allocated_vars)
       self.parent.dmavar_uses += self.dmavar_uses
 
+      return if !self.parent.respond_to?(:label_map)
+
       self.label_map.each_pair do |label,offset|
         self.parent.label_map[label] = offset + self.code_offset
       end
