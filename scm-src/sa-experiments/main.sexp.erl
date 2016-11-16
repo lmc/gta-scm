@@ -161,7 +161,7 @@
 % 7080 - debug_breakpoint_pc
 % 7084 - debug_rpc_feedback_enabled
 (labeldef debug_rpc)
-(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)) (variable_offset ("./sa_unused_vars1-16")))
+(IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)))
 % =====================================
 
 

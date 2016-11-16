@@ -288,17 +288,18 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           # code_end += args[:code_offset][2]
 
 
-          if args[:variable_offset][0].is_a?(String)
+          if args[:variable_offset].andand[0].is_a?(String)
             vars_to_use = File.read(args[:variable_offset][0]).lines.map{|l| l.strip.to_i}
           else
-            # vars_begin = offset
-            vars_begin = args[:variable_offset][0] == :self ? offset : args[:variable_offset][0]
-            # debugger
-            # vars_begin = offset
-            vars_begin += args[:variable_offset][1]
-            vars_begin += (vars_begin % 4) # align
+            vars_begin = offset
+            # # vars_begin = args[:variable_offset][0] == :self ? offset : args[:variable_offset][0]
+            # # debugger
+            # # vars_begin = offset
+            # vars_begin += args[:variable_offset][1] if args[:variable_offset]
+            # vars_begin += (vars_begin % 4) # align
 
-            max_vars = args[:variable_offset][2] || 1024
+            # max_vars = args[:variable_offset][2] || 1024
+            max_vars = 1024
           end
 
           # vars_begin = 10000

@@ -296,14 +296,19 @@ class GtaScm::GvarsPanel < GtaScm::Panel
 
       # [7084,:int ,"watchdog timer"],
       # [7088,:int ,"extscript 78 count"],
-      [4484,:int ,"watchdog check"],
-      [4488,:int ,"watchdog timer"],
-      [4492,:int ,"extscript 78 count"],
-      [4496,:int ,"code state"],
-      [3428,:int ,"code version"],
-      [3432,:int ,"save version"],
-      [7088,:int ,"debug enabled"],
-      [7084,:int ,"debug feedback enabled"],
+      # [4484,:int ,"watchdog check"],
+      # [4488,:int ,"watchdog timer"],
+      # [4492,:int ,"extscript 78 count"],
+      # [4496,:int ,"code state"],
+      # [3428,:int ,"code version"],
+      # [3432,:int ,"save version"],
+      # [7088,:int ,"debug enabled"],
+      # [7084,:int ,"debug feedback enabled"],
+      [7092,:int ,"array index"],
+      [7096,:int ,"array 0"],
+      [7100,:int ,"array 1"],
+      [7104,:int ,"array 2"],
+      [7108,:int ,"array 3"],
     ].each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
