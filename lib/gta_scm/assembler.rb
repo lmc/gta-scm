@@ -579,8 +579,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         else
           arg.set( arg_tokens[0] , arg_tokens[1] )
         end
-      when :var_array
-        arg.set_array(arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
+      when :var_array, :lvar_array
+        arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       when :dereference
         debugger
         arg.set_array(arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])

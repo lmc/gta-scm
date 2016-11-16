@@ -265,6 +265,20 @@ describe GtaScm::RubyToScmCompiler do
       end
     end
 
+
+    describe "arrays" do
+      context "with a single assignment" do
+        # let(:ruby){"$times = Array.new(1,0); $times_idx = 0; $times[$times_idx] = get_game_timer()"}
+        let(:ruby){"$_4004_timers = IntegerArray.new(1); $_4000_timers_idx = 0; get_game_timer($_4004_timers[$_4000_timers_idx])"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
+          (get_game_timer ((var_array 4004 4000 1 (int32 var))))
+        LISP
+        }
+      end
+
+    end
+
   end
 
   describe "compares" do

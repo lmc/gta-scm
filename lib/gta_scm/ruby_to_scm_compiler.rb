@@ -74,10 +74,11 @@ class GtaScm::RubyToScmCompiler
 
       if node.children[1] == :debugger
         emit_breakpoint()
+      elsif node.children[1] == :[]= && node.children[0].type == :gvar
+        # debugger
+        emit_global_var_assign(node)
       else
-
         [ emit_opcode_call(node) ]
-
       end
 
     when :break
@@ -178,12 +179,20 @@ class GtaScm::RubyToScmCompiler
     right = node.children[1]
     right_val = nil
 
+    if !node.children[0].is_a?(Symbol) && node.children[0].type == :gvar && node.children[1] == :[]=
+      return [ emit_assignment_opcode_call(node.children[3],node) ]
+    end
+
     # if left.is_a?(Symbol) && left.to_s.match(/\A\$/)
     #   return [emit_operator_assign(node)]
     # end
 
     if right.type == :send
-      return [emit_assignment_opcode_call(right, node)]
+      if right.children[0].type == :const && right.children[0].children[1] == :IntegerArray && right.children[1] == :new
+        return record_array_assign(node)
+      else
+        return [emit_assignment_opcode_call(right, node)]
+      end
     end
 
     type = right.type
@@ -280,6 +289,25 @@ class GtaScm::RubyToScmCompiler
       self.constants_to_types[ node.children[1] ] = node.children[2].type
       return []
     end
+  end
+
+  attr_accessor :var_arrays
+  attr_accessor :lvar_arrays
+  def record_array_assign(node)
+    array_scope = node.type == :gvasgn ? :var_array : :lvar_array
+    variable_name = node.children[0] # $:times
+    array_size = node.children[1].children[2].children[0]
+    array_type = node.children[1].children[0].children[1] == :IntegerArray ? :int32 : :float32
+
+    if array_scope == :var_array
+      self.var_arrays ||= {}
+      self.var_arrays[variable_name] = [array_scope,variable_name,array_size,array_type]
+    else
+      self.lvar_arrays ||= {}
+      self.lvar_arrays[variable_name] = [array_scope,variable_name,array_size,array_type]
+    end
+
+    return []
   end
 
   ASSIGNMENT_OPERATORS = {
@@ -520,7 +548,7 @@ class GtaScm::RubyToScmCompiler
         if assign_type == :gvasgn
           args << gvar(variable_node.to_s.gsub('$',''))
         else
-          if !variable_node.children or !opcode_def.arguments.last
+          if !variable_node.children or !opcode_def.andand.arguments.andand.last
             debugger
             "ff"
           end
@@ -704,6 +732,21 @@ class GtaScm::RubyToScmCompiler
       end
     when :const
       self.constants_to_values[ node.children[1] ]
+    when :send
+      if node.children[1] == :[]
+        array_type = node.children[0].type == :gvar ? :var_array : :lvar_array
+        array_var = node.children[0]
+        index_type = node.children[2].type == :gvar ? :var : :lvar
+        index_var = node.children[2]
+        if array_type == :var_array && (array_def = self.var_arrays[ node.children[0].children[0] ])
+          [ :var_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
+        else
+          raise "undefined array #{node.inspect}"
+        end
+      else
+        debugger
+        raise "emit_value ??? #{node.inspect}"
+      end
     else
       debugger
       raise "emit_value ??? #{node.inspect}"
