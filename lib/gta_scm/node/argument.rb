@@ -64,7 +64,6 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     self[2] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(index_offset,:int16).bytes )
     self[3] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(size,:int8).bytes )
     self[4] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(0x80,:int8).bytes )
-
   end
 
   def arg_type_id
@@ -119,6 +118,10 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     GtaScm::Types::ARRAY_TYPES.include?(self.arg_type_id)
   end
 
+  def global_array?
+    GtaScm::Types::GLOBAL_ARRAY_TYPES.include?(self.arg_type_id)
+  end
+
   def value
     if arg_type_id == 0
       nil
@@ -153,11 +156,18 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
   end
 
   def array_flag_values
-    bin = self[4][0].to_s(2)
+    bin = self[4][0].to_s(2).rjust(8,"0")
 
-    element_type = bin[1..-1].to_i(2)
-    is_index_global_var = bin[0] == "1"
+    element_type_o = bin[1..-1].to_i(2)
+    is_index_global_var = bin[0] == "1" ? :var : :lvar
 
-    [element_type,is_index_global_var]
+    element_type = {
+      0 => :int32,
+      1 => :float32,
+      2 => :string8,
+      3 => :string16,
+    }[element_type_o]
+
+    [element_type,is_index_global_var,element_type_o,bin.to_i(2),bin.to_s]
   end
 end
