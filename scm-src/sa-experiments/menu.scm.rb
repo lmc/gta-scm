@@ -26,6 +26,9 @@ tmp_pack_idx2 = 0
 # taxi = 67092 (packed car id 20 (orig 420))
 # cop car = 65732
 MAX_CARS = 8
+$_7120_cars_current = 0
+$_7124_cars_index = 0
+$_7128_cars = IntegerArray.new(8)
 $_7128_cars_1 = -536329075
 $_7132_cars_2 = -533329747
 $_7136_cars_3 = 461380
@@ -34,8 +37,6 @@ $_7144_cars_5 = -1
 $_7148_cars_6 = -1
 $_7152_cars_7 = -1
 $_7156_cars_8 = -1
-$_7120_cars_current = 0
-$_7124_cars_index = 1
 
 menu = 0
 menu_active = 0
@@ -60,43 +61,45 @@ tmp_f2 = 0.0
 tmp_f3 = 0.0
 
 read_cars_array = routine do
-  if $_7124_cars_index == 1
-    $_7120_cars_current = $_7128_cars_1
-  elsif $_7124_cars_index == 2
-    $_7120_cars_current = $_7132_cars_2
-  elsif $_7124_cars_index == 3
-    $_7120_cars_current = $_7136_cars_3
-  elsif $_7124_cars_index == 4
-    $_7120_cars_current = $_7140_cars_4
-  elsif $_7124_cars_index == 5
-    $_7120_cars_current = $_7144_cars_5
-  elsif $_7124_cars_index == 6
-    $_7120_cars_current = $_7148_cars_6
-  elsif $_7124_cars_index == 7
-    $_7120_cars_current = $_7152_cars_7
-  elsif $_7124_cars_index == 8
-    $_7120_cars_current = $_7156_cars_8
-  end
+  set_var_int_to_var_int($_7120_cars_current,$_7128_cars[$_7124_cars_index])
+  # if $_7124_cars_index == 0
+  #   $_7120_cars_current = $_7128_cars_1
+  # elsif $_7124_cars_index == 1
+  #   $_7120_cars_current = $_7132_cars_2
+  # elsif $_7124_cars_index == 2
+  #   $_7120_cars_current = $_7136_cars_3
+  # elsif $_7124_cars_index == 3
+  #   $_7120_cars_current = $_7140_cars_4
+  # elsif $_7124_cars_index == 4
+  #   $_7120_cars_current = $_7144_cars_5
+  # elsif $_7124_cars_index == 5
+  #   $_7120_cars_current = $_7148_cars_6
+  # elsif $_7124_cars_index == 6
+  #   $_7120_cars_current = $_7152_cars_7
+  # elsif $_7124_cars_index == 7
+  #   $_7120_cars_current = $_7156_cars_8
+  # end
 end
 
 write_cars_array = routine do
-  if $_7124_cars_index == 1
-    $_7128_cars_1 = $_7120_cars_current
-  elsif $_7124_cars_index == 2
-    $_7132_cars_2 = $_7120_cars_current
-  elsif $_7124_cars_index == 3
-    $_7136_cars_3 = $_7120_cars_current
-  elsif $_7124_cars_index == 4
-    $_7140_cars_4 = $_7120_cars_current
-  elsif $_7124_cars_index == 5
-    $_7144_cars_5 = $_7120_cars_current
-  elsif $_7124_cars_index == 6
-    $_7148_cars_6 = $_7120_cars_current
-  elsif $_7124_cars_index == 7
-    $_7152_cars_7 = $_7120_cars_current
-  elsif $_7124_cars_index == 8
-    $_7156_cars_8 = $_7120_cars_current
-  end
+  set_var_int_to_var_int($_7128_cars[$_7124_cars_index],$_7120_cars_current)
+  # if $_7124_cars_index == 0
+  #   $_7128_cars_1 = $_7120_cars_current
+  # elsif $_7124_cars_index == 1
+  #   $_7132_cars_2 = $_7120_cars_current
+  # elsif $_7124_cars_index == 2
+  #   $_7136_cars_3 = $_7120_cars_current
+  # elsif $_7124_cars_index == 3
+  #   $_7140_cars_4 = $_7120_cars_current
+  # elsif $_7124_cars_index == 4
+  #   $_7144_cars_5 = $_7120_cars_current
+  # elsif $_7124_cars_index == 5
+  #   $_7148_cars_6 = $_7120_cars_current
+  # elsif $_7124_cars_index == 6
+  #   $_7152_cars_7 = $_7120_cars_current
+  # elsif $_7124_cars_index == 7
+  #   $_7156_cars_8 = $_7120_cars_current
+  # end
 end
 
 read_stats_array = routine do
@@ -326,7 +329,7 @@ show_garage_menu = routine do
     menu = create_menu( "GSCM014" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
   end
 
-  $_7124_cars_index = 1
+  $_7124_cars_index = 0
   tmp_i = 1
   loop do
 
@@ -349,13 +352,12 @@ show_garage_menu = routine do
 
     # set menu item string to car name
     tmp_i = $_7124_cars_index
-    tmp_i -= 1
     set_menu_item_with_number(menu,0,tmp_i,$str_7112,0)
 
     # FIXME: compiler bug on this
     # $_7124_cars_index += 1
     add_val_to_int_var($_7124_cars_index,1)
-    if $_7124_cars_index > MAX_CARS
+    if $_7124_cars_index >= MAX_CARS
       break
     end
   end
@@ -498,7 +500,6 @@ handle_menu_input = routine do
 
   if menu_active == 2
     $_7124_cars_index = menu_selected
-    add_val_to_int_var($_7124_cars_index,1)
   elsif menu_active == 3
     stats_index = menu_selected
   end
@@ -521,9 +522,9 @@ handle_menu_input = routine do
         hide_menu()
         show_gang_wars_menu()
       elsif menu_selected_id == 103
-        # gosub(BREAKPOINT)
+        gosub(BREAKPOINT)
         task_jetpack($_12)
-      elsif menu_selected_id > 199 && menu_selected_id < 205
+      elsif menu_selected_id > 199 && menu_selected_id < 299
         if car_creator_saved_car == -1
           read_cars_array()
           tmp_packed = $_7120_cars_current

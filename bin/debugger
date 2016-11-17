@@ -304,11 +304,16 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       # [3432,:int ,"save version"],
       # [7088,:int ,"debug enabled"],
       # [7084,:int ,"debug feedback enabled"],
-      [7092,:int ,"array index"],
-      [7096,:int ,"array 0"],
-      [7100,:int ,"array 1"],
-      [7104,:int ,"array 2"],
-      [7108,:int ,"array 3"],
+      [7120,:int ,"array item"],
+      [7124,:int ,"array index"],
+      [7128,:int ,"array 0"],
+      [7132,:int ,"array 1"],
+      [7136,:int ,"array 2"],
+      [7140,:int ,"array 3"],
+      [7144,:int ,"array 4"],
+      [7148,:int ,"array 5"],
+      [7152,:int ,"array 6"],
+      [7156,:int ,"array 7"],
     ].each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
@@ -538,7 +543,7 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
     })
 
     self.settings[:injectors] = [
-      ["inject",195_000,"injectd",7092]
+      ["inject",194_500,"injectd",7092]
     ]
   end
 

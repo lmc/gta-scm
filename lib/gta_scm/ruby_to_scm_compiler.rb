@@ -188,7 +188,7 @@ class GtaScm::RubyToScmCompiler
     # end
 
     if right.type == :send
-      if right.children[0].type == :const && right.children[0].children[1] == :IntegerArray && right.children[1] == :new
+      if right.children[0].andand.type == :const && right.children[0].children[1] == :IntegerArray && right.children[1] == :new
         return record_array_assign(node)
       else
         return [emit_assignment_opcode_call(right, node)]
