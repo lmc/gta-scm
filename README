@@ -2,8 +2,11 @@ GTA SCM
 =======
 
 Unused/debug code:
-
+ 56124 -  56153 :    29       - jumped-over code
+ 56728 -  57945 :  1217       - jumped-over code during init
  59712 -  59754 :    42       - these launch_missions just hit terminate_this_script commands
+ 59818 -  59818 : first branch
+ 60030 -  61763 : main loop
  85611 -  86605 -   994       - collectables rewards, hook or term
  92234 -  94428 :  2194       - help thread, begin with terminate_this_script or hook it
 101932 - 103608    1676       - jetpack?? named: PROJECT
@@ -67,9 +70,9 @@ NEXT:
 * thread {} block, named + scoped local vars (+export symbols)
 * conditional gosubs (routine call as condition, routine calls return_true/false + return)
 * DONE: debugger/breakpoints (reuse rpc code?) (rpc_breakpoints_enabled,rpc_breakpoint_pc) (GXTs: CHEATON, FEM_PWT)
-* fix parser bugs with global vars, multiple conditionals
+* DONE: fix parser bugs with global vars, multiple conditionals
 * pipeline for code/img/gxt compiles/installs
-* refactor menu input handling into routines for each menu with a variable for which button was pressed
+* DONE: refactor menu input handling into routines for each menu with a variable for which button was pressed
 * standard lib that can be compiled in
 * function for bitpacking with counter + number of bits + packed value + unpacked value
 * test mission jumps (probs not) (does base pc change? check mission threads)
