@@ -314,6 +314,12 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       [7148,:int ,"array 5"],
       [7152,:int ,"array 6"],
       [7156,:int ,"array 7"],
+      [40828,:int ,"unused ?"],
+      [40832,:int ,"unused ?"],
+      [40836,:int ,"unused ?"],
+      [40840,:int ,"unused ?"],
+      [40844,:int ,"unused ?"],
+      [40848,:int ,"unused ?"],
     ].each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
@@ -624,9 +630,16 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
 
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
+    self.elements[:table].clear_highlight_lines!
+    self.elements[:table].set_highlight_line_color(3)
+
     data = self.panel_list( process.threads.reverse.map.each_with_index do |thread,idx|
       if thread.thread_id == self.settings[:thread_id]
         self.settings[:selected_row] = idx
+      end
+      color = ""
+      if thread.name.andand.match(/^x/)
+        self.elements[:table].add_highlight_line(idx)
       end
       [
         "#{thread.status_icon} #{(thread.nice_name||"").ljust(8," ")}"

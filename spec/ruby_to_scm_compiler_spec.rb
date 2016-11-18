@@ -20,30 +20,30 @@ describe GtaScm::RubyToScmCompiler do
         context "for immediate values" do
           context "for =" do
             let(:ruby){"test = 0"}
-            it { is_expected.to eql "(set_lvar_int ((lvar 0 test) (int32 0)))" }
+            it { is_expected.to eql "(set_lvar_int ((lvar 0 test) (int8 0)))" }
           end
           context "for +=" do
             let(:ruby){"test += 0"}
-            it { is_expected.to eql "(add_val_to_int_lvar ((lvar 0 test) (int32 0)))" }
+            it { is_expected.to eql "(add_val_to_int_lvar ((lvar 0 test) (int8 0)))" }
           end
           context "for -=" do
             let(:ruby){"test -= 0"}
-            it { is_expected.to eql "(sub_val_from_int_lvar ((lvar 0 test) (int32 0)))" }
+            it { is_expected.to eql "(sub_val_from_int_lvar ((lvar 0 test) (int8 0)))" }
           end
           context "for *=" do
             let(:ruby){"test *= 0"}
-            it { is_expected.to eql "(mult_val_by_int_lvar ((lvar 0 test) (int32 0)))" }
+            it { is_expected.to eql "(mult_val_by_int_lvar ((lvar 0 test) (int8 0)))" }
           end
           context "for /=" do
             let(:ruby){"test /= 0"}
-            it { is_expected.to eql "(div_val_by_int_lvar ((lvar 0 test) (int32 0)))" }
+            it { is_expected.to eql "(div_val_by_int_lvar ((lvar 0 test) (int8 0)))" }
           end
         end
         context "for other variables" do
           context "for =" do
             let(:ruby){"a = 1; test = a"}
             it { is_expected.to eql <<-LISP.strip_heredoc.strip
-                (set_lvar_int ((lvar 0 a) (int32 1)))
+                (set_lvar_int ((lvar 0 a) (int8 1)))
                 (set_lvar_int_to_lvar_int ((lvar 1 test) (lvar 0 a)))
               LISP
             }
@@ -51,8 +51,8 @@ describe GtaScm::RubyToScmCompiler do
           context "for +=" do
             let(:ruby){"a = 1; b = 2; a += b"}
             it { is_expected.to eql <<-LISP.strip_heredoc.strip
-                (set_lvar_int ((lvar 0 a) (int32 1)))
-                (set_lvar_int ((lvar 1 b) (int32 2)))
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
                 (add_int_lvar_to_int_lvar ((lvar 0 a) (lvar 1 b)))
               LISP
             }
@@ -60,8 +60,8 @@ describe GtaScm::RubyToScmCompiler do
           context "for -=" do
             let(:ruby){"a = 1; b = 2; a -= b"}
             it { is_expected.to eql <<-LISP.strip_heredoc.strip
-                (set_lvar_int ((lvar 0 a) (int32 1)))
-                (set_lvar_int ((lvar 1 b) (int32 2)))
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
                 (sub_int_lvar_from_int_lvar ((lvar 0 a) (lvar 1 b)))
               LISP
             }
@@ -69,8 +69,8 @@ describe GtaScm::RubyToScmCompiler do
           context "for *=" do
             let(:ruby){"a = 1; b = 2; a *= b"}
             it { is_expected.to eql <<-LISP.strip_heredoc.strip
-                (set_lvar_int ((lvar 0 a) (int32 1)))
-                (set_lvar_int ((lvar 1 b) (int32 2)))
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
                 (mult_int_lvar_by_int_lvar ((lvar 0 a) (lvar 1 b)))
               LISP
             }
@@ -78,8 +78,8 @@ describe GtaScm::RubyToScmCompiler do
           context "for /=" do
             let(:ruby){"a = 1; b = 2; a /= b"}
             it { is_expected.to eql <<-LISP.strip_heredoc.strip
-                (set_lvar_int ((lvar 0 a) (int32 1)))
-                (set_lvar_int ((lvar 1 b) (int32 2)))
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
                 (div_int_lvar_by_int_lvar ((lvar 0 a) (lvar 1 b)))
               LISP
             }
@@ -118,7 +118,7 @@ describe GtaScm::RubyToScmCompiler do
       context "for ints" do
         context "for =" do
           let(:ruby){"$test = 0"}
-          it { is_expected.to eql "(set_var_int ((var test) (int32 0)))" }
+          it { is_expected.to eql "(set_var_int ((var test) (int8 0)))" }
         end
 
       end
@@ -154,7 +154,7 @@ describe GtaScm::RubyToScmCompiler do
       context "local to global assignment" do
         let(:ruby){"local_var = 1; $global_var = local_var"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-            (set_lvar_int ((lvar 0 local_var) (int32 1)))
+            (set_lvar_int ((lvar 0 local_var) (int8 1)))
             (set_var_int_to_lvar_int ((var global_var) (lvar 0 local_var)))
           LISP
         }
@@ -162,7 +162,7 @@ describe GtaScm::RubyToScmCompiler do
       context "local to dma assignment" do
         let(:ruby){"local_var = 1; $_24 = local_var"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-            (set_lvar_int ((lvar 0 local_var) (int32 1)))
+            (set_lvar_int ((lvar 0 local_var) (int8 1)))
             (set_var_int_to_lvar_int ((dmavar 24) (lvar 0 local_var)))
           LISP
         }
@@ -182,26 +182,25 @@ describe GtaScm::RubyToScmCompiler do
       context "assign to lvar" do
         let(:ruby){"FOO = 1; a = FOO"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_lvar_int ((lvar 0 a) (int32 1)))
+          (set_lvar_int ((lvar 0 a) (int8 1)))
           LISP
         }
       end
       context "operations with constant" do
         let(:ruby){"FOO = 1; a = 0; a += FOO"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_lvar_int ((lvar 0 a) (int32 0)))
-          (add_val_to_int_lvar ((lvar 0 a) (int32 1)))
+          (set_lvar_int ((lvar 0 a) (int8 0)))
+          (add_val_to_int_lvar ((lvar 0 a) (int8 1)))
           LISP
         }
       end
       context "compares with constant" do
         let(:ruby){"FOO = 1; a = 0; if a > FOO; wait(1); end"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_lvar_int ((lvar 0 a) (int32 0)))
-          (andor ((int8 0)))
-          (is_int_lvar_greater_than_number ((lvar 0 a) (int32 1)))
+          (set_lvar_int ((lvar 0 a) (int8 0)))
+          (is_int_lvar_greater_than_number ((lvar 0 a) (int8 1)))
           (goto_if_false ((label label_1)))
-          (wait ((int32 1)))
+          (wait ((int8 1)))
           (labeldef label_1)
           LISP
         }
@@ -209,7 +208,7 @@ describe GtaScm::RubyToScmCompiler do
       context "calls with constant" do
         let(:ruby){"FOO = 1; gosub(FOO)"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (gosub ((int32 1)))
+          (gosub ((int8 1)))
           LISP
         }
       end
@@ -285,14 +284,13 @@ describe GtaScm::RubyToScmCompiler do
     context "trivial compares" do
       let(:ruby){"a = 0; if a > 5; wait(1); else; wait(0); end"}
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 0 a) (int32 0)))
-        (andor ((int8 0)))
-        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
+        (set_lvar_int ((lvar 0 a) (int8 0)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int8 5)))
         (goto_if_false ((label label_1)))
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (goto ((label label_2)))
         (labeldef label_1)
-        (wait ((int32 0)))
+        (wait ((int8 0)))
         (labeldef label_2)
         LISP
       }
@@ -301,15 +299,15 @@ describe GtaScm::RubyToScmCompiler do
     context "compares with ands" do
       let(:ruby){"a = 0; if a > 5 && a < 10; wait(1); else; wait(0); end"}
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (set_lvar_int ((lvar 0 a) (int8 0)))
         (andor ((int8 1)))
-        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
-        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int32 10)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int8 5)))
+        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int8 10)))
         (goto_if_false ((label label_1)))
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (goto ((label label_2)))
         (labeldef label_1)
-        (wait ((int32 0)))
+        (wait ((int8 0)))
         (labeldef label_2)
       LISP
       }
@@ -318,15 +316,15 @@ describe GtaScm::RubyToScmCompiler do
     context "compares with ors" do
       let(:ruby){"a = 0; if a > 5 || a < 10; wait(1); else; wait(0); end"}
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (set_lvar_int ((lvar 0 a) (int8 0)))
         (andor ((int8 21)))
-        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 5)))
-        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int32 10)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int8 5)))
+        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int8 10)))
         (goto_if_false ((label label_1)))
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (goto ((label label_2)))
         (labeldef label_1)
-        (wait ((int32 0)))
+        (wait ((int8 0)))
         (labeldef label_2)
       LISP
       }
@@ -344,14 +342,13 @@ describe GtaScm::RubyToScmCompiler do
       }
 
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 0 a) (int32 0)))
-        (andor ((int8 0)))
+        (set_lvar_int ((lvar 0 a) (int8 0)))
         (not_is_car_dead ((lvar 0 a)))
         (goto_if_false ((label label_1)))
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (goto ((label label_2)))
         (labeldef label_1)
-        (wait ((int32 0)))
+        (wait ((int8 0)))
         (labeldef label_2)
       LISP
       }
@@ -369,15 +366,15 @@ describe GtaScm::RubyToScmCompiler do
       }
 
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (set_lvar_int ((lvar 0 a) (int8 0)))
         (andor ((int8 1)))
-        (is_int_lvar_greater_than_number ((lvar 0 a) (int32 0)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int8 0)))
         (not_is_car_dead ((lvar 0 a)))
         (goto_if_false ((label label_1)))
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (goto ((label label_2)))
         (labeldef label_1)
-        (wait ((int32 0)))
+        (wait ((int8 0)))
         (labeldef label_2)
       LISP
       }
@@ -401,11 +398,10 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 32 timer_a) (int32 0)))
-        (andor ((int8 0)))
-        (is_int_lvar_greater_than_number ((lvar 32 timer_a) (int32 200)))
+        (set_lvar_int ((lvar 32 timer_a) (int8 0)))
+        (is_int_lvar_greater_than_number ((lvar 32 timer_a) (int16 200)))
         (goto_if_false ((label label_1)))
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (labeldef label_1)
       LISP
       }
@@ -472,28 +468,24 @@ describe GtaScm::RubyToScmCompiler do
     }
     it { is_expected.to eql <<-LISP.strip_heredoc.strip
       (labeldef label_1)
-      (set_lvar_int ((lvar 0 tmp_pack_idx) (int32 0)))
-      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
-      (andor ((int8 0)))
-      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 8)))
+      (set_lvar_int ((lvar 0 tmp_pack_idx) (int8 0)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int8 0)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int8 8)))
       (goto_if_false ((label label_3)))
-      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int8 0)))
       (goto ((label label_4)))
       (labeldef label_3)
-      (andor ((int8 0)))
-      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 16)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int8 16)))
       (goto_if_false ((label label_5)))
-      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int8 0)))
       (goto ((label label_6)))
       (labeldef label_5)
-      (andor ((int8 0)))
-      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 24)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int8 24)))
       (goto_if_false ((label label_7)))
-      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int32 0)))
+      (set_lvar_int ((lvar 1 tmp_pack_idx2) (int8 0)))
       (goto ((label label_8)))
       (labeldef label_7)
-      (andor ((int8 0)))
-      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int32 32)))
+      (is_int_lvar_equal_to_number ((lvar 0 tmp_pack_idx) (int8 32)))
       (goto_if_false ((label label_9)))
       (goto ((label label_2)))
       (labeldef label_9)
@@ -511,7 +503,7 @@ describe GtaScm::RubyToScmCompiler do
       let(:ruby){"loop do; wait(1); end"}
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
         (labeldef label_1)
-        (wait ((int32 1)))
+        (wait ((int8 1)))
         (goto ((label label_1)))
         (labeldef label_2)
         LISP
@@ -527,9 +519,9 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (set_lvar_int ((lvar 0 a) (int32 0)))
+        (set_lvar_int ((lvar 0 a) (int8 0)))
         (labeldef label_1)
-        (wait ((int32 50)))
+        (wait ((int8 50)))
         (goto ((label label_2)))
         (goto ((label label_1)))
         (labeldef label_2)
@@ -578,21 +570,19 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef label_1)
-          (wait ((int32 100)))
-          (set_lvar_int ((lvar 0 waiting_for) (int32 0)))
-          (andor ((int8 0)))
+          (wait ((int8 100)))
+          (set_lvar_int ((lvar 0 waiting_for) (int8 0)))
           (is_player_playing ((dmavar 8)))
           (goto_if_false ((label label_3)))
           (get_char_coordinates ((dmavar 12) (lvar 1 x) (lvar 2 y) (lvar 3 z)))
           (get_game_timer ((lvar 4 current_time)))
-          (andor ((int8 0)))
-          (is_int_lvar_greater_than_number ((lvar 4 current_time) (int32 5000)))
+          (is_int_lvar_greater_than_number ((lvar 4 current_time) (int16 5000)))
           (goto_if_false ((label label_4)))
-          (add_one_off_sound ((lvar 1 x) (lvar 2 y) (lvar 3 z) (int32 1056)))
+          (add_one_off_sound ((lvar 1 x) (lvar 2 y) (lvar 3 z) (int16 1056)))
           (terminate_this_script)
           (goto ((label label_5)))
           (labeldef label_4)
-          (add_val_to_int_lvar ((lvar 0 waiting_for) (int32 100)))
+          (add_val_to_int_lvar ((lvar 0 waiting_for) (int8 100)))
           (labeldef label_5)
           (labeldef label_3)
           (goto ((label label_1)))

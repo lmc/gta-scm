@@ -78,6 +78,7 @@ class RuTui::Table
       line.each_with_index do |col, index|
         # fg = @fg
         fg = @cols[index][:color] if !@cols[index].nil? and !@cols[index][:color].nil?
+        fg = @highlight_lines.include?(lindex) ? @highlight_line_color : fg if @highlight_lines
 
         if @highlight_direction == :vertical
           if index == @highlight
@@ -108,6 +109,18 @@ class RuTui::Table
     end
     obj << ascii_table_line if @ascii
     @obj = obj
+  end
+
+  def set_highlight_line_color(highlight_line_color)
+    @highlight_line_color = highlight_line_color
+  end
+
+  def clear_highlight_lines!
+    @highlight_lines = []
+  end
+
+  def add_highlight_line(index)
+    @highlight_lines << index
   end
 
 end

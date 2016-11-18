@@ -274,9 +274,10 @@ class GtaScm::RubyToScmCompiler
   def record_constant_assign(node)
     # FIXME: use emit_value for timer assigns
     if node.children[1] == :TIMER_A
-      return [ [:set_lvar_int,[[:lvar,32,:timer_a],[:int32,node.children[2].children[0]]]] ]
+      # return [ [:set_lvar_int,[[:lvar,32,:timer_a],[:int32,node.children[2].children[0]]]] ]
+      return [ [:set_lvar_int,[[:lvar,32,:timer_a],emit_value(node.children[2])]] ]
     elsif node.children[1] == :TIMER_B
-      return [ [:set_lvar_int,[[:lvar,33,:timer_b],[:int32,node.children[2].children[0]]]] ]
+      return [ [:set_lvar_int,[[:lvar,33,:timer_b],emit_value(node.children[2])]] ]
     elsif node.children[2].type == :array
       # raw sexp
       self.constants_to_values ||= {}
@@ -724,7 +725,7 @@ class GtaScm::RubyToScmCompiler
     when :gvar
       name = node.children[0].to_s.gsub(%r(^\$),'')
       if matches = name.match(%r(^_(\d+)_?(.*)?))
-        [:dmavar, matches[1].to_i, matches[2].to_sym ]
+        [:dmavar, matches[1].to_i, matches[2].present? ? matches[2].to_sym : nil ].compact
       elsif matches = name.match(%r(^str_(\d+)))
         [:var_string8, matches[1].to_i]
       else
@@ -833,7 +834,7 @@ class GtaScm::RubyToScmCompiler
 
     # debugger
     if matches = name.to_s.match(/\A_(\d+)_?(.*)?/)
-      return [:dmavar, matches[1].to_i, matches[2].to_sym]
+      return [:dmavar, matches[1].to_i, matches[2].present? ? matches[2].to_sym : nil ].compact
     end
 
     id = if self.gvar_names_to_ids[name]
