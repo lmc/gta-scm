@@ -1,6 +1,81 @@
 GTA SCM
 =======
 
+Unused/debug code:
+
+ 59712 -  59754 :    42       - these launch_missions just hit terminate_this_script commands
+ 85611 -  86605 -   994       - collectables rewards, hook or term
+ 92234 -  94428 :  2194       - help thread, begin with terminate_this_script or hook it
+101932 - 103608    1676       - jetpack?? named: PROJECT
+103840 - 106478               - unused basketball challenge?
+127703 - 129492 :  1898 bytes - impound/export debug (impossible branch begins 127588) (patch 127573 to jump to 129471)
+141175 - 141401 :   226       - impossible branch in gf init
+154564 - 154860 :   296
+
+                :  7,217
+NEXT:
+
+* generate HeaderExternal from files automatically
+* build external scripts first, patch into script.img, generate header, compile main script
+* DONE: main idle loop at 60030->61763
+* DONE: patch idle loop to check if externals are running (/watchdog timer for threads)
+* DONE: patch save game code to make save-game safe (kill threads/delete blips?)
+* DONE: save thread: gosub to save opcode at 88020
+* DONE: disassembly mission bytecode in-memory, patch ps2 keyboard checks (15 bytes total (4+4+7) -> goto (7), 4 no-ops (8))
+* more RPCs: teleport player, spawn car
+* compiler header-less mission_label SCMs
+* insert them back into script.img
+* DONE: load from main.scm with bootstrap code
+
+* standard lib
+* car-id-2-gxt if space permits? (~3600 bytes)
+* bitpacker accumulator routine
+    $bitpack = 0
+    $bitpack_accum = 0
+    int8 = 127
+    int16 = 1024
+
+    # 20 bytes each
+    $bitpack_bits = 8
+    $bitpack_value = int8
+    write_bitpack()
+    $bitpack_bits = 16
+    $bitpack_value = int16
+    write_bitpack()
+
+    $bitpack_accum = 0
+
+    # 20 bytes each
+    $bitpack_bits = 8
+    read_bitpack()
+    int8 = $bitpack_value
+
+    $bitpack_bits = 16
+    read_bitpack()
+    int16 = $bitpack_value
+
+
+
+* Ruby compiler
+* symbol export for routines, use routine names in stack view
+* compiler-level include
+* DONE: raw sexp output by assigning array to constant (ROUTINE_ADDR = [:label,:routine_label]; gosub(ROUTINE_ADDR))
+* non-hacky string var support
+* DONE: emit smallest size for immediate values possible
+* routines {} block, avoids jumps around routines
+* function calls using global vars for arguments/return values
+* thread {} block, named + scoped local vars (+export symbols)
+* conditional gosubs (routine call as condition, routine calls return_true/false + return)
+* DONE: debugger/breakpoints (reuse rpc code?) (rpc_breakpoints_enabled,rpc_breakpoint_pc) (GXTs: CHEATON, FEM_PWT)
+* fix parser bugs with global vars, multiple conditionals
+* pipeline for code/img/gxt compiles/installs
+* refactor menu input handling into routines for each menu with a variable for which button was pressed
+* standard lib that can be compiled in
+* function for bitpacking with counter + number of bits + packed value + unpacked value
+* test mission jumps (probs not) (does base pc change? check mission threads)
+* switch support (later)
+* array handling
+* DSL for patching original scm?
 
 Features
 --------
@@ -26,6 +101,14 @@ In-game VM Documentation
   * doesn't appear to be wrap-around or shadowing
   * same for lvars
   * terrifying
+
+* Can crash if threads don't yield with wait (?)
+* San Andreas can handle ~24,000 noops without crashing (confirm this - i think i just overwrote my main code)
+
+Check:
+
+* Can you use negative jump offsets in normal scripts? how do they behave?
+* Out-of-bounds array access
 
 
 Next
