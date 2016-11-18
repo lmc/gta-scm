@@ -479,7 +479,7 @@ input_menu = routine do
       menu_selected = 0
       show_gang_wars_menu()
     end
-  elsif menu_keypress == 2
+  elsif menu_keypress == 3
     hide_menu()
   end
 
