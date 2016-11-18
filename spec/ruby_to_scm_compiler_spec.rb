@@ -32,11 +32,11 @@ describe GtaScm::RubyToScmCompiler do
           end
           context "for *=" do
             let(:ruby){"test *= 0"}
-            it { is_expected.to eql "(mult_val_by_int_lvar ((lvar 0 test) (int8 0)))" }
+            it { is_expected.to eql "(mult_int_lvar_by_val ((lvar 0 test) (int8 0)))" }
           end
           context "for /=" do
             let(:ruby){"test /= 0"}
-            it { is_expected.to eql "(div_val_by_int_lvar ((lvar 0 test) (int8 0)))" }
+            it { is_expected.to eql "(div_int_lvar_by_val ((lvar 0 test) (int8 0)))" }
           end
         end
         context "for other variables" do
@@ -103,11 +103,11 @@ describe GtaScm::RubyToScmCompiler do
           end
           context "for *=" do
             let(:ruby){"test *= 0.0"}
-            it { is_expected.to eql "(mult_val_by_float_lvar ((lvar 0 test) (float32 0.0)))" }
+            it { is_expected.to eql "(mult_float_lvar_by_val ((lvar 0 test) (float32 0.0)))" }
           end
           context "for /=" do
             let(:ruby){"test /= 0.0"}
-            it { is_expected.to eql "(div_val_by_float_lvar ((lvar 0 test) (float32 0.0)))" }
+            it { is_expected.to eql "(div_float_lvar_by_val ((lvar 0 test) (float32 0.0)))" }
           end
         end
       end
@@ -168,11 +168,13 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
       context "local to dma maths" do
-        let(:ruby){"local_var = 1; $_24 = local_var; $_24 += 1; local_var = $_24"}
+        let(:ruby){"local_var = 1; $_24 = local_var; $_24 += 1; $_24 *= 100; local_var *= 100; local_var = $_24"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
             (set_lvar_int ((lvar 0 local_var) (int8 1)))
             (set_var_int_to_lvar_int ((dmavar 24) (lvar 0 local_var)))
             (add_val_to_int_var ((dmavar 24) (int8 1)))
+            (mult_int_var_by_val ((dmavar 24) (int8 100)))
+            (mult_int_lvar_by_val ((lvar 0 local_var) (int8 100)))
             (set_lvar_int_to_var_int ((lvar 0 local_var) (dmavar 24)))
           LISP
         }

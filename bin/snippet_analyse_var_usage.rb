@@ -1,0 +1,1 @@
+(0..50_000).step(4){|i| cmd = 'ack -c "\((var|var_array|var_string|var_string8_array|var_string16_array) '+i.to_s+'[\) ]"'; lines = `#{cmd}`; count = lines ? lines.lines.map{|l| l.split(':').last.to_i}.inject(:+) : 0; puts "#{i}:\t#{count}"; f.puts "#{i}:\t#{count}"; }

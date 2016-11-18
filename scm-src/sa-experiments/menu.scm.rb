@@ -62,44 +62,10 @@ tmp_f3 = 0.0
 
 read_cars_array = routine do
   set_var_int_to_var_int($_7120_cars_current,$_7128_cars[$_7124_cars_index])
-  # if $_7124_cars_index == 0
-  #   $_7120_cars_current = $_7128_cars_1
-  # elsif $_7124_cars_index == 1
-  #   $_7120_cars_current = $_7132_cars_2
-  # elsif $_7124_cars_index == 2
-  #   $_7120_cars_current = $_7136_cars_3
-  # elsif $_7124_cars_index == 3
-  #   $_7120_cars_current = $_7140_cars_4
-  # elsif $_7124_cars_index == 4
-  #   $_7120_cars_current = $_7144_cars_5
-  # elsif $_7124_cars_index == 5
-  #   $_7120_cars_current = $_7148_cars_6
-  # elsif $_7124_cars_index == 6
-  #   $_7120_cars_current = $_7152_cars_7
-  # elsif $_7124_cars_index == 7
-  #   $_7120_cars_current = $_7156_cars_8
-  # end
 end
 
 write_cars_array = routine do
   set_var_int_to_var_int($_7128_cars[$_7124_cars_index],$_7120_cars_current)
-  # if $_7124_cars_index == 0
-  #   $_7128_cars_1 = $_7120_cars_current
-  # elsif $_7124_cars_index == 1
-  #   $_7132_cars_2 = $_7120_cars_current
-  # elsif $_7124_cars_index == 2
-  #   $_7136_cars_3 = $_7120_cars_current
-  # elsif $_7124_cars_index == 3
-  #   $_7140_cars_4 = $_7120_cars_current
-  # elsif $_7124_cars_index == 4
-  #   $_7144_cars_5 = $_7120_cars_current
-  # elsif $_7124_cars_index == 5
-  #   $_7148_cars_6 = $_7120_cars_current
-  # elsif $_7124_cars_index == 6
-  #   $_7152_cars_7 = $_7120_cars_current
-  # elsif $_7124_cars_index == 7
-  #   $_7156_cars_8 = $_7120_cars_current
-  # end
 end
 
 read_stats_array = routine do
@@ -355,8 +321,8 @@ show_garage_menu = routine do
     set_menu_item_with_number(menu,0,tmp_i,$str_7112,0)
 
     # FIXME: compiler bug on this
-    # $_7124_cars_index += 1
-    add_val_to_int_var($_7124_cars_index,1)
+    $_7124_cars_index += 1
+    # add_val_to_int_var($_7124_cars_index,1)
     if $_7124_cars_index >= MAX_CARS
       break
     end
@@ -383,8 +349,10 @@ show_car_creator_menu = routine do
   load_all_models_now()
   tmp_f, tmp_f, tmp_f, spawn_x, spawn_y, tmp_f = get_model_dimensions(tmp_car_id)
 
-  mult_float_lvar_by_val(spawn_x,0.75)
-  add_val_to_float_lvar(spawn_y,2.0)
+  # mult_float_lvar_by_val(spawn_x,0.75)
+  spawn_x *= 0.75
+  # add_val_to_float_lvar(spawn_y,2.0)
+  spawn_y += 2.0
 
   spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , spawn_x , spawn_y, 0.0 )
   spawn_heading = get_char_heading($_12)
@@ -489,12 +457,12 @@ end
 handle_menu_input = routine do
   menu_selected = get_menu_item_selected(menu)
   menu_selected_id = menu_active
-  # menu_selected_tmp *= 100
-  mult_int_lvar_by_val(menu_selected_id,100)
-  # menu_selected += menu_selected_tmp
-  add_val_to_int_lvar(menu_selected_id,menu_selected)
+  menu_selected_id *= 100
+  # mult_int_lvar_by_val(menu_selected_id,100)
+  menu_selected_id += menu_selected
+  # add_val_to_int_lvar(menu_selected_id,menu_selected)
 
-  # $_7124_cars_index = menu_selected
+  $_7124_cars_index = menu_selected
   # # $_7124_cars_index += 1
   # add_val_to_int_var($_7124_cars_index,1)
 

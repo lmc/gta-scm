@@ -35,7 +35,12 @@ class GtaScm::Disassembler::Base
       # debugger
       self.scm.img_scms.each_with_index do |img_scm,i|
         name = self.scm.img_file.entries[i][:name].gsub(/\.scm/,'')
-        scm_img_name = "external_#{i.to_s.rjust(2,"0")}_#{name}"
+        header_entry = self.scm.externals_header[1][3].detect{|h| h[0].map(&:chr).join.strip.downcase == name}
+        header_idx = 99
+        if header_entry
+          header_idx = self.scm.externals_header[1][3].index(header_entry)
+        end
+        scm_img_name = "external_#{header_idx.to_s.rjust(2,"0")}_#{name}"
         # debugger
         # puts "disassembling #{scm_img_name}"
         img_scm.nodes.each_pair do |offset,node|

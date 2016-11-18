@@ -434,15 +434,22 @@ class GtaScm::RubyToScmCompiler
         opcode_name << "#{left_var_type}_var"
       end
 
-      # HORRIBLE HACK:
-      # when assigning cross-scope (ie. setting global var to local var)
-      # the opcode names are all fucked-up
-      # so use regexes to fix it (???!!!)
-      opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
     else
       raise "can only handle lvasgn left hands8"
     end
 
+    # HORRIBLE HACK:
+    # when assigning cross-scope (ie. setting global var to local var)
+    # the opcode names are all fucked-up
+    # so use regexes to fix it (???!!!)
+    if operator == :"*" || operator == :"/"
+      # debugger
+      opcode_name.gsub!(/([a-z]+)_(val)_([a-z]+)_((int|float)_l?var)/,"\\1_\\4_\\3_\\2")
+    else
+      opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
+    end
+
+    # debugger
     return [ opcode_name.to_sym , [left_value,right_value] ]
 
   end

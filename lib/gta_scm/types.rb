@@ -115,6 +115,9 @@ module GtaScm::Types
     if type == :uint32
       return bin.unpack("L<").first
     end
+    if type == :uint16
+      return bin.unpack("S<").first
+    end
 
     if char = TYPE_PACK_CHARS[type]
       bin.unpack(char).first

@@ -157,8 +157,8 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
 
   def array_ir
     [
-      GtaScm::Types.bin2value(self[1],:int16),
-      GtaScm::Types.bin2value(self[2],:int16),
+      GtaScm::Types.bin2value(self[1],:uint16),
+      GtaScm::Types.bin2value(self[2],:uint16),
       GtaScm::Types.bin2value(self[3],:int8),
       # GtaScm::Types.bin2value(self[4],:int8)
       array_flag_values
