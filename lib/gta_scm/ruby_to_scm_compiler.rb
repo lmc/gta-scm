@@ -612,6 +612,7 @@ class GtaScm::RubyToScmCompiler
           left_var_type = :int
           opcode_name << "#{left_var_type}_var"          
         else
+          debugger
           raise "can only handle lvars on left side"
         end
 
@@ -682,7 +683,7 @@ class GtaScm::RubyToScmCompiler
 
     # TODO: handle bool check of variable `if var` (node.children[0].type == :lvar)
 
-    if [:send,:and].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:gvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
+    if [:send,:and,:or].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:gvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
         *andor,

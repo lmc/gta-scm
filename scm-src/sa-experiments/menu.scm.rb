@@ -41,7 +41,8 @@ $_7156_cars_8 = -1
 menu = 0
 menu_active = 0
 menu_selected = 0
-menu_selected_id = 0
+# menu_selected_id = 0
+menu_keypress = -1
 
 car = 0
 car_creator_saved_car = -1
@@ -279,7 +280,7 @@ show_menu = routine do
   tmp_i += 1
   set_menu_item_with_number(menu,0,tmp_i,"GSCM020",0)
 
-  set_active_menu_item(menu,0)
+  set_active_menu_item(menu,menu_selected)
 
 end
 
@@ -328,11 +329,13 @@ show_garage_menu = routine do
     end
   end
 
-  if menu_selected_id > 199 && menu_selected_id < 299
-    menu_selected = menu_selected_id
-    menu_selected -= 200
-    set_active_menu_item(menu,menu_selected)
-  end
+  # if menu_selected_id > 199 && menu_selected_id < 299
+  #   menu_selected = menu_selected_id
+  #   menu_selected -= 200
+  #   set_active_menu_item(menu,menu_selected)
+  # end
+
+  set_active_menu_item(menu,menu_selected)
 
 end
 
@@ -405,11 +408,13 @@ show_car_creator_menu = routine do
   set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_dirt)
 
 
-  if menu_selected_id > 299 && menu_selected_id < 399
-    menu_selected = menu_selected_id
-    menu_selected -= 300
-    set_active_menu_item(menu,menu_selected)
-  end
+  # if menu_selected_id > 299 && menu_selected_id < 399
+  #   menu_selected = menu_selected_id
+  #   menu_selected -= 300
+  #   set_active_menu_item(menu,menu_selected)
+  # end
+
+  set_active_menu_item(menu,menu_selected)
 
 end
 
@@ -442,7 +447,6 @@ show_gang_wars_menu = routine do
 
 end
 
-
 hide_menu = routine do
   if menu_active == 3
     despawn_car()
@@ -454,170 +458,330 @@ hide_menu = routine do
   set_player_control($_8,1)
 end
 
-handle_menu_input = routine do
-  menu_selected = get_menu_item_selected(menu)
-  menu_selected_id = menu_active
-  menu_selected_id *= 100
-  # mult_int_lvar_by_val(menu_selected_id,100)
-  menu_selected_id += menu_selected
-  # add_val_to_int_lvar(menu_selected_id,menu_selected)
 
-  $_7124_cars_index = menu_selected
-  # # $_7124_cars_index += 1
-  # add_val_to_int_var($_7124_cars_index,1)
-
-  if menu_active == 2
-    $_7124_cars_index = menu_selected
-  elsif menu_active == 3
-    stats_index = menu_selected
+input_menu = routine do
+  if menu_keypress == 1
+    if menu_selected == 0
+      hide_menu()
+      menu_selected = 0
+      show_garage_menu()
+    elsif menu_selected == 1
+      hide_menu()
+      tmp_car_id = 541
+      tmp_car_col_1 = 30
+      tmp_car_col_2 = 8
+      tmp_car_variation = 0
+      tmp_car_dirt = 0
+      menu_selected = 0
+      show_car_creator_menu()
+    elsif menu_selected == 2
+      hide_menu()
+      menu_selected = 0
+      show_gang_wars_menu()
+    end
+  elsif menu_keypress == 2
+    hide_menu()
   end
 
-  if TIMER_A > 200
-    if is_button_pressed(0,16) # X = accept
-      TIMER_A = 0
-      if menu_selected_id == 100
-        hide_menu()
-        show_garage_menu()
-      elsif menu_selected_id == 101
-        hide_menu()
-        tmp_car_id = 541
-        tmp_car_col_1 = 30
-        tmp_car_col_2 = 8
-        tmp_car_variation = 0
-        tmp_car_dirt = 0
-        show_car_creator_menu()
-      elsif menu_selected_id == 102
-        hide_menu()
-        show_gang_wars_menu()
-      elsif menu_selected_id == 103
-        gosub(BREAKPOINT)
-        task_jetpack($_12)
-      elsif menu_selected_id > 199 && menu_selected_id < 299
-        if car_creator_saved_car == -1
-          read_cars_array()
-          tmp_packed = $_7120_cars_current
-        else
-          tmp_packed = car_creator_saved_car
-          car_creator_saved_car = -1
-        end
-        if $_7120_cars_current == -1
-          add_one_off_sound(0.0,0.0,0.0,1137)
-        else
-          add_one_off_sound(0.0,0.0,0.0,1138)
-          spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
-          spawn_heading = get_char_heading($_12)
-          spawn_heading += 90.0
-          unpack_int()
-          spawn_car()
-          hide_menu()
-          show_garage_menu()
-        end
-      elsif menu_selected_id > 299 && menu_selected_id < 399
-        read_stats_array()
-        stats_current += 1
-        write_stats_array()
+end
 
-        if menu_selected_id == 300
-          set_factory_colours()
-        end
-        if menu_selected_id == 304
-          set_factory_colours()
-        end
-
-        hide_menu()
-        show_car_creator_menu()
-      elsif menu_selected_id > 399 && menu_selected_id < 499
-        tmp_f, tmp_f2, tmp_f3 = get_char_coordinates($_12)
-        get_name_of_info_zone(tmp_f, tmp_f2, tmp_f3, $_7112)
-        if menu_selected_id == 400
-          set_gang_wars_active(1)
-        elsif menu_selected_id == 401
-          set_gang_wars_active(0)
-        elsif menu_selected_id == 402
-          set_gang_wars_active(0)
-          set_zone_gang_strength($str_7112,0,0)
-          set_zone_gang_strength($str_7112,1,0)
-          set_zone_gang_strength($str_7112,2,0)
-          set_gang_wars_active(1)
-        elsif menu_selected_id == 403
-          set_gang_wars_active(0)
-          set_zone_gang_strength($str_7112,0,40)
-          set_gang_wars_active(1)
-        elsif menu_selected_id == 404
-          set_gang_wars_active(0)
-          set_zone_gang_strength($str_7112,1,40)
-          set_gang_wars_active(1)
-        elsif menu_selected_id == 405
-          set_gang_wars_active(0)
-          set_zone_gang_strength($str_7112,2,40)
-          set_gang_wars_active(1)
-        end
-      end
-    elsif is_button_pressed(0,15) # triangle = cancel
-      TIMER_A = 0
+input_garage_menu = routine do
+  if menu_keypress == 1
+    if car_creator_saved_car == -1
+      read_cars_array()
+      tmp_packed = $_7120_cars_current
+    else
+      tmp_packed = car_creator_saved_car
+      car_creator_saved_car = -1
+    end
+    if $_7120_cars_current == -1
+      add_one_off_sound(0.0,0.0,0.0,1137)
+    else
+      add_one_off_sound(0.0,0.0,0.0,1138)
+      spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
+      spawn_heading = get_char_heading($_12)
+      spawn_heading += 90.0
+      unpack_int()
+      spawn_car()
       hide_menu()
-      if menu_selected_id > 199
-        show_menu()
-      end
-    elsif is_button_pressed(0,14) # square = store
-      TIMER_A = 0
-
-      if menu_active == 2
-        if is_char_in_any_car( $_12 )
-          car = store_car_char_is_in_no_save( $_12 )
-          tmp_car_id = get_car_model(car)
-          tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
-          tmp_car_variation = 0
-          tmp_car_dirt = 0
-          pack_int()
-          $_7120_cars_current = tmp_packed
-          write_cars_array()
-          hide_menu()
-          show_garage_menu()
-          add_one_off_sound(0.0,0.0,0.0,1138)
-        else
-          if car_creator_saved_car == -1
-            add_one_off_sound(0.0,0.0,0.0,1137)
-          else
-            add_one_off_sound(0.0,0.0,0.0,1138)
-            $_7120_cars_current = car_creator_saved_car
-            car_creator_saved_car = -1
-            write_cars_array()
-            hide_menu()
-            show_garage_menu()
-          end
-        end
-
-      elsif menu_active == 3
-
-        pack_int()
-        car_creator_saved_car = tmp_packed
-        hide_menu()
-        show_garage_menu()
-
-      end
-
-    elsif is_button_pressed(0,17) # circle = delete
-      TIMER_A = 0
-      if menu_active == 2
+      show_garage_menu()
+    end
+  elsif menu_keypress == 2
+    if is_char_in_any_car( $_12 )
+      car = store_car_char_is_in_no_save( $_12 )
+      tmp_car_id = get_car_model(car)
+      tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
+      tmp_car_variation = 0
+      tmp_car_dirt = 0
+      pack_int()
+      $_7120_cars_current = tmp_packed
+      write_cars_array()
+      hide_menu()
+      show_garage_menu()
+      add_one_off_sound(0.0,0.0,0.0,1138)
+    else
+      if car_creator_saved_car == -1
+        add_one_off_sound(0.0,0.0,0.0,1137)
+      else
         add_one_off_sound(0.0,0.0,0.0,1138)
-        $_7120_cars_current = -1
+        $_7120_cars_current = car_creator_saved_car
+        car_creator_saved_car = -1
         write_cars_array()
         hide_menu()
         show_garage_menu()
-      elsif menu_active == 3
-        add_one_off_sound(0.0,0.0,0.0,1054)
-
-        read_stats_array()
-        stats_current -= 1
-        write_stats_array()
-
-        hide_menu()
-        show_car_creator_menu()
       end
-      
     end
+  elsif menu_keypress == 3
+    hide_menu()
+    menu_selected = 0
+    show_menu()
+  elsif menu_keypress == 4
+    add_one_off_sound(0.0,0.0,0.0,1138)
+    $_7120_cars_current = -1
+    write_cars_array()
+    hide_menu()
+    show_garage_menu()
   end
+end
+
+input_car_creator_menu = routine do
+  stats_index = menu_selected
+  if menu_keypress == 1
+    add_one_off_sound(0.0,0.0,0.0,1054)
+    read_stats_array()
+    stats_current += 1
+    write_stats_array()
+
+    if stats_index == 0 || stats_index == 4
+      set_factory_colours()
+    end
+
+    hide_menu()
+    show_car_creator_menu()
+  elsif menu_keypress == 2
+    pack_int()
+    car_creator_saved_car = tmp_packed
+    hide_menu()
+    menu_selected = 0
+    show_garage_menu()
+  elsif menu_keypress == 3
+    hide_menu()
+    menu_selected = 1
+    show_menu()
+  elsif menu_keypress == 4
+    add_one_off_sound(0.0,0.0,0.0,1054)
+
+    read_stats_array()
+    stats_current -= 1
+    write_stats_array()
+
+    if stats_index == 0 || stats_index == 4
+      set_factory_colours()
+    end
+
+    hide_menu()
+    show_car_creator_menu()
+  end
+end
+
+# input_gang_wars_menu = routine do
+  
+# end
+
+
+handle_menu_input = routine do
+  menu_selected = get_menu_item_selected(menu)
+  menu_keypress = -1
+  $_7124_cars_index = menu_selected
+
+  if TIMER_A > 200
+
+    # X = accept = menu_keypress 1
+    if is_button_pressed(0,16)
+      TIMER_A = 0
+      menu_keypress = 1
+    end
+
+    # square = store = menu_keypress 2
+    if is_button_pressed(0,14)
+      TIMER_A = 0
+      menu_keypress = 2
+    end
+
+    # square = store = menu_keypress 3
+    if is_button_pressed(0,15) # triangle = cancel
+      TIMER_A = 0
+      menu_keypress = 3
+    end
+
+    #  circle = delete = menu_keypress 4
+    if is_button_pressed(0,17)
+      TIMER_A = 0
+      menu_keypress = 4
+    end
+
+    if menu_active == 1
+      input_menu()
+    elsif menu_active == 2
+      input_garage_menu()
+    elsif menu_active == 3
+      input_car_creator_menu()
+    end
+
+  end
+
+  # if menu_active == 2
+  #   $_7124_cars_index = menu_selected
+  # elsif menu_active == 3
+  #   stats_index = menu_selected
+  # end
+
+  # if TIMER_A > 200
+  #   if is_button_pressed(0,16) # X = accept
+  #     TIMER_A = 0
+  #     if menu_selected_id == 100
+  #       hide_menu()
+  #       show_garage_menu()
+  #     elsif menu_selected_id == 101
+  #       hide_menu()
+  #       tmp_car_id = 541
+  #       tmp_car_col_1 = 30
+  #       tmp_car_col_2 = 8
+  #       tmp_car_variation = 0
+  #       tmp_car_dirt = 0
+  #       show_car_creator_menu()
+  #     elsif menu_selected_id == 102
+  #       hide_menu()
+  #       show_gang_wars_menu()
+  #     elsif menu_selected_id == 103
+  #       gosub(BREAKPOINT)
+  #       task_jetpack($_12)
+  #     elsif menu_selected_id > 199 && menu_selected_id < 299
+  #       if car_creator_saved_car == -1
+  #         read_cars_array()
+  #         tmp_packed = $_7120_cars_current
+  #       else
+  #         tmp_packed = car_creator_saved_car
+  #         car_creator_saved_car = -1
+  #       end
+  #       if $_7120_cars_current == -1
+  #         add_one_off_sound(0.0,0.0,0.0,1137)
+  #       else
+  #         add_one_off_sound(0.0,0.0,0.0,1138)
+  #         spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
+  #         spawn_heading = get_char_heading($_12)
+  #         spawn_heading += 90.0
+  #         unpack_int()
+  #         spawn_car()
+  #         hide_menu()
+  #         show_garage_menu()
+  #       end
+  #     elsif menu_selected_id > 299 && menu_selected_id < 399
+  #       read_stats_array()
+  #       stats_current += 1
+  #       write_stats_array()
+
+  #       if menu_selected_id == 300
+  #         set_factory_colours()
+  #       end
+  #       if menu_selected_id == 304
+  #         set_factory_colours()
+  #       end
+
+  #       hide_menu()
+  #       show_car_creator_menu()
+  #     elsif menu_selected_id > 399 && menu_selected_id < 499
+  #       tmp_f, tmp_f2, tmp_f3 = get_char_coordinates($_12)
+  #       get_name_of_info_zone(tmp_f, tmp_f2, tmp_f3, $_7112)
+  #       if menu_selected_id == 400
+  #         set_gang_wars_active(1)
+  #       elsif menu_selected_id == 401
+  #         set_gang_wars_active(0)
+  #       elsif menu_selected_id == 402
+  #         set_gang_wars_active(0)
+  #         set_zone_gang_strength($str_7112,0,0)
+  #         set_zone_gang_strength($str_7112,1,0)
+  #         set_zone_gang_strength($str_7112,2,0)
+  #         set_gang_wars_active(1)
+  #       elsif menu_selected_id == 403
+  #         set_gang_wars_active(0)
+  #         set_zone_gang_strength($str_7112,0,40)
+  #         set_gang_wars_active(1)
+  #       elsif menu_selected_id == 404
+  #         set_gang_wars_active(0)
+  #         set_zone_gang_strength($str_7112,1,40)
+  #         set_gang_wars_active(1)
+  #       elsif menu_selected_id == 405
+  #         set_gang_wars_active(0)
+  #         set_zone_gang_strength($str_7112,2,40)
+  #         set_gang_wars_active(1)
+  #       end
+  #     end
+  #   elsif is_button_pressed(0,15) # triangle = cancel
+  #     TIMER_A = 0
+  #     hide_menu()
+  #     if menu_selected_id > 199
+  #       show_menu()
+  #     end
+  #   elsif is_button_pressed(0,14) # square = store
+  #     TIMER_A = 0
+
+  #     if menu_active == 2
+  #       if is_char_in_any_car( $_12 )
+  #         car = store_car_char_is_in_no_save( $_12 )
+  #         tmp_car_id = get_car_model(car)
+  #         tmp_car_col_1, tmp_car_col_2 = get_car_colours(car)
+  #         tmp_car_variation = 0
+  #         tmp_car_dirt = 0
+  #         pack_int()
+  #         $_7120_cars_current = tmp_packed
+  #         write_cars_array()
+  #         hide_menu()
+  #         show_garage_menu()
+  #         add_one_off_sound(0.0,0.0,0.0,1138)
+  #       else
+  #         if car_creator_saved_car == -1
+  #           add_one_off_sound(0.0,0.0,0.0,1137)
+  #         else
+  #           add_one_off_sound(0.0,0.0,0.0,1138)
+  #           $_7120_cars_current = car_creator_saved_car
+  #           car_creator_saved_car = -1
+  #           write_cars_array()
+  #           hide_menu()
+  #           show_garage_menu()
+  #         end
+  #       end
+
+  #     elsif menu_active == 3
+
+  #       pack_int()
+  #       car_creator_saved_car = tmp_packed
+  #       hide_menu()
+  #       show_garage_menu()
+
+  #     end
+
+  #   elsif is_button_pressed(0,17) # circle = delete
+  #     TIMER_A = 0
+  #     if menu_active == 2
+  #       add_one_off_sound(0.0,0.0,0.0,1138)
+  #       $_7120_cars_current = -1
+  #       write_cars_array()
+  #       hide_menu()
+  #       show_garage_menu()
+  #     elsif menu_active == 3
+  #       add_one_off_sound(0.0,0.0,0.0,1054)
+
+  #       read_stats_array()
+  #       stats_current -= 1
+  #       write_stats_array()
+
+  #       hide_menu()
+  #       show_car_creator_menu()
+  #     end
+      
+  #   end
+  # end
 
 end
 
@@ -632,6 +796,7 @@ loop do
         TIMER_A = 0
         add_one_off_sound(0.0,0.0,0.0,1056)
         if menu_active == 0
+          menu_selected = 0
           show_menu()
         else
           hide_menu()
