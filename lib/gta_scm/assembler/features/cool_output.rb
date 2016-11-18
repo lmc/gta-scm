@@ -15,6 +15,7 @@ module GtaScm::Assembler::Feature::CoolOutput
     self.cool_logger = GtaScm::Logger.new(:info)
     self.cool_logger.decorations = []
     self.cool_logger.info "~CoolOutput~ logger taking over"
+    print `clear`
 
     print "\e[2m"
 
@@ -28,6 +29,7 @@ module GtaScm::Assembler::Feature::CoolOutput
   end
 
   def on_node_emit(f,node,bin)
+    super
     begin
       # print "\e[4m"
       idx = 0
@@ -70,7 +72,7 @@ module GtaScm::Assembler::Feature::CoolOutput
       self.cool_logger_state[:current_column] = 0
       print "\r\n"
       addr = f.pos + idx
-      addr_str = " #{addr.to_s.rjust(7,"o")} | "
+      addr_str = " #{addr.to_s.rjust(7,".")} | "
       # print "\e[24m\e[39m\e[0m"
       # print "\e[24m\e[39m"
       print "\e[39m"
@@ -111,9 +113,9 @@ module GtaScm::Assembler::Feature::CoolOutput
     print "#{esc_code}"
 
     print "#{hex[0]}"
-    sleep 0.003
+    # sleep 0.003
     print "#{hex[1]}"
-    sleep 0.002
+    sleep 0.001
 
     if (type == :opcode && idx == 1) || type == :arg_type
     # if type == :arg_type

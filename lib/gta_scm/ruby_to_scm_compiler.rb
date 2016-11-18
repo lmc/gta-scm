@@ -90,7 +90,7 @@ class GtaScm::RubyToScmCompiler
       raise "unknown node type #{node.type.inspect}"
     end
 
-    puts "transform_node - #{ttt.inspect}"
+    # puts "transform_node - #{ttt.inspect}"
 
     ttt
   end

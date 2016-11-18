@@ -237,7 +237,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           lines = instructions.map do |node|
 
             s = Elparser::encode(node)
-            puts s
+            # puts s
             s
           end
 
@@ -253,6 +253,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               include GtaScm::Assembler::Feature::ListVariableAllocator
               include GtaScm::Assembler::Feature::VariableHeaderAllocator
               include GtaScm::Assembler::Feature::ExportSymbols
+              # include GtaScm::Assembler::Feature::CoolOutput
             end
             self.on_feature_init()
           end
@@ -320,6 +321,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               include GtaScm::Assembler::Feature::ListVariableAllocator
               include GtaScm::Assembler::Feature::VariableHeaderAllocator
               include GtaScm::Assembler::Feature::ExportSymbols
+              # include GtaScm::Assembler::Feature::CoolOutput
             end
             self.on_feature_init()
           end
