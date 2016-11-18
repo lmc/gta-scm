@@ -43,6 +43,7 @@ class GtaScm::Disassembler::Base
         scm_img_name = "external_#{header_idx.to_s.rjust(2,"0")}_#{name}"
         # debugger
         # puts "disassembling #{scm_img_name}"
+        # TODO: note these as externals so mission_labels get detected properly
         img_scm.nodes.each_pair do |offset,node|
           # debugger
           emit_node(offset,node,scm_img_name)
@@ -75,6 +76,7 @@ class GtaScm::Disassembler::Base
     raise "abstract"
   end
 
+  # TODO: handle externals as mission labels
   def label_for_offset(offset,source_offset = nil)
     if offset < 0
       if mission = self.scm.mission_for_offset(source_offset)

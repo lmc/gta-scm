@@ -17,71 +17,22 @@
 
 
 
-% == Patches ==========================
-
-% insert initial MAIN code
+% == Initial Main Code ================
 (IncludeBin ("games/san-andreas/data/script/main.scm" 55976 56728))
-
 % =====================================
-
-
 
 % == Main Loop Extension ==============
 % Global vars used:
 % 4484 - watchdog timeout
 % 4488 - watchdog timer
-
-% we run at the end of the main loop in the MAIN thread
-(labeldef main_loop_ext)
-
-% TODO: replace with clean shutdown check in save hook?
-% check if watchdog timer has stopped updating (new game or thread killed)
-(get_game_timer ((dmavar 21136)))
-(set_var_int_to_var_int ((dmavar 4484 watchdog_timeout) (dmavar 21136)))
-(sub_val_from_int_var ((dmavar 4484 watchdog_timeout) (int16 1000)))
-
-(andor ((int8 0)))
-(is_int_var_greater_than_int_var ((dmavar 4484 watchdog_timeout) (dmavar 4488 watchdog_timer)))
-(goto_if_false ((label main_loop_ext_end)))
-
-% if watchdog timer has stopped updating, re-spawn thread
-(get_game_timer ((dmavar 4488 watchdog_timer)))
-% (terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
-(start_new_script ((label watchdog) (end_var_args)))
-
-% jump back to start of main loop
-(labeldef main_loop_ext_end)
-(goto ((int32 60030)))
-
+(Include "main-loop-ext")
 % =====================================
-
-
 
 % == Save Thread Extension ============
 % Global vars used: 
 % 4496 - code state: 0 = needs init, 1 = init'd
-
-% we run as a gosub from the PSAVE1 thread
-(labeldef save_thread_ext)
-
-% TODO: set `terminating` global var, for threads to shut down cleanly with
-
-% kill threads that will have PCs in undefined code if scm file is uninstalled
-(terminate_all_scripts_with_this_name ((string8 "xdbgrpc")))
-(terminate_all_scripts_with_this_name ((string8 "xextldr")))
-(terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
-
-% wait to make sure threads are dead
-(wait ((int8 100)))
-(set_var_int ((dmavar 4496 code_state) (int8 0)))
-
-% jump back to original save gosub
-(labeldef save_thread_ext_end)
-(goto ((int32 88389)))
-
+(Include "save-ext")
 % =====================================
-
-
 
 % == Watchdog Thread ==================
 % Global vars used:
@@ -93,54 +44,7 @@
 % 3432 - save persist version ID
 % 3436 - save persist version string
 % 3440 - save persist version string
-
-% watchdog thread, will re-spawn threads and keep timer updated
-(labeldef watchdog)
-(wait ((int8 0)))
-(script_name ((string8 "xwtchdg")))
-(set_var_int ((dmavar 3428 code_persist_version) (int16 1)))
-(get_game_timer ((dmavar 4488 watchdog_timer)))
-
-% wait for intro/init missions to run to get free variables
-(andor ((int8 0)))
-(is_int_var_equal_to_number ((dmavar 21392) (int8 -1)))
-(goto_if_false ((label watchdog)))
-(andor ((int8 0)))
-(is_int_var_greater_than_number ((dmavar 13576) (int8 0)))
-(goto_if_false ((label watchdog)))
-
-% check to see if the code versions differ, re-init if so
-(andor ((int8 0)))
-  (is_int_var_greater_than_int_var ((dmavar 3428 code_persist_version) (dmavar 3432 save_persist_version)))
-(goto_if_false ((label watchdog_end_init)))
-  (gosub ((label watchdog_init)))
-(labeldef watchdog_end_init)
-
-(andor ((int8 0)))
-  (is_int_var_equal_to_number ((dmavar 4496 code_state) (int8 0)))
-(goto_if_false ((label watchdog_end_respawn)))
-  % re-spawn threads here
-  (start_new_script ((label debug_rpc) (end_var_args)))
-  (start_new_script ((label external_loader) (end_var_args)))
-  (set_var_int ((dmavar 4496 code_state) (int8 1)))
-(labeldef watchdog_end_respawn)
-
-% idle loop, just keep timer updated
-(labeldef watchdog_loop)
-(wait ((int8 0)))
-(get_game_timer ((dmavar 4488 watchdog_timer)))
-(goto ((label watchdog_loop)))
-
-
-(labeldef watchdog_init)
-
-% RPC defaults
-(set_var_int ((dmavar 7088 debug_rpc_enabled) (int8 1)))
-(set_var_int ((dmavar 7084 debug_rpc_feedback_enabled) (int8 1)))
-
-(set_var_int_to_var_int ((dmavar 3432 save_persist_version) (dmavar 3428 code_persist_version)))
-(return)
-
+(Include "watchdog")
 % =====================================
 
 
@@ -164,45 +68,10 @@
 (IncludeAndAssemble "debug-rpc" (code_offset (nil 0 1024)))
 % =====================================
 
-
-
 % == External Loader ==================
 % Global vars used:
 % 4492 - external 78 instance count
-
-% load external scripts from script.img
-(labeldef external_loader)
-(script_name ((string8 "xextldr")))
-
-% register + request load
-(register_streamed_script_internal ((int8 78)))
-(stream_script ((int8 78)))
-
-% wait for script to load
-(labeldef external_loader_load)
-(wait ((int8 10)))
-(andor ((int8 0)))
-(has_streamed_script_loaded ((int8 78)))
-(goto_if_false ((label external_loader_load)))
-
-% once loaded, loop
-(labeldef external_loader_idle)
-(wait ((int8 0)))
-
-% if no scripts are running, spawn them
-(get_number_of_instances_of_streamed_script ((int8 78) (dmavar 4492)))
-(andor ((int8 0)))
-(is_int_var_equal_to_number ((dmavar 4492) (int8 0)))
-(goto_if_false ((label external_loader_idle)))
-
-% spawn scripts here
-% (start_new_streamed_script ((int8 78) (end_var_args)))
-
-% wait for them to load before polling again
-(wait ((int16 1000)))
-
-(goto ((label external_loader_idle)))
-
+(Include "external-loader")
 % =====================================
 
 
