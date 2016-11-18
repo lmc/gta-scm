@@ -22,7 +22,7 @@ logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 
 scm = GtaScm::Scm.load(ARGV[0],ARGV[1])
 
-# scm.img_file = GtaScm::ImgFile.open(File.dirname(ARGV[1])+"/script.img","r")
+scm.img_file = GtaScm::ImgFile.open(File.dirname(ARGV[1])+"/script.img","r")
 
 scm.load_opcode_definitions!
 
@@ -71,7 +71,7 @@ end
 img_parsers = []
 if scm.img_file
   scm.img_file.parse!
-  scm.img_file.entry_count.times do |i|
+  scm.img_file.entries.size.times do |i|
     puts "parsing entry #{i}"
     img_scm = GtaScm::Scm.load_string(ARGV[0],scm.img_file.data(i))
     img_parser = GtaScm::Parser.new(img_scm,0)

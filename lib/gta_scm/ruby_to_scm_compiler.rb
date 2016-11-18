@@ -418,9 +418,9 @@ class GtaScm::RubyToScmCompiler
       end
       # left_var_type = self.lvar_names_to_types[ left.children[0] ]
 
-      # if !left_var_type
-      #   left_var_type = right.type
-      # end
+      if !left_var_type
+        left_var_type = right.type
+      end
 
       if operator == :"="
         if node.children[1].type == :lvar
@@ -754,15 +754,21 @@ class GtaScm::RubyToScmCompiler
     end
   end
 
-  def emit_if_conditions(node)
+  def emit_if_conditions(node,parent_condition_type = nil)
     case node.type
     when :and, :or
-      andor_id = node.type == :and ? 0 : 20
+      if parent_condition_type
+        if node.type != parent_condition_type
+          raise InvalidConditionalLogicalOperatorUse, "cannot mix AND/OR in one IF statement"
+        end
+      else
+        andor_id = node.type == :and ? 0 : 20
+      end
 
       conditions = node.children.map do |condition_node|
         case condition_node.type
         when :and, :or
-          raise InvalidConditionalLogicalOperatorUse, "cannot mix AND/OR in one IF statement"
+          emit_if_conditions(condition_node,node.type)
         when :send
           emit_conditional_opcode_call(condition_node)
         else
@@ -771,8 +777,16 @@ class GtaScm::RubyToScmCompiler
         end
       end
 
-      andor_id += (conditions.size - 1)
-      [andor_id,conditions]
+      if conditions[0].is_a?(Array) && !conditions[0][0].is_a?(Symbol)
+        conditions = [*conditions[0],conditions[1]]
+      end
+
+      if parent_condition_type
+        conditions
+      else
+        andor_id += (conditions.size - 1)
+        [andor_id,conditions]
+      end
     when :send
       [ 0, [emit_conditional_opcode_call(node)] ]
     end

@@ -32,9 +32,11 @@ class GtaScm::Disassembler::Base
     # debugger
 
     if self.scm.img_scms
+      # debugger
       self.scm.img_scms.each_with_index do |img_scm,i|
         name = self.scm.img_file.entries[i][:name].gsub(/\.scm/,'')
         scm_img_name = "external_#{i.to_s.rjust(2,"0")}_#{name}"
+        # debugger
         # puts "disassembling #{scm_img_name}"
         img_scm.nodes.each_pair do |offset,node|
           # debugger

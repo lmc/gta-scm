@@ -87,6 +87,8 @@ module GtaScm::Types
         [value].pack(char)
       elsif o_type == :uint32
         [value].pack("L<")
+      elsif o_type == :uint16
+        [value].pack("S<")
       elsif o_type == :int
 
       elsif o_type == :float

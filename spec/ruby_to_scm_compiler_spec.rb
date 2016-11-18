@@ -167,6 +167,16 @@ describe GtaScm::RubyToScmCompiler do
           LISP
         }
       end
+      context "local to dma maths" do
+        let(:ruby){"local_var = 1; $_24 = local_var; $_24 += 1; local_var = $_24"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+            (set_lvar_int ((lvar 0 local_var) (int8 1)))
+            (set_var_int_to_lvar_int ((dmavar 24) (lvar 0 local_var)))
+            (add_val_to_int_var ((dmavar 24) (int8 1)))
+            (set_lvar_int_to_var_int ((lvar 0 local_var) (dmavar 24)))
+          LISP
+        }
+      end
     end
 
     context "type-casting" do
@@ -276,6 +286,16 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
 
+      context "with global var and local index" do
+        # let(:ruby){"$times = Array.new(1,0); $times_idx = 0; $times[$times_idx] = get_game_timer()"}
+        let(:ruby){"$_4004_timers = IntegerArray.new(1); index = 0; get_game_timer($_4004_timers[index])"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 index) (int8 0)))
+          (get_game_timer ((var_array 4004 0 1 (int32 lvar))))
+        LISP
+        }
+      end
+
     end
 
   end
@@ -320,6 +340,44 @@ describe GtaScm::RubyToScmCompiler do
         (andor ((int8 21)))
         (is_int_lvar_greater_than_number ((lvar 0 a) (int8 5)))
         (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int8 10)))
+        (goto_if_false ((label label_1)))
+        (wait ((int8 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int8 0)))
+        (labeldef label_2)
+      LISP
+      }
+    end
+
+    context "compares with multiple ors" do
+      let(:ruby){"a = 0; if a == 5 || a == 10 || a == 15 || a == 20; wait(1); else; wait(0); end"}
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int8 0)))
+        (andor ((int8 23)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 5)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 10)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 15)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 20)))
+        (goto_if_false ((label label_1)))
+        (wait ((int8 1)))
+        (goto ((label label_2)))
+        (labeldef label_1)
+        (wait ((int8 0)))
+        (labeldef label_2)
+      LISP
+      }
+    end
+
+    context "compares with multiple ands" do
+      let(:ruby){"a = 0; if a == 5 && a == 10 && a == 15 && a == 20; wait(1); else; wait(0); end"}
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int8 0)))
+        (andor ((int8 3)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 5)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 10)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 15)))
+        (is_int_lvar_equal_to_number ((lvar 0 a) (int8 20)))
         (goto_if_false ((label label_1)))
         (wait ((int8 1)))
         (goto ((label label_2)))

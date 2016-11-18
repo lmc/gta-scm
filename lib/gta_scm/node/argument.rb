@@ -66,8 +66,8 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     else
       raise ArgumentError
     end
-    self[1] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(array_offset,:int16).bytes )
-    self[2] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(index_offset,:int16).bytes )
+    self[1] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(array_offset,:uint16).bytes )
+    self[2] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(index_offset,:uint16).bytes )
     self[3] = GtaScm::ByteArray.new( GtaScm::Types.value2bin(size,:int8).bytes )
 
     flags = 0

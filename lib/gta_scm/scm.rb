@@ -139,6 +139,10 @@ class GtaScm::Scm
     self.nodes.instance_eval("@values").detect { |node| node.is_a?(GtaScm::Node::Header::Missions) }
   end
 
+  def externals_header
+    self.nodes.instance_eval("@values").detect { |node| node.is_a?(GtaScm::Node::Header::Externals) }
+  end
+
   def objscm_name(object_id)
     return nil if object_id >= 0 or !models_header
     GtaScm::Types.bin2value( models_header.model_names[ object_id.abs ] , :string24 )
