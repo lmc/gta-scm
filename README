@@ -8,7 +8,7 @@ Unused/debug code:
  59818 -  59818 : first branch
  60030 -  61763 : main loop
  85611 -  86605 -   994       - collectables rewards, hook or term
- 92234 -  94428 :  2194       - help thread, begin with terminate_this_script or hook it
+ 92228 -  94428 :  2194       - help thread, begin with terminate_this_script or hook it
 101932 - 103608    1676       - jetpack?? named: PROJECT
 103840 - 106478               - unused basketball challenge?
 127703 - 129492 :  1898 bytes - impound/export debug (impossible branch begins 127588) (patch 127573 to jump to 129471)
@@ -17,6 +17,9 @@ Unused/debug code:
 
                 :  7,217
 NEXT:
+
+* generate call graph
+  detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
 * generate HeaderExternal from files automatically
 * build external scripts first, patch into script.img, generate header, compile main script

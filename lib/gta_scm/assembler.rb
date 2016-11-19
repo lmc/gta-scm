@@ -212,7 +212,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           end
         when :Include
           start_offset = offset
-          File.read("#{self.input_dir}/#{tokens[1]}.sexp.erl").each_line.each_with_index do |i_line,i_idx|
+          contents = File.read("#{self.input_dir}/#{tokens[1]}.sexp.erl")
+          contents.gsub!(/^\s*?\%.*$\n/,"")
+          contents.gsub!(/\\\n/,"")
+          contents.each_line.each_with_index do |i_line,i_idx|
             self.read_line(scm,i_line,tokens[1],i_idx)
           end
           end_offset = self.nodes.last.offset
