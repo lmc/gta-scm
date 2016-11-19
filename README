@@ -63,6 +63,8 @@ NEXT:
 
 
 * Ruby compiler
+* singleton global variable assigner
+* export symbols to subdir, name properly
 * symbol export for routines, use routine names in stack view
 * compiler-level include
 * DONE: raw sexp output by assigning array to constant (ROUTINE_ADDR = [:label,:routine_label]; gosub(ROUTINE_ADDR))
