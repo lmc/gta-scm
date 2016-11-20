@@ -16,7 +16,18 @@ emit(false) do
   in_vehicle = 0
   vehicle = 0
   p_weapon = 0
+
+  t_x = 0.0
+  t_y = 0.0
+  t_z = 0.0
 end
+
+wait(5000)
+t_x = 2078.0
+t_y = 1390.0
+t_z = 11.0
+# set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+task_jetpack(PLAYER_CHAR)
 
 loop do
   wait 0

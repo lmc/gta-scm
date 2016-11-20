@@ -14,6 +14,8 @@ class GtaScm::RubyToScmCompiler
     self.constants_to_values ||= {}
     self.constants_to_values[:PLAYER] = [:dmavar, 8]
     self.constants_to_values[:PLAYER_CHAR] = [:dmavar, 12]
+    self.constants_to_values[:TIMER_A] = [:lvar, 32]
+    self.constants_to_values[:TIMER_B] = [:lvar, 33]
     # self.constants_to_values[:BREAKPOINT_PC] = [:dmavar, 12]
   end
 
@@ -398,7 +400,7 @@ class GtaScm::RubyToScmCompiler
       right_type = right_var_type
       right_value = self.constants_to_values[ right.children[1] ]
     else
-      raise "unknown right type"
+      raise "unknown right type #{node.inspect}"
     end
 
     opcode_name << "_#{middle}_"
@@ -494,6 +496,7 @@ class GtaScm::RubyToScmCompiler
       # end
 
       if !opcode_def
+        raise "unknown opcode #{opcode_name} (#{node.inspect})"
         debugger
       end
 

@@ -85,6 +85,16 @@ NEXT:
 * array handling
 * DSL for patching original scm?
 
+enable/disable keys
+enter/ext vehicle: SET_PLAYER_ENTER_CAR_BUTTON
+duck: SET_PLAYER_DUCK_BUTTON
+shoot: SET_PLAYER_FIRE_BUTTON
+jump: SET_PLAYER_JUMP_BUTTON
+r1?: SET_PLAYER_DISPLAY_VITAL_STATS_BUTTON
+r2/l2?: SET_PLAYER_CYCLE_WEAPON_BUTTON
+get_current_population_zone_type
+create_user_3d_marker
+
 Features
 --------
 

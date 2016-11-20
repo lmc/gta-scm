@@ -199,6 +199,7 @@ class GtaScm::LvarsPanel < GtaScm::Panel
     })
     # self.settings[:thread_id] ||= 95
     self.settings[:lvars_count] = 32
+    self.settings[:lvar_selected] = 0
     self.settings[:types] = [:int] * self.settings[:lvars_count]
     self.settings[:names] = [nil] * self.settings[:lvars_count]
   end
@@ -231,8 +232,8 @@ class GtaScm::LvarsPanel < GtaScm::Panel
           end
         end
       else
-        self.settings[:types] = [:int] * 32
-        self.settings[:names] = [nil] * 32
+        # self.settings[:types] = [:int] * 32
+        # self.settings[:names] = [nil] * 32
       end
 
 
@@ -259,8 +260,38 @@ class GtaScm::LvarsPanel < GtaScm::Panel
       # data << ["#{self.settings[:thread_id]}","#{$key}","#{self.settings[:key]}",""]
       # self.settings[:thread_id] -= 1
 
+      self.elements[:table].clear_highlight!
+      self.elements[:table].highlight(self.settings[:lvar_selected])
       self.elements[:table].set_table(data)
     end
+  end
+
+  def input(key,is_attached,process)
+    case key
+    when "d"
+      self.settings[:lvar_selected] += 1
+      self.settings[:key] = "d"
+    when "e"
+      self.settings[:lvar_selected] -= 1
+      self.settings[:key] = "e"
+    when "c"
+      type = self.settings[:types][ self.settings[:lvar_selected] ]
+      new_type = case type
+      when :int
+        :float
+      when :float
+        :str
+      when :str
+        :bin
+      when :bin
+        :int
+      end
+      self.settings[:types][ self.settings[:lvar_selected] ] = new_type
+      self.settings[:key] = "c"
+    end
+
+    self.settings[:lvar_selected] = 32 if self.settings[:lvar_selected] >= 32
+    self.settings[:lvar_selected] = 0  if self.settings[:lvar_selected] <= 0
   end
 end
 
