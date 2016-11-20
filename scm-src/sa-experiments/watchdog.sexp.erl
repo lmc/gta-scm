@@ -36,6 +36,7 @@
   % re-spawn threads here
   (start_new_script ((label debug_rpc) (end_var_args)))
   (start_new_script ((label external_loader) (end_var_args)))
+  (start_new_script ((label helper) (end_var_args)))
   (set_var_int ((dmavar 4496 code_state) (int8 1)))
 (labeldef watchdog_end_respawn)
 

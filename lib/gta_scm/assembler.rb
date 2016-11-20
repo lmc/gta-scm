@@ -170,8 +170,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     end
   end
 
+  attr_accessor :emit_nodes
   # TODO: make symbol recogniser recursive, so you can use ie. Rawhex for arguments
   def read_line(scm,line,file_name,line_idx)
+    self.emit_nodes = true if self.emit_nodes.nil?
     self.parser ||= Elparser::Parser.new
     if line.present? and line.strip[0] == "("# and idx < 30
       offset = nodes.next_offset
@@ -369,12 +371,17 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           self.on_labeldef(tokens[1],nodes.next_offset)
           self.define_touchup(:"label_#{tokens[1]}",nodes.next_offset)
           return
+        when :EmitNodes
+          self.emit_nodes = tokens[1] == :t
+          return
         else
           self.assemble_instruction(scm,offset,tokens)
       end
 
-      node.offset = offset
-      self.nodes << node
+      if self.emit_nodes
+        node.offset = offset
+        self.nodes << node
+      end
 
       self.offsets_to_files_lines[offset] = [file_name,line_idx]
 

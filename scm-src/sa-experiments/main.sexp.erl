@@ -116,9 +116,8 @@
 
 % == Free Space =======================
 
-(labeldef main_code_end)
-(wait ((int8 0)))
-(goto ((label main_code_end)))
+(labeldef helper)
+(IncludeRuby "helper")
 
 % =====================================
 

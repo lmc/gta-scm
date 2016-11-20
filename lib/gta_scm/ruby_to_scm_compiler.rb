@@ -7,6 +7,14 @@ class GtaScm::RubyToScmCompiler
   def initialize
     self.local_method_names_to_labels = {}
     self.label_prefix = "label_"
+    install_constants!
+  end
+
+  def install_constants!
+    self.constants_to_values ||= {}
+    self.constants_to_values[:PLAYER] = [:dmavar, 8]
+    self.constants_to_values[:PLAYER_CHAR] = [:dmavar, 12]
+    # self.constants_to_values[:BREAKPOINT_PC] = [:dmavar, 12]
   end
 
   def transform_node(node)
@@ -22,6 +30,8 @@ class GtaScm::RubyToScmCompiler
 
       if node.children[0].type == :send && node.children[0].children[1] == :loop
         emit_loop(node,node.children[2])
+      elsif node.children[0].type == :send && node.children[0].children[1] == :emit
+        handle_conditional_emit(node)
       else
         raise "unknown block type: #{node.inspect}"
       end
@@ -93,6 +103,20 @@ class GtaScm::RubyToScmCompiler
     # puts "transform_node - #{ttt.inspect}"
 
     ttt
+  end
+
+  def handle_conditional_emit(node)
+    do_emit = node.children[0].children[2].type == :true
+    nodes = transform_node(node.children[2])
+    if do_emit
+      nodes
+    else
+      [
+        [:EmitNodes, false],
+        *nodes,
+        [:EmitNodes, true]
+      ]
+    end
   end
 
   attr_accessor :loop_stack
