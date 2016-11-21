@@ -335,23 +335,25 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       # [3432,:int ,"save version"],
       # [7088,:int ,"debug enabled"],
       # [7084,:int ,"debug feedback enabled"],
-      [7120,:int ,"array item"],
-      [7124,:int ,"array index"],
-      [7128,:int ,"array 0"],
-      [7132,:int ,"array 1"],
-      [7136,:int ,"array 2"],
-      [7140,:int ,"array 3"],
-      [7144,:int ,"array 4"],
-      [7148,:int ,"array 5"],
-      [7152,:int ,"array 6"],
-      [7156,:int ,"array 7"],
-      [21828,:int ,"unused ?"],
-      [21832,:int ,"unused ?"],
-      [21836,:int ,"unused ?"],
-      [21840,:int ,"unused ?"],
-      [21844,:int ,"unused ?"],
-      [40848,:int ,"unused ?"],
-    ].each do |(gvar,type,name)|
+    #   [7120,:int ,"array item"],
+    #   [7124,:int ,"array index"],
+    #   [7128,:int ,"array 0"],
+    #   [7132,:int ,"array 1"],
+    #   [7136,:int ,"array 2"],
+    #   [7140,:int ,"array 3"],
+    #   [7144,:int ,"array 4"],
+    #   [7148,:int ,"array 5"],
+    #   [7152,:int ,"array 6"],
+    #   [7156,:int ,"array 7"],
+    #   [21828,:int ,"unused ?"],
+    #   [21832,:int ,"unused ?"],
+    #   [21836,:int ,"unused ?"],
+    #   [21840,:int ,"unused ?"],
+    #   [21844,:int ,"unused ?"],
+    #   [40848,:int ,"unused ?"],
+    # ]
+
+    .each do |(gvar,type,name)|
       self.settings[:gvars] << gvar
       self.settings[:types] << type
       self.settings[:names] << name

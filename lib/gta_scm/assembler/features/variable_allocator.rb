@@ -29,9 +29,17 @@ module GtaScm::Assembler::Feature::VariableAllocator
   def allocate_vars_to_dma_addresses!
     allocated_offset = nil
 
+    var_pool = self.vars_to_use.values.flatten.uniq
+
+    if self.parent
+      # debugger
+      # self.parent.var_touchups
+    end
+
     self.var_touchups.each do |var_name|
       type = self.var_touchups_types[var_name]
-      allocated_offset = self.next_var_slot(type)
+      # debugger
+      allocated_offset = self.next_var_slot(type,var_pool)
       self.allocated_vars[var_name] = allocated_offset
       self.define_touchup(var_name,allocated_offset)
     end
@@ -51,27 +59,38 @@ module GtaScm::Assembler::Feature::VariableAllocator
     end
   end
 
-  def next_var_slot(type = nil)
-    size = type == :var_string8 ? 8 : 4
+  def next_var_slot(type = nil, var_pool = nil)
+    extra_vars_to_pop = type == :var_string8 ? 1 : 0
 
-    offset = self.variables_range.begin
-    while offset < self.max_var_slot
-      if !self.dmavar_uses.include?(offset)
-        # logger.debug "Free var slot free at #{offset}"
-        break
-      end
-      offset += self.dmavar_sizes[offset] || 4
+    # debugger
+
+    var_slot = var_pool.shift
+    extra_vars_to_pop.times do
+      var_pool.shift
     end
 
-    if offset < self.max_var_slot
-      self.notice_dmavar(offset,type)
-      # leave space for an 8 byte var by reserving another slot
-      # if size == 8
-      #   self.notice_dmavar(offset + 4)
-      # end
-      return offset
-    else
-      raise "No free var slots"
-    end
+    self.dmavar_uses << var_slot
+
+    return var_slot
+
+    # offset = self.variables_range.begin
+    # while offset < self.max_var_slot
+    #   if !self.dmavar_uses.include?(offset)
+    #     # logger.debug "Free var slot free at #{offset}"
+    #     break
+    #   end
+    #   offset += self.dmavar_sizes[offset] || 4
+    # end
+
+    # if offset < self.max_var_slot
+    #   self.notice_dmavar(offset,type)
+    #   # leave space for an 8 byte var by reserving another slot
+    #   # if size == 8
+    #   #   self.notice_dmavar(offset + 4)
+    #   # end
+    #   return offset
+    # else
+    #   raise "No free var slots"
+    # end
   end
 end

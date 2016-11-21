@@ -10,7 +10,7 @@
 
 % wait to make sure threads are dead
 (wait ((int8 100)))
-(set_var_int ((dmavar 4496 code_state) (int8 0)))
+(set_var_int ((var code_state) (int8 0)))
 
 % jump back to original save gosub
 (labeldef save_thread_ext_end)

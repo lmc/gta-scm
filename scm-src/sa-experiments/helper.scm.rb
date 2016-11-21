@@ -55,6 +55,9 @@ loop do
     playing = 0
   end
 
+  if $watchdog_timer == 0
+    $watchdog_timer = 0
+  end
 
   # if $_21828 == 1
 

@@ -12,8 +12,8 @@
 (labeldef watchdog)
 (wait ((int8 0)))
 (script_name ((string8 "xwtchdg")))
-(set_var_int ((dmavar 3428 code_persist_version) (int16 1)))
-(get_game_timer ((dmavar 4488 watchdog_timer)))
+(set_var_int ((var code_persist_version) (int16 1)))
+(get_game_timer ((var watchdog_timer)))
 
 % wait for intro/init missions to run to get free variables
 (andor ((int8 0)))
@@ -25,25 +25,25 @@
 
 % check to see if the code versions differ, re-init if so
 (andor ((int8 0)))
-  (is_int_var_greater_than_int_var ((dmavar 3428 code_persist_version) (dmavar 3432 save_persist_version)))
+  (is_int_var_greater_than_int_var ((var code_persist_version) (dmavar 3432 save_persist_version)))
 (goto_if_false ((label watchdog_end_init)))
   (gosub ((label watchdog_init)))
 (labeldef watchdog_end_init)
 
 (andor ((int8 0)))
-  (is_int_var_equal_to_number ((dmavar 4496 code_state) (int8 0)))
+  (is_int_var_equal_to_number ((var code_state) (int8 0)))
 (goto_if_false ((label watchdog_end_respawn)))
   % re-spawn threads here
   (start_new_script ((label debug_rpc) (end_var_args)))
   (start_new_script ((label external_loader) (end_var_args)))
   (start_new_script ((label helper) (end_var_args)))
-  (set_var_int ((dmavar 4496 code_state) (int8 1)))
+  (set_var_int ((var code_state) (int8 1)))
 (labeldef watchdog_end_respawn)
 
 % idle loop, just keep timer updated
 (labeldef watchdog_loop)
 (wait ((int8 0)))
-(get_game_timer ((dmavar 4488 watchdog_timer)))
+(get_game_timer ((var watchdog_timer)))
 (goto ((label watchdog_loop)))
 
 
@@ -53,5 +53,5 @@
 (set_var_int ((dmavar 7088 debug_rpc_enabled) (int8 1)))
 (set_var_int ((dmavar 7084 debug_rpc_feedback_enabled) (int8 1)))
 
-(set_var_int_to_var_int ((dmavar 3432 save_persist_version) (dmavar 3428 code_persist_version)))
+(set_var_int_to_var_int ((var save_persist_version) (var code_persist_version)))
 (return)

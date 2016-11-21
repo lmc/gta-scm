@@ -41,6 +41,8 @@ class GtaScm::Assembler::Base
 
     self.include_sizes = {}
     self.offsets_to_files_lines = {}
+
+    self.vars_to_use = {}
   end
 
   def assemble(scm,out_path)
@@ -212,6 +214,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             node.offset = offset
             node.from_ir(tokens,scm,self)
           end
+        when :UseGlobalVariables
+          self.vars_to_use[tokens[1]] = []
+          Range.new(tokens[2].to_i, tokens[3].to_i).step(4) do |var|
+            self.vars_to_use[tokens[1]] << var
+          end
+          return
         when :Include
           start_offset = offset
           contents = File.read("#{self.input_dir}/#{tokens[1]}.sexp.erl")
@@ -226,6 +234,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         when :IncludeRuby
           file = tokens[1]
           args = Hash[tokens[2..-1]]
+          start_offset = offset
 
           # debugger
           ruby = File.read("#{self.input_dir}/#{file}.scm.rb")
@@ -240,49 +249,55 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           instructions = compiler.transform_node(parsed)
 
           lines = instructions.map do |node|
-
             s = Elparser::encode(node)
             # puts s
             s
           end
 
-
-          iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
-          iasm.parent = self
-          iasm.external = self.external
-          iasm.code_offset = offset
-          iasm.code_offset += self.code_offset if self.code_offset
-          def iasm.install_features!
-            class << self
-              include GtaScm::Assembler::Feature::VariableAllocator
-              include GtaScm::Assembler::Feature::ListVariableAllocator
-              include GtaScm::Assembler::Feature::VariableHeaderAllocator
-              include GtaScm::Assembler::Feature::ExportSymbols
-              # include GtaScm::Assembler::Feature::CoolOutput
-            end
-            self.on_feature_init()
+          lines.each_with_index do |line,line_idx|
+            # debugger
+            self.read_line(scm,line,file,line_idx)
           end
-          iasm.symbols_name = "debug-rpc"
-          iasm.install_features!
 
-          output = StringIO.new
-          # iasm.assemble(iscm,file,output)
-          lines.each_with_index do |line,idx|
-            iasm.read_line(iscm,line,file,idx)
-          end
-          iasm.on_before_touchups()
-          iasm.install_touchup_values!
-          iasm.on_after_touchups()
-          iasm.emit_assembly!(iscm,file,output)
-          iasm.on_complete()
+          end_offset = self.nodes.last.offset + self.nodes.last.size
+          self.on_include(start_offset,end_offset,tokens)
+          return
+          # iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
+          # iasm.parent = self
+          # iasm.external = self.external
+          # iasm.code_offset = offset
+          # iasm.code_offset += self.code_offset if self.code_offset
+          # def iasm.install_features!
+          #   class << self
+          #     include GtaScm::Assembler::Feature::VariableAllocator
+          #     # include GtaScm::Assembler::Feature::ListVariableAllocator
+          #     include GtaScm::Assembler::Feature::VariableHeaderAllocator
+          #     include GtaScm::Assembler::Feature::ExportSymbols
+          #     # include GtaScm::Assembler::Feature::CoolOutput
+          #   end
+          #   self.on_feature_init()
+          # end
+          # iasm.symbols_name = "debug-rpc"
+          # iasm.install_features!
 
-          output.rewind
-          code = output.read
+          # output = StringIO.new
+          # # iasm.assemble(iscm,file,output)
+          # lines.each_with_index do |line,idx|
+          #   iasm.read_line(iscm,line,file,idx)
+          # end
+          # iasm.on_before_touchups()
+          # iasm.install_touchup_values!
+          # iasm.on_after_touchups()
+          # iasm.emit_assembly!(iscm,file,output)
+          # iasm.on_complete()
 
-          n = GtaScm::Node::Raw.new( code.bytes )
-          self.on_include(offset,n,tokens)
-          self.include_sizes[file] = n.size
-          n
+          # output.rewind
+          # code = output.read
+
+          # n = GtaScm::Node::Raw.new( code.bytes )
+          # self.on_include(offset,n,tokens)
+          # self.include_sizes[file] = n.size
+          # n
 
         when :IncludeAndAssemble
           file = tokens[1]
@@ -317,13 +332,13 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iasm.parent = self
           iasm.external = self.external
           iasm.code_offset = code_begin
-          iasm.vars_to_use = vars_to_use
+          # iasm.vars_to_use = vars_to_use
           iasm.copy_touchups_from_parent!
 
           def iasm.install_features!
             class << self
               include GtaScm::Assembler::Feature::VariableAllocator
-              include GtaScm::Assembler::Feature::ListVariableAllocator
+              # include GtaScm::Assembler::Feature::ListVariableAllocator
               include GtaScm::Assembler::Feature::VariableHeaderAllocator
               include GtaScm::Assembler::Feature::ExportSymbols
               # include GtaScm::Assembler::Feature::CoolOutput
@@ -469,7 +484,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
                 end
               end
             else
-              # debugger
+              debugger
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 
@@ -579,14 +594,14 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1])
         arg.set( :var, 0xBBBB )
       when :var
-        self.use_var_address(node.offset,[1,arg_idx,1],:"var_#{arg_tokens[1]}")
+        self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
         arg.set( arg_tokens[0] , 0xCCCC )
       when :dmavar
         self.notice_dmavar( arg_tokens[1] , nil , arg_tokens )
         arg.set( :var , arg_tokens[1] )
       when :var_string8
         if arg_tokens[1].is_a?(Symbol)
-          self.use_var_address(node.offset,[1,arg_idx,1],:"var_#{arg_tokens[1]}",:var_string8)
+          self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}",:var_string8)
           # self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1],:jump)
           arg.set( arg_tokens[0] , 0xDDDDDDDDDDDDDDDD )
         else
