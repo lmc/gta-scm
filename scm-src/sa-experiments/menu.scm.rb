@@ -1,8 +1,15 @@
 script_name("xgrgman")
 
 BREAKPOINT_OFFSET = 56531
-BREAKPOINT = [:int32,194710]
+BREAKPOINT = [:int32,57355]
 CARID2GXT = [:label, :carid2gxt_addr]
+
+BITPACK_INIT = [:label,:lib_bitpack_init]
+# BITPACK_INIT = [:int32,194132]
+BITPACK_PACK = [:label,:lib_bitpack_pack]
+# BITPACK_PACK = [:int32,194162]
+BITPACK_UNPACK = [:label,:lib_bitpack_unpack]
+# BITPACK_UNPACK = [:int32,194270]
 
 tmp_car_id = 0
 # potentially 8 bits spare if we pack car id into int8
@@ -125,81 +132,53 @@ end
 # car variation ids:
 # group 1 - bloodra/hotrin = 6 variations
 pack_int = routine do
-  tmp_pack_idx = -1
-  tmp_pack_idx2 = -1
-  tmp_car_id -= 400
-  tmp_i = tmp_car_id
+  gosub(BITPACK_INIT)
+  $bitpack_bits = 8
 
-  loop do
+  $bitpack_value = tmp_car_id
+  $bitpack_value -= 400
+  gosub(BITPACK_PACK)
 
-    tmp_pack_idx += 1
-    tmp_pack_idx2 += 1
+  $bitpack_value = tmp_car_col_1
+  gosub(BITPACK_PACK)
 
-    if tmp_pack_idx == 8
-      tmp_i = tmp_car_col_1
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 16
-      tmp_i = tmp_car_col_2
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 24
-      tmp_i = tmp_car_variation
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 28
-      tmp_i = tmp_car_dirt
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 32
-      break
-    end
+  $bitpack_value = tmp_car_col_2
+  gosub(BITPACK_PACK)
 
-    if is_local_var_bit_set_lvar(tmp_i,tmp_pack_idx2)
-      set_local_var_bit_lvar(tmp_packed,tmp_pack_idx)
-    else
-      clear_local_var_bit_lvar(tmp_packed,tmp_pack_idx)
-    end
+  $bitpack_bits = 4
 
-  end
+  $bitpack_value = tmp_car_variation
+  gosub(BITPACK_PACK)
 
+  $bitpack_value = tmp_car_dirt
+  gosub(BITPACK_PACK)
+
+  tmp_packed = $bitpack_packed
 end
 
 unpack_int = routine do
-  tmp_pack_idx = -1
-  tmp_pack_idx2 = -1
-  tmp_i = 0
+  gosub(BITPACK_INIT)
+  $bitpack_packed = tmp_packed
 
-  loop do
+  $bitpack_bits = 8
 
-    tmp_pack_idx += 1
-    tmp_pack_idx2 += 1
+  gosub(BITPACK_UNPACK)
+  tmp_car_id = $bitpack_value
+  tmp_car_id += 400
 
-    if tmp_pack_idx == 8
-      tmp_car_id = tmp_i
-      tmp_car_id += 400
-      tmp_i = 0
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 16
-      tmp_car_col_1 = tmp_i
-      tmp_i = 0
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 24
-      tmp_car_col_2 = tmp_i
-      tmp_i = 0
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 28
-      tmp_car_variation = tmp_i
-      tmp_i = 0
-      tmp_pack_idx2 = 0
-    elsif tmp_pack_idx == 32
-      tmp_car_dirt = tmp_i
-      break
-    end
+  gosub(BITPACK_UNPACK)
+  tmp_car_col_1 = $bitpack_value
 
-    if is_local_var_bit_set_lvar(tmp_packed,tmp_pack_idx)
-      set_local_var_bit_lvar(tmp_i,tmp_pack_idx2)
-    else
-      clear_local_var_bit_lvar(tmp_i,tmp_pack_idx2)
-    end
+  gosub(BITPACK_UNPACK)
+  tmp_car_col_2 = $bitpack_value
 
-  end
+  $bitpack_bits = 4
+
+  gosub(BITPACK_UNPACK)
+  tmp_car_variation = $bitpack_value
+
+  gosub(BITPACK_UNPACK)
+  tmp_car_dirt = $bitpack_value
 end
 
 
@@ -218,6 +197,7 @@ spawn_car = routine do
 
   despawn_car()
 
+  tmp_car_variation = 15
   if tmp_car_variation < 15
     set_car_model_components(tmp_car_id,tmp_car_variation,-1)
   end
@@ -229,6 +209,7 @@ spawn_car = routine do
     change_car_colour(car,tmp_car_col_1,tmp_car_col_2)
   end
 
+  tmp_car_dirt = 15
   if tmp_car_dirt < 15
     tmp_f = tmp_car_dirt.to_f
     set_vehicle_dirt_level(car,tmp_f)
@@ -314,12 +295,13 @@ show_garage_menu = routine do
     # gosub(CARID2GXT)
 
     if $_7112 == 0
-      set_var_text_label($str_7112,"GSCM004")
+      # set_var_text_label($str_7112,"GSCM004")
+      set_var_text_label($str_7112,"NUMBER")
     end
 
     # set menu item string to car name
     tmp_i = $_7124_cars_index
-    set_menu_item_with_number(menu,0,tmp_i,$str_7112,0)
+    set_menu_item_with_number(menu,0,tmp_i,$str_7112,tmp_car_id)
 
     # FIXME: compiler bug on this
     $_7124_cars_index += 1
@@ -501,6 +483,7 @@ input_garage_menu = routine do
       spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
       spawn_heading = get_char_heading($_12)
       spawn_heading += 90.0
+      gosub(BREAKPOINT)
       unpack_int()
       spawn_car()
       hide_menu()

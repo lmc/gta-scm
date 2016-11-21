@@ -37,6 +37,7 @@
   (start_new_script ((label debug_rpc) (end_var_args)))
   (start_new_script ((label external_loader) (end_var_args)))
   (start_new_script ((label helper) (end_var_args)))
+  (start_new_script ((label menu) (end_var_args)))
   (set_var_int ((var code_state) (int8 1)))
 (labeldef watchdog_end_respawn)
 

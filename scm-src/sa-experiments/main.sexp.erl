@@ -122,6 +122,10 @@
 (labeldef helper)
 (IncludeRuby "helper")
 
+(labeldef menu)
+% (terminate_this_script)
+(IncludeRuby "menu")
+
 % =====================================
 
 

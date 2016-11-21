@@ -1,4 +1,5 @@
 script_name "xhelper"
+BREAKPOINT = [:int32,57355]
 
 emit(false) do
   playing = 0
@@ -54,6 +55,7 @@ loop do
   else
     playing = 0
   end
+    # gosub(BREAKPOINT)
 
   if $watchdog_timer == 0
     $watchdog_timer = 0

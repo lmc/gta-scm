@@ -151,6 +151,7 @@ module GtaScm::Types
     elsif type == :istring8
       7 # immediate string
     else
+      debugger
       raise "bytes4type unknown type `#{type}|#{o_type}`"
     end
   end

@@ -27,7 +27,7 @@
 (goto_if_false ((label external_loader_idle)))
 
 % spawn scripts here
-(start_new_streamed_script ((int8 78) (end_var_args)))
+% (start_new_streamed_script ((int8 78) (end_var_args)))
 
 % wait for them to load before polling again
 (wait ((int16 1000)))

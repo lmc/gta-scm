@@ -317,7 +317,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
     self.settings[:types] = []
     self.settings[:names] = []
 
-    [
+    # [
       # [172  ,:int ,"interior"],
       # [100  ,:int ,"stat"],
       # [160  ,:int ,"day of week"],
@@ -353,11 +353,14 @@ class GtaScm::GvarsPanel < GtaScm::Panel
     #   [40848,:int ,"unused ?"],
     # ]
 
-    .each do |(gvar,type,name)|
-      self.settings[:gvars] << gvar
-      self.settings[:types] << type
-      self.settings[:names] << name
-    end
+
+
+    # .each do |(gvar,type,name)|
+    #   self.settings[:gvars] << gvar
+    #   self.settings[:types] << type
+    #   self.settings[:names] << name
+    # end
+    self.settings[:gvars_inited] = false
     self.settings[:selected_gvar] = 0
   end
 
@@ -372,6 +375,25 @@ class GtaScm::GvarsPanel < GtaScm::Panel
   def update(process,is_attached)
     if !is_attached
       return
+    end
+
+    if !self.settings[:gvars_inited]
+      gvars = process.symbols_var_offsets.each_pair.map do |name,offset|
+        type = process.symbols_var_types[offset]
+        if name
+          type ||= :int
+          type == :int32 if type == :int
+          type == :float32 if type == :float
+          [offset.to_i,name,type]
+        end
+      end.compact
+      gvars.sort_by!(&:first)
+      gvars.each do |(offset,name,type)|
+        self.settings[:gvars] << offset
+        self.settings[:types] << type.to_sym
+        self.settings[:names] << name
+      end
+      self.settings[:gvars_inited] = true
     end
 
     data = self.settings[:gvars].map.each_with_index do |gvar,idx|
@@ -583,7 +605,7 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
     })
 
     self.settings[:injectors] = [
-      ["inject",194_500,"injectd",7092]
+      ["inject",195_000,"injectd",7092]
     ]
   end
 
@@ -803,7 +825,7 @@ $panels[:thread_list].controller = $panels[:thread_selector]
 $panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,36,32)
 $panels[:lvars].controller = $panels[:thread_selector]
 $panels[:gvars] = GtaScm::GvarsPanel.new(50+1,SIZE[0]-35,50,32)
-# $panels[:breakpoint] = GtaScm::BreakpointPanel.new(50+1,2,50,4)
+$panels[:breakpoint] = GtaScm::BreakpointPanel.new(50+1,2,50,4)
 $panels[:code_injector] = GtaScm::CodeInjectorPanel.new(50+1,4,50,4)
 $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(50+1,15,28,32)
 

@@ -29,41 +29,18 @@ NEXT:
 * DONE: save thread: gosub to save opcode at 88020
 * DONE: disassembly mission bytecode in-memory, patch ps2 keyboard checks (15 bytes total (4+4+7) -> goto (7), 4 no-ops (8))
 * more RPCs: teleport player, spawn car
-* compiler header-less mission_label SCMs
+* compiler header-less mission_label SCMs (with assembler directive?)
+* disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)
 * insert them back into script.img
 * DONE: load from main.scm with bootstrap code
 
 * standard lib
 * car-id-2-gxt if space permits? (~3600 bytes)
-* bitpacker accumulator routine
-    $bitpack = 0
-    $bitpack_accum = 0
-    int8 = 127
-    int16 = 1024
-
-    # 20 bytes each
-    $bitpack_bits = 8
-    $bitpack_value = int8
-    write_bitpack()
-    $bitpack_bits = 16
-    $bitpack_value = int16
-    write_bitpack()
-
-    $bitpack_accum = 0
-
-    # 20 bytes each
-    $bitpack_bits = 8
-    read_bitpack()
-    int8 = $bitpack_value
-
-    $bitpack_bits = 16
-    read_bitpack()
-    int16 = $bitpack_value
-
+* DONE: bitpacker accumulator routine
 
 
 * Ruby compiler
-* singleton global variable assigner
+* DONE: singleton global variable assigner
 * export symbols to subdir, name properly
 * symbol export for routines, use routine names in stack view
 * compiler-level include
@@ -78,8 +55,8 @@ NEXT:
 * DONE: fix parser bugs with global vars, multiple conditionals
 * pipeline for code/img/gxt compiles/installs
 * DONE: refactor menu input handling into routines for each menu with a variable for which button was pressed
-* standard lib that can be compiled in
-* function for bitpacking with counter + number of bits + packed value + unpacked value
+* DONE: standard lib that can be compiled in
+* DONE: function for bitpacking with counter + number of bits + packed value + unpacked value
 * test mission jumps (probs not) (does base pc change? check mission threads)
 * switch support (later)
 * array handling

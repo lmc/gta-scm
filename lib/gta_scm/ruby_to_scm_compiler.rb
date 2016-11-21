@@ -339,7 +339,7 @@ class GtaScm::RubyToScmCompiler
 
   def handle_routine_declare(node)
     args = {}
-    if node.children[1].children[0].children[2].type == :hash
+    if node.children[1].andand.children.andand[0].andand.children.andand[2].andand.type == :hash
       node.children[1].children[0].children[2].children.each do |pair|
         args[ pair.children[0].children[0] ] = pair.children[1].children[0]
       end
