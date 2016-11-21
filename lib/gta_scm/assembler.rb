@@ -220,7 +220,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           contents.each_line.each_with_index do |i_line,i_idx|
             self.read_line(scm,i_line,tokens[1],i_idx)
           end
-          end_offset = self.nodes.last.offset
+          end_offset = self.nodes.last.offset + self.nodes.last.size
           self.on_include(start_offset,end_offset,tokens)
           return
         when :IncludeRuby

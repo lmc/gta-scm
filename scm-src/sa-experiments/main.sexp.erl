@@ -115,6 +115,7 @@
 
 
 % == Free Space =======================
+(IncludeRuby "bitpacker")
 
 (labeldef helper)
 (IncludeRuby "helper")

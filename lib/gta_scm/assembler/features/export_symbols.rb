@@ -91,7 +91,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
   def on_include(offset,node,tokens)
     super
-
+    # debugger
     self.includes << { offset: offset, node: node, tokens: tokens }
   end
 
@@ -127,8 +127,10 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
         self.includes.each do |inc|
           if inc[:node].is_a?(Numeric)
+            # debugger
             data[:ranges][inc[:tokens][1]] = [inc[:offset],inc[:node]]
           else
+            # debugger
             data[:ranges][inc[:tokens][1]] = [inc[:offset],inc[:offset]+inc[:node].size]
           end
         end
@@ -148,7 +150,12 @@ module GtaScm::Assembler::Feature::ExportSymbols
         data[:threads] = self.threads
         data[:threads_lvars] = self.threads_lvars
 
-        data[:labels] = self.label_map
+        data[:labels] = {}
+        self.label_map.each do |label,offset|
+          if !label.match(/^(l_|label_)/)
+            data[:labels][label] = offset
+          end
+        end
 
         f << JSON.pretty_generate(data)
       end

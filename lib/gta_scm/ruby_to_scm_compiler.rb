@@ -167,7 +167,7 @@ class GtaScm::RubyToScmCompiler
       when :block
         # debugger
         if node.children[1].children[0].type == :send && node.children[1].children[0].children[1] == :routine
-          transform_node(node.children[1].children[2])
+          handle_routine_declare(node)
         else
           debugger
           raise "cannot handle ???"
@@ -335,6 +335,19 @@ class GtaScm::RubyToScmCompiler
     end
 
     return []
+  end
+
+  def handle_routine_declare(node)
+    args = {}
+    if node.children[1].children[0].children[2].type == :hash
+      node.children[1].children[0].children[2].children.each do |pair|
+        args[ pair.children[0].children[0] ] = pair.children[1].children[0]
+      end
+    end
+    code = []
+    code << [:labeldef, args[:export]] if args[:export]
+    code += transform_node(node.children[1].children[2])
+    code
   end
 
   ASSIGNMENT_OPERATORS = {
@@ -657,12 +670,16 @@ class GtaScm::RubyToScmCompiler
           right_var_type = self.lvar_names_to_types[ node.children[2].children[0] ]
           opcode_name << "#{right_var_type}_lvar"
           right_value = lvar(node.children[2].children[0])
+        elsif right_type == :gvar
+          right_var_type = :int # FIXME: look up correct type
+          opcode_name << "#{right_var_type}_var"
+          right_value = gvar(node.children[2].children[0])
         elsif right_type == :const
           opcode_name << "number"
           right_var_type = self.constants_to_types[ node.children[2].children[1] ]
           right_value = self.constants_to_values[ node.children[2].children[1] ]
         else
-          raise "unknown right type"
+          raise "unknown right type #{node.inspect}"
         end
 
         return [opcode_name.to_sym,[left_value,right_value]]
@@ -828,10 +845,14 @@ class GtaScm::RubyToScmCompiler
   end
 
   attr_accessor :generate_label_counter
-  def generate_label!
-    self.generate_label_counter ||= 0
-    self.generate_label_counter += 1
-    :"#{self.label_prefix}#{self.generate_label_counter}"
+  def generate_label!(name = nil)
+    if name
+      return name
+    else
+      self.generate_label_counter ||= 0
+      self.generate_label_counter += 1
+      :"#{self.label_prefix}#{self.generate_label_counter}"
+    end
   end
 
   attr_accessor :lvar_names_to_types
