@@ -94,7 +94,6 @@ class GtaScm::Node::Header::Externals < GtaScm::Node::Header
       previous_entry = self[1][3][external_id - 1]
       start = GtaScm::Types.bin2value(previous_entry[1],:int32) + GtaScm::Types.bin2value(previous_entry[2],:int32)
     end
-
     self[1][3][external_id] = GtaScm::Node::Raw.new
     self[1][3][external_id] << GtaScm::Node::Raw.new( (name.ljust(19,"\000")+"\000")[0..20].bytes )
     self[1][3][external_id] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( start , :int32 ).bytes )

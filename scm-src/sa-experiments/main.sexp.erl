@@ -122,10 +122,6 @@
 (labeldef helper)
 (IncludeRuby "helper")
 
-(labeldef menu)
-(terminate_this_script)
-% (IncludeRuby "menu")
-
 % =====================================
 
 
@@ -140,3 +136,4 @@
 
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")
+% (AssembleExternal 79 "ext79")

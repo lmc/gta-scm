@@ -130,10 +130,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       externals_header = self.nodes.detect{|n| n.is_a?(GtaScm::Node::Header::Externals) }
       external_offsets.each_pair do |external_id,(name,nodes_index)|
         logger.info "saving #{external_id} #{name} into externals/#{name}.scm"
-        code = self.nodes.delete_at(nodes_index)
+        code = self.nodes[nodes_index]
+        self.nodes[nodes_index] = nil
         # File.open("#{out_path}/#{name}.scm","w"){|f| f << code}
         externals_code[external_id] = code
-        logger.info "patching externals header with name and size"
+        logger.info "patching externals header with name and size (#{code.size})"
         externals_header.set_entry(external_id, name, code.size)
       end
 
@@ -204,6 +205,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     end
     begin
       self.nodes.each do |node|
+        next if node.nil?
         # puts node.offset
         bin = node.to_binary
         self.on_node_emit(out_path,node,bin)

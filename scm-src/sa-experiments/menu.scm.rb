@@ -1,7 +1,8 @@
 script_name("xgrgman")
 
 BREAKPOINT_OFFSET = 56531
-BREAKPOINT = [:int32,57355]
+# BREAKPOINT = [:int32,57355]
+BREAKPOINT = [:label, :debug_breakpoint]
 CARID2GXT = [:label, :carid2gxt_addr]
 
 BITPACK_INIT = [:label,:lib_bitpack_init]
