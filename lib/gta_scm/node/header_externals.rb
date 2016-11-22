@@ -76,15 +76,29 @@ class GtaScm::Node::Header::Externals < GtaScm::Node::Header
     # externals names
     self[1][3] = GtaScm::ByteArray.new
     data[:externals].each do |external|
-      # self[1][3] << GtaScm::Node::Raw.new( (external[1][1].ljust(19,"\000")+"\000")[0..20].bytes )
+      entry = GtaScm::Node::Raw.new
+      entry << GtaScm::Node::Raw.new( (external[1][1].ljust(19,"\000")+"\000")[0..20].bytes )
+      entry << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[2][1] , :int32 ).bytes )
+      entry << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[3][1] , :int32 ).bytes )
+      self[1][3] << entry
+      # self[1][3] << GtaScm::Node::Raw.new( (external[0][1].ljust(19,"\000")+"\000")[0..20].bytes )
+      # self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[1][1] , :int32 ).bytes )
       # self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[2][1] , :int32 ).bytes )
-      # self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[3][1] , :int32 ).bytes )
-      self[1][3] << GtaScm::Node::Raw.new( (external[0][1].ljust(19,"\000")+"\000")[0..20].bytes )
-      self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[1][1] , :int32 ).bytes )
-      self[1][3] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( external[2][1] , :int32 ).bytes )
     end
 
     asm.define_touchup(:label__post_header_externals,asm.nodes.next_offset(self))
+  end
+
+  def set_entry(external_id, name, size, start = nil)
+    if !start
+      previous_entry = self[1][3][external_id - 1]
+      start = GtaScm::Types.bin2value(previous_entry[1],:int32) + GtaScm::Types.bin2value(previous_entry[2],:int32)
+    end
+
+    self[1][3][external_id] = GtaScm::Node::Raw.new
+    self[1][3][external_id] << GtaScm::Node::Raw.new( (name.ljust(19,"\000")+"\000")[0..20].bytes )
+    self[1][3][external_id] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( start , :int32 ).bytes )
+    self[1][3][external_id] << GtaScm::Node::Raw.new( GtaScm::Types.value2bin( size , :int32 ).bytes )
   end
 
 

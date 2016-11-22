@@ -3,6 +3,7 @@ class GtaScm::RubyToScmCompiler
 
   attr_accessor :scm
   attr_accessor :label_prefix
+  attr_accessor :external
 
   def initialize
     self.local_method_names_to_labels = {}
@@ -132,7 +133,7 @@ class GtaScm::RubyToScmCompiler
       [
         [:labeldef, loop_start],
         *transform_node(block_node),
-        [:goto,[[:label,loop_start]]],
+        [:goto,[[self.label_type,loop_start]]],
         [:labeldef, loop_exit]
       ]
     ensure
@@ -142,7 +143,7 @@ class GtaScm::RubyToScmCompiler
 
   def emit_break(node)
     loop_exit = self.loop_stack.last[:exit]
-    return [:goto, [[:label, loop_exit]]]
+    return [:goto, [[self.label_type, loop_exit]]]
   end
 
   def emit_block(node)
@@ -152,6 +153,10 @@ class GtaScm::RubyToScmCompiler
       sexps += cc
     end
     sexps
+  end
+
+  def label_type
+    self.external ? :mission_label : :label
   end
 
   attr_accessor :local_method_names_to_labels
@@ -184,7 +189,7 @@ class GtaScm::RubyToScmCompiler
     method_end_label = self.local_method_names_to_labels["#{method_name}_end"] = generate_label!
 
     [
-      [:goto, [[:label, method_end_label]]],
+      [:goto, [[self.label_type, method_end_label]]],
       [:labeldef, method_label],
       *method_body,
       [:return],
@@ -497,7 +502,7 @@ class GtaScm::RubyToScmCompiler
     opcode_name = node.children[1]
 
     if method_label = self.local_method_names_to_labels["#{opcode_name}"]
-      [:gosub,[[:label,method_label]]]
+      [:gosub,[[self.label_type,method_label]]]
     else
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
@@ -732,7 +737,7 @@ class GtaScm::RubyToScmCompiler
       [
         *andor,
         *conditions,
-        [:goto_if_false,[[:label, false_label]]],
+        [:goto_if_false,[[self.label_type, false_label]]],
         *transform_node(node.children[1]),
         [:labeldef, false_label]
       ]
@@ -746,9 +751,9 @@ class GtaScm::RubyToScmCompiler
       [
         *andor,
         *conditions,
-        [:goto_if_false,[[:label, false_label]]],
+        [:goto_if_false,[[self.label_type, false_label]]],
         *transform_node(node.children[1]),
-        [:goto,[[:label,end_label]]],
+        [:goto,[[self.label_type,end_label]]],
         [:labeldef, false_label],
         *transform_node(node.children[2]),
         [:labeldef, end_label]

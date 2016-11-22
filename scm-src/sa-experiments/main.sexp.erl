@@ -123,8 +123,8 @@
 (IncludeRuby "helper")
 
 (labeldef menu)
-% (terminate_this_script)
-(IncludeRuby "menu")
+(terminate_this_script)
+% (IncludeRuby "menu")
 
 % =====================================
 
@@ -137,3 +137,6 @@
 (IncludeBin ("games/san-andreas/data/script/main.scm" 194125 3079744))
 
 % =====================================
+
+(AssignGlobalVariables)
+(AssembleExternal 78 "ext78")

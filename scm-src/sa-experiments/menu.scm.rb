@@ -129,8 +129,7 @@ write_stats_array = routine do
   end
 end
 
-# car variation ids:
-# group 1 - bloodra/hotrin = 6 variations
+
 pack_int = routine do
   gosub(BITPACK_INIT)
   $bitpack_bits = 8

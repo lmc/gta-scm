@@ -22,7 +22,7 @@ logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 
 scm = GtaScm::Scm.load(ARGV[0],ARGV[1])
 
-scm.img_file = GtaScm::ImgFile.open(File.dirname(ARGV[1])+"/script.img","r")
+# scm.img_file = GtaScm::ImgFile.open(File.dirname(ARGV[1])+"/script.img","r")
 
 scm.load_opcode_definitions!
 

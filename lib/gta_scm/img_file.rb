@@ -30,7 +30,7 @@ class GtaScm::ImgFile < File
       entry[:archive_size] = GtaScm::Types.bin2value( self.parser.read(2) , :int16 )
       entry[:name] = GtaScm::Types.bin2value( self.parser.read(24) , :string24 )
       self.entries << entry
-      logger.info entry
+      # logger.info entry
     end
   end
 

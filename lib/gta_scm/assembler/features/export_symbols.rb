@@ -142,7 +142,8 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
         data[:variables] = {}
         offset2name = self.allocated_vars.invert
-        self.dmavar_uses.sort.each do |offset|
+
+        self.dmavar_uses.to_a.compact.sort.each do |offset|
           name = offset2name[offset] || self.gvars_names[offset]
           data[:variables][offset] = [ name, self.var_types[offset] ]
         end

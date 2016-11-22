@@ -28,6 +28,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
 
   def allocate_vars_to_dma_addresses!
     allocated_offset = nil
+    return if self.allocated_vars.present?
 
     var_pool = self.vars_to_use.values.flatten.uniq
 
