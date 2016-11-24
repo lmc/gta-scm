@@ -31,6 +31,8 @@ class GtaScm::Assembler::Base
   attr_accessor :var_offset
   attr_accessor :var_size
 
+  attr_accessor :new_gxt_entries
+
 
   def initialize(input_dir)
     self.input_dir = input_dir
@@ -45,6 +47,7 @@ class GtaScm::Assembler::Base
     self.external_offsets = {}
 
     self.vars_to_use = {}
+    self.new_gxt_entries = {}
   end
 
   def assemble(scm,out_path)
@@ -162,6 +165,25 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         end
       end
       img_file_w.rebuild!
+    end
+
+
+    # if self.new_gxt_entries.present?
+    if out_path.is_a?(String) && true
+      puts "patching new GXT entries"
+      gxt_file = GtaScm::GxtFile.new(File.open("./games/san-andreas/Text/american.gxt","r"))
+      gxt_file.read_tabl_sa!
+      gxt_file.read_tkey_sa!
+      gxt_file.read_reverse_crc32!
+      self.new_gxt_entries.each_pair do |key,value|
+        key1,key2 = key.split("-").map(&:strip)
+        # gxt_file.add_entry(key1,key2,value)
+      end
+      # debugger
+      puts "rebuilding"
+      # debugger
+      data = gxt_file.rebuild!
+      File.open("#{out_path}/american.gxt","w"){|f| f << data}
     end
 
     self.emit_assembly!(scm,main_name,out_path)
@@ -396,9 +418,13 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           return
         when :labeldef
           toffset = nodes.next_offset
-          toffset -= self.code_offset if self.code_offset
+          toffset -= self.code_offset if self.code_offset && self.external
           self.on_labeldef(tokens[1],toffset)
           self.define_touchup(:"label_#{tokens[1]}",toffset)
+          return
+        when :DefineGxt
+          key = "#{tokens[1]}-#{tokens[2]}"
+          self.new_gxt_entries[key] = tokens[3]
           return
         when :EmitNodes
           self.emit_nodes = tokens[1] == :t
@@ -477,7 +503,6 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               arr = arr[array_key]
             end
 
-            
             if touchup_value = self.touchup_defines[touchup_name]
               if touchup_name.to_s.match(/^label_/)
                 if self.code_offset
@@ -502,7 +527,6 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             if touchup_name == :label_lib_bitpack_init || touchup_name == "label_lib_bitpack_init"
               # debugger
             end
-
 
             o_touchup_value = touchup_value
 

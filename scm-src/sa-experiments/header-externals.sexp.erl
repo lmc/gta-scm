@@ -1,6 +1,7 @@
 (HeaderExternals (                                                  \
   (padding (int8 2))                                                \
-  (largest_external_size (int32 35122))                             \
+  % (largest_external_size (int32 35122))                             \
+  (largest_external_size (int32 104632))                             \
   (external_count (int32 79))                                       \
   (externals (                                                      \
     ((int32  0) (string20 "PLAYER_PARACHUTE") (int32 3079744) (int32 5631 ))   \

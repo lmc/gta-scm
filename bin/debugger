@@ -380,7 +380,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
     if !self.settings[:gvars_inited]
       gvars = process.symbols_var_offsets.each_pair.map do |name,offset|
         type = process.symbols_var_types[offset]
-        if name
+        if name || offset == 21744
           type ||= :int
           type == :int32 if type == :int
           type == :float32 if type == :float
@@ -605,7 +605,7 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
     })
 
     self.settings[:injectors] = [
-      ["inject",195_000,"injectd",7092]
+      ["inject",198_000,"injectd",7092]
     ]
   end
 
@@ -623,12 +623,26 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
 
   end
 
+  attr_accessor :allocation_count
+  VM_ALLOCATE_SIZE = 1024
   def input(key,is_attached,process)
+    self.allocation_count ||= 0
+
     if key == "u"
+      print RuTui::Ansi.clear_color + RuTui::Ansi.clear
       dir = "scm-src/sa-experiments"
       filename = self.settings[:injectors][0][0]
-      # VARS_OFFSET = 7092
-      code_offset = self.settings[:injectors][0][1].to_i
+      thread_name = self.settings[:injectors][0][2]
+
+      # HORRIBLE HACK:
+      # vm_allocate gives us back 64-bit pointers so we can't use it for VM memory allocation...
+      # code_offset = Ragweed::Wraposx::vm_allocate(process.process.task,base_offset,VM_ALLOCATE_SIZE,true)
+      
+      # ...so lets just write into the top 1gb of user-process memory space
+      code_offset = 2**30 + (VM_ALLOCATE_SIZE * self.allocation_count++)
+
+      code_offset -= process.scm_offset
+
       scm = GtaScm::Scm.load_string("san-andreas","")
       scm.load_opcode_definitions!
       asm = GtaScm::Assembler::Sexp.new(dir)
@@ -640,16 +654,13 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
         end
         self.on_feature_init()
       end
-      def asm.variables_range
-        # (VARS_OFFSET..(VARS_OFFSET+1024))
-        0..4
-      end
       output = StringIO.new
       asm.assemble(scm,filename,output)
       output.rewind
       code = output.read
+
       process.write(process.scm_offset + code_offset, code)
-      process.rpc(1,code_offset,"injectd")
+      process.rpc(1,code_offset,thread_name || "xinject")
     end
 
     if key == "j"

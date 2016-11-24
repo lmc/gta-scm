@@ -21,17 +21,18 @@ NEXT:
 * generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
-* generate HeaderExternal from files automatically
-* build external scripts first, patch into script.img, generate header, compile main script
+* gxt compile pipeline (rebuild GXT files, insert new entries)
+* DONE: generate HeaderExternal from files automatically
+* DONE: build external scripts first, patch into script.img, generate header, compile main script
 * DONE: main idle loop at 60030->61763
 * DONE: patch idle loop to check if externals are running (/watchdog timer for threads)
 * DONE: patch save game code to make save-game safe (kill threads/delete blips?)
 * DONE: save thread: gosub to save opcode at 88020
 * DONE: disassembly mission bytecode in-memory, patch ps2 keyboard checks (15 bytes total (4+4+7) -> goto (7), 4 no-ops (8))
 * more RPCs: teleport player, spawn car
-* compiler header-less mission_label SCMs (with assembler directive?)
 * disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)
-* insert them back into script.img
+* DONE: compiler header-less mission_label SCMs (with assembler directive?)
+* DONE: insert them back into script.img
 * DONE: load from main.scm with bootstrap code
 
 * standard lib
@@ -53,13 +54,13 @@ NEXT:
 * conditional gosubs (routine call as condition, routine calls return_true/false + return)
 * DONE: debugger/breakpoints (reuse rpc code?) (rpc_breakpoints_enabled,rpc_breakpoint_pc) (GXTs: CHEATON, FEM_PWT)
 * DONE: fix parser bugs with global vars, multiple conditionals
-* pipeline for code/img/gxt compiles/installs
+* MOSTLY DONE: pipeline for code/img/gxt compiles/installs
 * DONE: refactor menu input handling into routines for each menu with a variable for which button was pressed
 * DONE: standard lib that can be compiled in
 * DONE: function for bitpacking with counter + number of bits + packed value + unpacked value
 * test mission jumps (probs not) (does base pc change? check mission threads)
 * switch support (later)
-* array handling
+* DONE: array handling
 * DSL for patching original scm?
 
 enable/disable keys

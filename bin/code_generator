@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+# ./bin/code_generator
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+instructions_to_generate = 10000
+waits_every_n_instructions = 100
+
+0.upto(instructions_to_generate) do |i|
+  puts "(set_var_int ((var test) (int32 #{i})))"
+  if i % waits_every_n_instructions == 0
+    puts "(wait ((int8 100)))"
+  end
+end

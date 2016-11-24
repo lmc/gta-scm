@@ -120,6 +120,7 @@
 (IncludeRuby "bitpacker")
 
 (labeldef helper)
+(set_var_int ((var test) (int8 0)))
 (IncludeRuby "helper")
 
 % =====================================
@@ -134,6 +135,6 @@
 
 % =====================================
 
+(DefineGxt "MAIN" "GSCM022" "Text text text")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")
-% (AssembleExternal 79 "ext79")

@@ -26,10 +26,6 @@ begin
   idx = 0
   gxt_file.tkey.each_pair do |name,arr|
     file = File.open("_out/sa-gxt/#{idx.to_s.rjust(3,"0")}-#{name}.txt","w")
-    # arr.each_pair do |crc32,offset|
-    #   key = gxt_file.reverse_crc32[crc32] || crc32
-    #   file.puts("#{key}=#{gxt_file.strings[crc32]}")
-    # end
     inv = arr.invert
     inv.keys.sort.each do |offset|
       crc32 = inv[offset]

@@ -1,9 +1,5 @@
-(IncludeRuby "menu")
-
-% (IncludeRuby "bitpacker")
-
-% (start_new_script ((label debug_cube) (int8 0) (float32 2481.0) (float32 -1661.0) (float32 20.0)  (float32 2493.0) (float32 -1670.0) (float32 14.0)  (end_var_args)))
-% (terminate_this_script)
-
-% (labeldef debug_cube)
-% (IncludeRuby "debug-cube")
+(script_name ((string8 "xinject")))
+(labeldef injectloop)
+(wait ((int16 1000)))
+(add_one_off_sound ((float32 0.0) (float32 0.0) (float32 0.0) (int16 1137)))
+(goto ((label injectloop)))
