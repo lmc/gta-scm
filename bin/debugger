@@ -639,7 +639,7 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
       # code_offset = Ragweed::Wraposx::vm_allocate(process.process.task,base_offset,VM_ALLOCATE_SIZE,true)
       
       # ...so lets just write into the top 1gb of user-process memory space
-      code_offset = 2**30 + (VM_ALLOCATE_SIZE * self.allocation_count++)
+      code_offset = (2**30) + (VM_ALLOCATE_SIZE * self.allocation_count += 1)
 
       code_offset -= process.scm_offset
 

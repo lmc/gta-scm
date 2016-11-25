@@ -177,11 +177,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       gxt_file.read_reverse_crc32!
       self.new_gxt_entries.each_pair do |key,value|
         key1,key2 = key.split("-").map(&:strip)
-        # gxt_file.add_entry(key1,key2,value)
+        puts "adding #{key1}/#{key2} = #{value}"
+        gxt_file.add_entry(key1,key2,value)
       end
-      # debugger
-      puts "rebuilding"
-      # debugger
       data = gxt_file.rebuild!
       File.open("#{out_path}/american.gxt","w"){|f| f << data}
     end

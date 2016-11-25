@@ -135,6 +135,6 @@
 
 % =====================================
 
-(DefineGxt "MAIN" "GSCM022" "Text text text")
+(DefineGxt "MAIN" "GSCM100" "Text text text")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")

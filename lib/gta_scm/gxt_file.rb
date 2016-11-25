@@ -278,7 +278,12 @@ class GtaScm::GxtFile < GtaScm::FileWalker
     logger.info "tdat #{_tdat} #{size}"
   end
 
+  attr_accessor :tkey_counter
   def add_entry(key1,key2,value)
+    self.tkey_counter ||= 0
+    self.tkey_counter += 1
+    self.tkey[key1][ gxt_crc32(key2) ] = 999_999_999 + tkey_counter
+    # need to add to self.tkey too ?
     self.strings[key1][ gxt_crc32(key2) ] = value
   end
 
@@ -351,7 +356,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
 
 
 
-      puts "building"
+      # puts "building"
 
       tkey_header = ""
       if name != "MAIN"
@@ -391,7 +396,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
 
     end
 
-    puts "writing"
+    # puts "writing"
 
     # File.open(PATH,"wb") do |f|
     #   f << out_head

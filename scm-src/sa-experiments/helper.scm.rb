@@ -61,6 +61,10 @@ loop do
     $watchdog_timer = 0
   end
 
+  use_text_commands(0)
+  display_text(100.0,100.0,"DOLLAR")
+  display_text(200.0,100.0,"GSCM100")
+
   # if $_21828 == 1
 
   # end

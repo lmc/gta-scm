@@ -17,6 +17,6 @@
 (IncludeRuby "menu" (external true))
 
 (labeldef test)
-(script_name ((string8 "xext79")))
+(script_name ((string8 "xext78")))
 (wait ((int16 1000)))
 (terminate_this_script)
