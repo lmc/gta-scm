@@ -439,16 +439,16 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       if self.emit_nodes
         node.offset = offset
         self.nodes << node
-      else
-        # debugger
-        node
       end
 
       self.offsets_to_files_lines[offset] = [file_name,line_idx]
 
       if node.is_a?(GtaScm::Node::Instruction)
         self.include_sizes[file_name] ||= 0
-        self.include_sizes[file_name]  += node.size
+
+        if self.emit_nodes
+          self.include_sizes[file_name]  += node.size
+        end
         logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
       end
       logger.info "#{nodes.last.offset}"

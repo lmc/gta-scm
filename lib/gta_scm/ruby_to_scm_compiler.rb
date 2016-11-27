@@ -9,6 +9,7 @@ class GtaScm::RubyToScmCompiler
     self.local_method_names_to_labels = {}
     self.label_prefix = "label_"
     self.var_arrays = {}
+    self.routines_block = false
     install_constants!
   end
 
@@ -36,7 +37,10 @@ class GtaScm::RubyToScmCompiler
         emit_loop(node,node.children[2])
       elsif node.children[0].type == :send && node.children[0].children[1] == :emit
         handle_conditional_emit(node,node.children[0].children[2].type == :true)
+      elsif node.children[0].type == :send && node.children[0].children[1] == :routines
+        handle_routines_declare(node)
       else
+        debugger
         raise "unknown block type: #{node.inspect}"
       end
 
@@ -131,6 +135,20 @@ class GtaScm::RubyToScmCompiler
     end
   end
 
+  attr_accessor :routines_block
+  
+  def handle_routines_declare(node)
+    self.routines_block = true
+    nodes = transform_node(node.children[2])
+    self.routines_block = false
+    routines_end = generate_label!
+    [
+      [:goto,[[self.label_type,routines_end]]],
+      *nodes,
+      [:labeldef,routines_end]
+    ]
+  end
+
   attr_accessor :loop_stack
   def emit_loop(loop_node,block_node)
     loop_start = generate_label!
@@ -205,16 +223,20 @@ class GtaScm::RubyToScmCompiler
     method_label = self.local_method_names_to_labels["#{method_name}"] = generate_label!
     method_end_label = self.local_method_names_to_labels["#{method_name}_end"] = generate_label!
 
+    jump_opcode = [:goto, [[self.label_type, method_end_label]]]
+    jump_opcode = nil if self.routines_block
+
     end_opcode = [:return]
     end_opcode = [:terminate_this_script] if args[:end_with] == :terminate_this_script
+    end_opcode = nil                      if args.key?(:end_with) && args[:end_with].nil?
 
     [
-      [:goto, [[self.label_type, method_end_label]]],
+      jump_opcode,
       [:labeldef, method_label],
       *method_body,
       end_opcode,
       [:labeldef, method_end_label]
-    ]
+    ].compact
   end
 
   def emit_local_var_assign(node)

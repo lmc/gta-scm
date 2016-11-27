@@ -36,124 +36,125 @@ end
 TYPE_3_PICKUP_START = 11528
 TYPE_3_PICKUP_END = 11724
 
-reset_closest = routine do
-  closest_int = -1
-  closest_float = 99999.9
-end
-reset_closest()
+routines do
+  reset_closest = routine do
+    closest_int = -1
+    closest_float = 99999.9
+  end
 
-get_nearest_valid_pickup = routine do
-  tmp_i = TYPE_3_PICKUP_START
-  tmp_i /= 4
-  tmp_i2 = TYPE_3_PICKUP_END
-  tmp_i2 /= 4
-  reset_closest()
+  get_nearest_valid_pickup = routine do
+    tmp_i = TYPE_3_PICKUP_START
+    tmp_i /= 4
+    tmp_i2 = TYPE_3_PICKUP_END
+    tmp_i2 /= 4
+    reset_closest()
 
-  loop do
-    # tmp_pickup = $_0[tmp_i]
-    set_lvar_int_to_var_int(tmp_pickup,$_0[tmp_i])
+    loop do
+      # tmp_pickup = $_0[tmp_i]
+      set_lvar_int_to_var_int(tmp_pickup,$_0[tmp_i])
 
-    tmp_x,tmp_y,tmp_z = get_pickup_coordinates(tmp_pickup)
+      tmp_x,tmp_y,tmp_z = get_pickup_coordinates(tmp_pickup)
 
-    if is_any_pickup_at_coords(tmp_x,tmp_y,tmp_z) and !has_pickup_been_collected(tmp_pickup)
-      distance = get_distance_between_coords_2d($player_x,$player_y, tmp_x, tmp_y)
-      if distance < closest_float
-        closest_float = distance
-        closest_int = tmp_pickup
+      if is_any_pickup_at_coords(tmp_x,tmp_y,tmp_z) and !has_pickup_been_collected(tmp_pickup)
+        distance = get_distance_between_coords_2d($player_x,$player_y, tmp_x, tmp_y)
+        if distance < closest_float
+          closest_float = distance
+          closest_int = tmp_pickup
+        end
+      end
+
+      tmp_i += 1
+      if tmp_i > tmp_i2
+        break
       end
     end
 
-    tmp_i += 1
-    if tmp_i > tmp_i2
-      break
-    end
   end
 
-end
-
-ATTEMPTS_UNTIL_RANDOM = 81
-ATTEMPTS_PER_RUN = 100
-get_nearest_tag = routine do
-  tmp_i = 0
-  tmp_x2 = -250.0
-  tmp_y2 = -250.0
-  closest_float = 9999.0
-  loop do
-    
-    if tmp_i > ATTEMPTS_UNTIL_RANDOM
-      tmp_x2 = generate_random_float_in_range(-2000.0,2000.0)
-      tmp_y2 = generate_random_float_in_range(-2000.0,2000.0)
-    end
-
-    tmp_x,tmp_y,tmp_z = get_offset_from_char_in_world_coords(PLAYER_CHAR,tmp_x2,tmp_y2,0.0)
-
-    tmp_x2 += 50.0
-    if tmp_x2 >= 250.0
-      tmp_x2 = -250.0
-      tmp_y2 += 50.0
-    end
-
-    tmp_x,tmp_y,tmp_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
-
-    # is the tag unsprayed
-    tmp_i2 = get_percentage_tagged_in_area(tmp_x,tmp_y,tmp_x,tmp_y)
-    if tmp_i2 < 100
-      distance = get_distance_between_coords_2d($player_x,$player_y, tmp_x, tmp_y)
-
-      if distance < closest_float
-        closest_float = distance
-        closest_x,closest_y,closest_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
-        displayed_float = closest_z
-        displayed_float += closest_y
-        displayed_float += closest_x
+  ATTEMPTS_UNTIL_RANDOM = 81
+  ATTEMPTS_PER_RUN = 100
+  get_nearest_tag = routine do
+    tmp_i = 0
+    tmp_x2 = -250.0
+    tmp_y2 = -250.0
+    closest_float = 9999.0
+    loop do
+      
+      if tmp_i > ATTEMPTS_UNTIL_RANDOM
+        tmp_x2 = generate_random_float_in_range(-2000.0,2000.0)
+        tmp_y2 = generate_random_float_in_range(-2000.0,2000.0)
       end
 
+      tmp_x,tmp_y,tmp_z = get_offset_from_char_in_world_coords(PLAYER_CHAR,tmp_x2,tmp_y2,0.0)
+
+      tmp_x2 += 50.0
+      if tmp_x2 >= 250.0
+        tmp_x2 = -250.0
+        tmp_y2 += 50.0
+      end
+
+      tmp_x,tmp_y,tmp_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
+
+      # is the tag unsprayed
+      tmp_i2 = get_percentage_tagged_in_area(tmp_x,tmp_y,tmp_x,tmp_y)
+      if tmp_i2 < 100
+        distance = get_distance_between_coords_2d($player_x,$player_y, tmp_x, tmp_y)
+
+        if distance < closest_float
+          closest_float = distance
+          closest_x,closest_y,closest_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
+          displayed_float = closest_z
+          displayed_float += closest_y
+          displayed_float += closest_x
+        end
+
+      end
+
+      tmp_i += 1
+      if tmp_i > ATTEMPTS_PER_RUN
+        break
+      end
     end
 
-    tmp_i += 1
-    if tmp_i > ATTEMPTS_PER_RUN
-      break
+  end
+
+  THREAD_CORONA = [:label, :thread_corona_col]
+  display_setup = routine do
+    blip = add_blip_for_coord(closest_x,closest_y,closest_z)
+    start_new_script(THREAD_CORONA,closest_x,closest_y,closest_z,18.0,9,255,255,255)
+  end
+
+  display_cleanup = routine do
+    remove_blip(blip)
+    terminate_all_scripts_with_this_name("xcrncol")
+  end
+
+  display_nearest_pickup = routine do
+    if closest_int == -1
+      display_cleanup()
+      displayed_pickup = -1
+    else
+      if closest_int == displayed_pickup
+        # do nothing
+        displayed_pickup = closest_int
+      else
+        display_cleanup()
+        closest_x,closest_y,closest_z = get_pickup_coordinates(closest_int)
+        display_setup()
+        displayed_pickup = closest_int
+      end
     end
   end
 
-end
-
-THREAD_CORONA = [:label, :thread_corona_col]
-display_setup = routine do
-  blip = add_blip_for_coord(closest_x,closest_y,closest_z)
-  start_new_script(THREAD_CORONA,closest_x,closest_y,closest_z,18.0,9,255,255,255)
-end
-
-display_cleanup = routine do
-  remove_blip(blip)
-  terminate_all_scripts_with_this_name("xcrncol")
-end
-
-display_nearest_pickup = routine do
-  if closest_int == -1
-    display_cleanup()
-    displayed_pickup = -1
-  else
-    if closest_int == displayed_pickup
+  display_nearest_tag = routine do
+    if displayed_float == displayed_float2
       # do nothing
-      displayed_pickup = closest_int
+      displayed_float = displayed_float2
     else
       display_cleanup()
-      closest_x,closest_y,closest_z = get_pickup_coordinates(closest_int)
       display_setup()
-      displayed_pickup = closest_int
+      displayed_float2 = displayed_float
     end
-  end
-end
-
-display_nearest_tag = routine do
-  if displayed_float == displayed_float2
-    # do nothing
-    displayed_float = displayed_float2
-  else
-    display_cleanup()
-    display_setup()
-    displayed_float2 = displayed_float
   end
 end
 
