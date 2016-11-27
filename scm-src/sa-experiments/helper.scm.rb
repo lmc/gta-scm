@@ -28,6 +28,7 @@ t_y = 1390.0
 t_z = 11.0
 # set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 task_jetpack(PLAYER_CHAR)
+give_weapon_to_char(PLAYER_CHAR,41,1000)
 
 # THREAD_COLLECTABLES_FINDER = [:label, :thre]
 # start_new_script(THREAD_COLLECTABLES_FINDER)

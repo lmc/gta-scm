@@ -18,7 +18,8 @@ if $_0 == 0
   tmp_z = 0.0
   tmp_x2 = 0.0
   tmp_y2 = 0.0
-  tmp_z2 = 0.0
+  tmp_x3 = 0.0
+  tmp_y3 = 0.0
   tmp_i2 = 0
   tmp_pickup = 0
   distance = 0.0
@@ -73,22 +74,26 @@ get_nearest_valid_pickup = routine do
 
 end
 
-ATTEMPTS_UNTIL_RANDOM = 50
+ATTEMPTS_UNTIL_RANDOM = 81
 ATTEMPTS_PER_RUN = 100
 get_nearest_tag = routine do
   tmp_i = 0
+  tmp_x2 = -250.0
+  tmp_y2 = -250.0
   closest_float = 9999.0
   loop do
     
-    if tmp_i == 0
-      tmp_x = $player_x
-      tmp_y = $player_y
-      tmp_z = $player_z
-    # # elsif tmp_i <= ATTEMPTS_PER_RUN
-    # #   # go ordered
+    if tmp_i > ATTEMPTS_UNTIL_RANDOM
+      tmp_x2 = generate_random_float_in_range(-2000.0,2000.0)
+      tmp_y2 = generate_random_float_in_range(-2000.0,2000.0)
+    end
 
-    # # else
-    # #   # go random
+    tmp_x,tmp_y,tmp_z = get_offset_from_char_in_world_coords(PLAYER_CHAR,tmp_x2,tmp_y2,0.0)
+
+    tmp_x2 += 50.0
+    if tmp_x2 >= 250.0
+      tmp_x2 = -250.0
+      tmp_y2 += 50.0
     end
 
     tmp_x,tmp_y,tmp_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
