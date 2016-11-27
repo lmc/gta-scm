@@ -26,7 +26,7 @@ wait(5000)
 t_x = 2078.0
 t_y = 1390.0
 t_z = 11.0
-# set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 task_jetpack(PLAYER_CHAR)
 
 # THREAD_COLLECTABLES_FINDER = [:label, :thre]
@@ -35,7 +35,7 @@ task_jetpack(PLAYER_CHAR)
 THREAD_CORONA = [:label, :thread_corona]
 # END_VAR_ARGS = [:end_var_args]
 # (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
-start_new_script(THREAD_CORONA,2500.0,-1670.0,20.0,8.0,9,255,255,255)
+# start_new_script(THREAD_CORONA,2500.0,-1670.0,20.0,8.0,9,255,255,255)
 
 loop do
   wait 0
