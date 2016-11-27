@@ -21,7 +21,9 @@ NEXT:
 * generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
-* game: remake collectables finder in ruby
+* DONE: game: remake collectables finder in ruby
+* game: remake collectables finder manager in ruby
+* game: rewrite rpc thread in ruby
 * game: chill with homies
 
 * compiler: gosubs as a condition (return_true/false opcodes)
@@ -37,7 +39,7 @@ NEXT:
 
 * more RPCs:
     teleport player: x/y/z/heading/interior id
-* disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)
+* DONE-FIXED: disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)
 
 * DONE: gxt compile pipeline (rebuild GXT files, insert new entries)
 * DONE: generate HeaderExternal from files automatically
@@ -54,7 +56,7 @@ NEXT:
 * standard lib
 * car-id-2-gxt if space permits? (~3600 bytes)
 * DONE: bitpacker accumulator routine
-
+* 2d/3d iterator helper
 
 * Ruby compiler
 * DONE: singleton global variable assigner
@@ -64,7 +66,7 @@ NEXT:
 * DONE: raw sexp output by assigning array to constant (ROUTINE_ADDR = [:label,:routine_label]; gosub(ROUTINE_ADDR))
 * non-hacky string var support
 * DONE: emit smallest size for immediate values possible
-* routines {} block, avoids jumps around routines
+* DONE: routines {} block, avoids jumps around routines
 * function calls using global vars for arguments/return values
 * thread {} block, named + scoped local vars (+export symbols)
 * conditional gosubs (routine call as condition, routine calls return_true/false + return)

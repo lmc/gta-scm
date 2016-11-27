@@ -107,6 +107,10 @@ class GtaScm::RubyToScmCompiler
 
       [ emit_break(node) ]
 
+    when :return
+
+      emit_return_value(node)
+
     else
       debugger
       raise "unknown node type #{node.type.inspect}"
@@ -171,6 +175,16 @@ class GtaScm::RubyToScmCompiler
   def emit_break(node)
     loop_exit = self.loop_stack.last[:exit]
     return [:goto, [[self.label_type, loop_exit]]]
+  end
+
+  def emit_return_value(node)
+    condition = node.children[0].type == :true
+    opcode = condition ? :not_is_ps2_keyboard_key_pressed : :is_ps2_keyboard_key_pressed
+    value = condition ? 1 : 0
+    [
+      [opcode,[[:int8,value]]],
+      [:return]
+    ]
   end
 
   def emit_block(node)
@@ -535,11 +549,19 @@ class GtaScm::RubyToScmCompiler
   end
 
   def emit_opcode_call(node,force_not = false)
+    if node.children[1] == :!
+      force_not = true
+      node = node.children[0]
+    end
+
     opcode_name = node.children[1]
 
     if method_label = self.local_method_names_to_labels["#{opcode_name}"]
       [:gosub,[[self.label_type,method_label]]]
     else
+
+
+
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
       args = node.children[2..-1]
@@ -550,8 +572,8 @@ class GtaScm::RubyToScmCompiler
       # end
 
       if !opcode_def
-        raise "unknown opcode #{opcode_name} (#{node.inspect})"
         debugger
+        raise "unknown opcode #{opcode_name} (#{node.inspect})"
       end
 
       if opcode_name == :start_new_script
@@ -736,7 +758,9 @@ class GtaScm::RubyToScmCompiler
         return emit_opcode_call(node)
       end
     elsif node.children.size == 2
-      if node.children[0].type == :send && node.children[1] == :!
+      if label = self.local_method_names_to_labels["#{node.children[1]}"]
+        return [:gosub,[[self.label_type,label]]]
+      elsif node.children[0].type == :send && node.children[1] == :!
         # negated opcode call
         return emit_opcode_call(node.children[0],true)
       # elsif node.children[1].is_a?(Symbol)
