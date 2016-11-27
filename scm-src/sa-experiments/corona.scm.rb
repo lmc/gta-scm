@@ -1,5 +1,4 @@
-
-corona = routine(export: :thread_corona, end_with: :terminate_this_script) do
+corona_inner = routine do
   if $_0 == 0
     x = 0.0
     y = 0.0
@@ -10,11 +9,7 @@ corona = routine(export: :thread_corona, end_with: :terminate_this_script) do
     colour_g = 255
     colour_b = 255
     thread_name = 0
-  end
-  if thread_name == 0
-    script_name("xcorona")
-  else
-    script_name(thread_name)
+    thread_name2 = 0
   end
   loop do
     wait(0)
@@ -23,3 +18,12 @@ corona = routine(export: :thread_corona, end_with: :terminate_this_script) do
   end
 end
 
+corona = routine(export: :thread_corona, end_with: :terminate_this_script) do
+  script_name("xcrngen")
+  corona_inner()
+end
+
+corona_col = routine(export: :thread_corona_col, end_with: :terminate_this_script) do
+  script_name("xcrncol")
+  corona_inner()
+end

@@ -7,7 +7,8 @@
 (terminate_all_scripts_with_this_name ((string8 "xdbgrpc")))
 (terminate_all_scripts_with_this_name ((string8 "xextldr")))
 (terminate_all_scripts_with_this_name ((string8 "xhelper")))
-(terminate_all_scripts_with_this_name ((string8 "xcorona")))
+(terminate_all_scripts_with_this_name ((string8 "xcrngen")))
+(terminate_all_scripts_with_this_name ((string8 "xcrncol")))
 
 (terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
 

@@ -26,7 +26,7 @@ wait(5000)
 t_x = 2078.0
 t_y = 1390.0
 t_z = 11.0
-set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+# set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 task_jetpack(PLAYER_CHAR)
 
 # THREAD_COLLECTABLES_FINDER = [:label, :thre]

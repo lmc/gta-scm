@@ -247,14 +247,14 @@ class GtaScm::RubyToScmCompiler
 
     if node.type == :gvasgn && node.children[1].type == :gvar
       # FIXME: handle types here
-      left = gvar(node.children[0],:int)
-      right = gvar(node.children[1].children[0],:int)
+      left = gvar(node.children[0],nil)
+      right = gvar(node.children[1].children[0],nil)
       return [ [:set_var_int_to_var_int,[left,right]] ]
     end
     if node.type == :lvasgn && node.children[1].type == :gvar
       # FIXME: handle types here
-      left = lvar(node.children[0],:int)
-      right = gvar(node.children[1].children[0],:int)
+      left = lvar(node.children[0],nil)
+      right = gvar(node.children[1].children[0],nil)
       return [ [:set_lvar_int_to_var_int,[left,right]] ]
     end
 

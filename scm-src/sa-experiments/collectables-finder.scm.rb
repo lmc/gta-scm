@@ -16,28 +16,40 @@ if $_0 == 0
   tmp_x = 0.0
   tmp_y = 0.0
   tmp_z = 0.0
+  tmp_x2 = 0.0
+  tmp_y2 = 0.0
+  tmp_z2 = 0.0
   tmp_i2 = 0
   tmp_pickup = 0
   distance = 0.0
   displayed_pickup = -1
+  displayed_float = 0.0
+  displayed_float2 = 1.0
   closest_int = 0
   closest_float = 0.0
   closest_x = 0.0
   closest_y = 0.0
   closest_z = 0.0
   blip = -1
+  tag_sprayed = 0
 end
+
 
 TYPE_3_PICKUP_START = 11528
 TYPE_3_PICKUP_END = 11724
+
+reset_closest = routine do
+  closest_int = -1
+  closest_float = 99999.9
+end
+reset_closest()
 
 get_nearest_valid_pickup = routine do
   tmp_i = TYPE_3_PICKUP_START
   tmp_i /= 4
   tmp_i2 = TYPE_3_PICKUP_END
   tmp_i2 /= 4
-  closest_int = -1
-  closest_float = 99999.9
+  reset_closest()
 
   loop do
     # tmp_pickup = $_0[tmp_i]
@@ -61,12 +73,58 @@ get_nearest_valid_pickup = routine do
 
 end
 
+ATTEMPTS_UNTIL_RANDOM = 50
+ATTEMPTS_PER_RUN = 100
+get_nearest_tag = routine do
+  tmp_i = 0
+  closest_float = 9999.0
+  loop do
+    
+    if tmp_i == 0
+      tmp_x = $player_x
+      tmp_y = $player_y
+      tmp_z = $player_z
+    # # elsif tmp_i <= ATTEMPTS_PER_RUN
+    # #   # go ordered
+
+    # # else
+    # #   # go random
+    end
+
+    tmp_x,tmp_y,tmp_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
+    tag_sprayed = get_percentage_tagged_in_area(tmp_x,tmp_y,tmp_x,tmp_y)
+
+    # is the tag unsprayed
+    if tag_sprayed < 100
+      distance = get_distance_between_coords_2d($player_x,$player_y, tmp_x, tmp_y)
+
+      if distance < closest_float
+        closest_float = distance
+        closest_x,closest_y,closest_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
+        displayed_float = closest_z
+        displayed_float += closest_y
+        displayed_float += closest_x
+      end
+
+    end
+
+    tmp_i += 1
+    if tmp_i > 100
+      break
+    end
+  end
+
+end
+
+THREAD_CORONA = [:label, :thread_corona_col]
 display_setup = routine do
   blip = add_blip_for_coord(closest_x,closest_y,closest_z)
+  start_new_script(THREAD_CORONA,closest_x,closest_y,closest_z,18.0,9,255,255,255)
 end
 
 display_cleanup = routine do
   remove_blip(blip)
+  terminate_all_scripts_with_this_name("xcrncol")
 end
 
 display_nearest_pickup = routine do
@@ -86,12 +144,26 @@ display_nearest_pickup = routine do
   end
 end
 
+display_nearest_tag = routine do
+  if displayed_float == displayed_float2
+    # do nothing
+    displayed_float = displayed_float2
+  else
+    display_cleanup()
+    display_setup()
+    displayed_float2 = displayed_float
+  end
+end
+
 loop do
   wait(10)
   if is_player_playing(PLAYER)
     $player_x,$player_y,$player_z = get_char_coordinates(PLAYER_CHAR)
 
-    if collectable_type == 3
+    if collectable_type == 1
+      get_nearest_tag()
+      display_nearest_tag()
+    elsif collectable_type == 3
       get_nearest_valid_pickup()
       display_nearest_pickup()
     end
