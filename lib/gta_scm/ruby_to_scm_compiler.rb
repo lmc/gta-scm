@@ -163,6 +163,14 @@ class GtaScm::RubyToScmCompiler
   def emit_method_def(node)
     # debugger
     method_name = node.children[0]
+
+    args = {}
+    if node.children[1].andand.children.andand[0].andand.children.andand[2].andand.type == :hash
+      node.children[1].children[0].children[2].children.each do |pair|
+        args[ pair.children[0].children[0] ] = pair.children[1].children[0]
+      end
+    end
+
     # raise "can only handle :args" if node.children[1].type != :args
     method_body = case node.children[1].type
       when :send
@@ -172,7 +180,7 @@ class GtaScm::RubyToScmCompiler
       when :block
         # debugger
         if node.children[1].children[0].type == :send && node.children[1].children[0].children[1] == :routine
-          handle_routine_declare(node)
+          handle_routine_declare(node,args)
         else
           debugger
           raise "cannot handle ???"
@@ -188,11 +196,14 @@ class GtaScm::RubyToScmCompiler
     method_label = self.local_method_names_to_labels["#{method_name}"] = generate_label!
     method_end_label = self.local_method_names_to_labels["#{method_name}_end"] = generate_label!
 
+    end_opcode = [:return]
+    end_opcode = [:terminate_this_script] if args[:end_with] == :terminate_this_script
+
     [
       [:goto, [[self.label_type, method_end_label]]],
       [:labeldef, method_label],
       *method_body,
-      [:return],
+      end_opcode,
       [:labeldef, method_end_label]
     ]
   end
@@ -342,13 +353,7 @@ class GtaScm::RubyToScmCompiler
     return []
   end
 
-  def handle_routine_declare(node)
-    args = {}
-    if node.children[1].andand.children.andand[0].andand.children.andand[2].andand.type == :hash
-      node.children[1].children[0].children[2].children.each do |pair|
-        args[ pair.children[0].children[0] ] = pair.children[1].children[0]
-      end
-    end
+  def handle_routine_declare(node,args)
     code = []
     code << [:labeldef, args[:export]] if args[:export]
     code += transform_node(node.children[1].children[2])
@@ -518,8 +523,14 @@ class GtaScm::RubyToScmCompiler
         debugger
       end
 
-      if args.size != opcode_def.arguments.size
-        raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
+      if opcode_name == :start_new_script
+        args << [:end_var_args]
+      else
+
+        if args.size != opcode_def.arguments.size
+          raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
+        end
+
       end
 
       if force_not

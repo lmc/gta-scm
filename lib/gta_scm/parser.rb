@@ -168,7 +168,7 @@ class GtaScm::Parser < GtaScm::FileWalker
     self.on_eat_node(self.node)
   end
 
-  $dmavar_uses = Set.new
+  # $dmavar_uses = Set.new
 
   def eat_instruction!
     begin
@@ -176,12 +176,10 @@ class GtaScm::Parser < GtaScm::FileWalker
       self.node.eat!(self)
       self.on_eat_node(self.node)
 
-      self.node.arguments.select{|a| a.arg_type_id == 2}.each{|a| $dmavar_uses << a.value}
+      # self.node.arguments.select{|a| a.arg_type_id == 2}.each{|a| $dmavar_uses << a.value}
 
       self.node.jumps.each do |jump|
         jump[:from] = node.offset
-        # debugger
-        # TODO: fix up negative jump offsets here?
         jump[:to] = self.absolute_offset(node.offset,jump[:to]) if jump[:to]
         self.jumps_source2targets[ jump[:from] ] << jump 
         self.jumps_target2sources[ jump[:to]   ] << jump 

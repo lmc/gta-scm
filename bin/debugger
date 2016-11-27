@@ -233,7 +233,7 @@ class GtaScm::LvarsPanel < GtaScm::Panel
         end
       else
         # self.settings[:types] = [:int] * 32
-        # self.settings[:names] = [nil] * 32
+        self.settings[:names] = [nil] * 32
       end
 
 

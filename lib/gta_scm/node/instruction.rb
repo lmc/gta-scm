@@ -118,6 +118,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
     [0x4d,0x00] => [0], # GOTO_IF_FALSE
     [0x4f,0x00] => [0], # START_NEW_SCRIPT
     [0x50,0x00] => [0], # GOSUB
+    [0x71,0x08] => [3,5,7,9,11,13,15,17], # SWITCH_START
+    [0x72,0x08] => [1,3,5,7,9,11,13,15,17], # SWITCH_CONTINUE
   }
   def jump_argument?(arg_idx)
     arg_idxs = JUMP_ARGUMENT_OPCODES[ self.opcode ]
@@ -147,6 +149,8 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
         [{type: :gosub,    to: self.arguments[0].value}]
       when [0x51,0x00] # RETURN
         [{type: :return}]
+      when [0x71,0x08], [0x72,0x08] # SWITCH_START / SWITCH_CONTINUE
+        jumps_for_switch
       else
         []
       end
@@ -154,5 +158,12 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
 
   def absolute_offset(value)
     
+  end
+
+  def jumps_for_switch
+    jump_args = JUMP_ARGUMENT_OPCODES[self.opcode]
+    jump_args.map do |jump_arg_idx|
+      {type: :switch, to: self.arguments[jump_arg_idx].value}
+    end
   end
 end

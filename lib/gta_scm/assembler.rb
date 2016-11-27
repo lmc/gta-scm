@@ -32,6 +32,7 @@ class GtaScm::Assembler::Base
   attr_accessor :var_size
 
   attr_accessor :new_gxt_entries
+  attr_accessor :paddings
 
 
   def initialize(input_dir)
@@ -48,6 +49,7 @@ class GtaScm::Assembler::Base
 
     self.vars_to_use = {}
     self.new_gxt_entries = {}
+    self.paddings = {}
   end
 
   def assemble(scm,out_path)
@@ -169,7 +171,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
 
     # if self.new_gxt_entries.present?
-    if out_path.is_a?(String) && true
+    if out_path.is_a?(String) && false
       puts "patching new GXT entries"
       gxt_file = GtaScm::GxtFile.new(File.open("./games/san-andreas/Text/american.gxt","r"))
       gxt_file.read_tabl_sa!
@@ -190,6 +192,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
     # logger.info "Complete, final size: #{File.size(out_path)} bytes"
     logger.info "Complete"
+    logger.info self.paddings.inspect
     logger.info self.external_offsets.inspect
     logger.info self.include_sizes.inspect
     if out_path.is_a?(String)
@@ -405,7 +408,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           GtaScm::Node::Raw.new( [0] * tokens[1][0] )
         when :PadUntil
           zeros = tokens[1][0] - self.nodes.next_offset
-          logger.info "Inserting #{zeros} zeros #{self.nodes.next_offset}"
+          end_offset = offset + zeros
+          logger.info "Inserting #{zeros} zeros #{self.nodes.next_offset} until #{end_offset}"
+          self.paddings[end_offset] = zeros
           GtaScm::Node::Raw.new( [0] * zeros )
         when :IncludeBin
           bytes = File.read(tokens[1][0],(tokens[1][2] - tokens[1][1]),tokens[1][1])

@@ -1,4 +1,4 @@
-script_name("injectd")
+script_name("xinject")
 should_terminate = 0
 
 terminate = routine do

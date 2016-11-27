@@ -117,11 +117,18 @@
 
 
 % == Free Space =======================
+(IncludeRuby "global-variable-declares")
 (IncludeRuby "bitpacker")
+(IncludeRuby "corona")
 
 (labeldef helper)
 (set_var_int ((var test) (int8 0)))
+(start_new_script ((label collectables_finder) (end_var_args)))
+% (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
 (IncludeRuby "helper")
+
+(labeldef collectables_finder)
+(IncludeRuby "collectables-finder")
 
 % =====================================
 
@@ -135,6 +142,6 @@
 
 % =====================================
 
-(DefineGxt "MAIN" "GSCM100" "Text text text")
+(DefineGxt "MAIN" "GSCM100" "Lol lol lol")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")

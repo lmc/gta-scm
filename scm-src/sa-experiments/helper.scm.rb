@@ -1,5 +1,4 @@
 script_name "xhelper"
-BREAKPOINT = [:int32,57355]
 
 emit(false) do
   playing = 0
@@ -30,6 +29,14 @@ t_z = 11.0
 # set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 task_jetpack(PLAYER_CHAR)
 
+# THREAD_COLLECTABLES_FINDER = [:label, :thre]
+# start_new_script(THREAD_COLLECTABLES_FINDER)
+
+THREAD_CORONA = [:label, :thread_corona]
+# END_VAR_ARGS = [:end_var_args]
+# (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
+start_new_script(THREAD_CORONA,2500.0,-1670.0,20.0,8.0,9,255,255,255)
+
 loop do
   wait 0
 
@@ -47,7 +54,6 @@ loop do
     vehicle = get_car_char_is_using(PLAYER_CHAR)
     if vehicle > 0
       in_vehicle = 1
-
     else
       in_vehicle = 0
     end
@@ -55,17 +61,14 @@ loop do
   else
     playing = 0
   end
-    # gosub(BREAKPOINT)
 
   if $watchdog_timer == 0
     $watchdog_timer = 0
   end
 
-  use_text_commands(0)
-  display_text(100.0,100.0,"DOLLAR")
-  display_text(200.0,100.0,"GSCM100")
-
-  # if $_21828 == 1
-
-  # end
+  if $debugvar1 == 1
+    use_text_commands(0)
+    display_text(100.0,100.0,"DOLLAR")
+    display_text(200.0,100.0,"GSCM100")
+  end
 end

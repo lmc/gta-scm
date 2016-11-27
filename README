@@ -21,7 +21,25 @@ NEXT:
 * generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
-* gxt compile pipeline (rebuild GXT files, insert new entries)
+* game: remake collectables finder in ruby
+* game: chill with homies
+
+* compiler: gosubs as a condition (return_true/false opcodes)
+* compiler: handle `return` with and without args
+* compiler: perhaps make gosubs/jumps shorter by assembling as int16 where possible?
+* compiler: perhaps make gosubs/jumps shorter by making binary lookup table of offsets, then accessing with gosub(dmavar 50000 label_name) ?
+* compiler: perhaps make text lookups shorter by assembling binary table, then using global var array into it? (8 * 211+1 = 1696)
+
+* disassembler: tag all jumps
+* disassembler: make list of label names, use in disassembly
+* disassembler: make list of variable names, use in disasm
+* disassembler: use dmavar, not var in disasm
+
+* more RPCs:
+    teleport player: x/y/z/heading/interior id
+* disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)
+
+* DONE: gxt compile pipeline (rebuild GXT files, insert new entries)
 * DONE: generate HeaderExternal from files automatically
 * DONE: build external scripts first, patch into script.img, generate header, compile main script
 * DONE: main idle loop at 60030->61763
@@ -29,8 +47,6 @@ NEXT:
 * DONE: patch save game code to make save-game safe (kill threads/delete blips?)
 * DONE: save thread: gosub to save opcode at 88020
 * DONE: disassembly mission bytecode in-memory, patch ps2 keyboard checks (15 bytes total (4+4+7) -> goto (7), 4 no-ops (8))
-* more RPCs: teleport player, spawn car
-* disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)
 * DONE: compiler header-less mission_label SCMs (with assembler directive?)
 * DONE: insert them back into script.img
 * DONE: load from main.scm with bootstrap code
