@@ -2,7 +2,7 @@
 script_name("xcolfnd")
 THREAD_CORONA = [:label,:thread_corona]
 
-if $_0 == 0
+if emit(false)
   tmp_i = 0               # lvar 0 used for ext script id
   collectable_type = 0    # 1: gang tags, 2: snapshots, 3: horseshoes, 4: oysters, 5: import/export
   end_after_gametime = 0  # at this gametime, end the thread
@@ -18,8 +18,6 @@ if $_0 == 0
   tmp_z = 0.0
   tmp_x2 = 0.0
   tmp_y2 = 0.0
-  tmp_x3 = 0.0
-  tmp_y3 = 0.0
   tmp_i2 = 0
   tmp_pickup = 0
   distance = 0.0
@@ -32,7 +30,6 @@ if $_0 == 0
   closest_y = 0.0
   closest_z = 0.0
   blip = -1
-  tag_sprayed = 0
 end
 
 
@@ -97,10 +94,10 @@ get_nearest_tag = routine do
     end
 
     tmp_x,tmp_y,tmp_z = get_nearest_tag_position(tmp_x,tmp_y,tmp_z)
-    tag_sprayed = get_percentage_tagged_in_area(tmp_x,tmp_y,tmp_x,tmp_y)
 
     # is the tag unsprayed
-    if tag_sprayed < 100
+    tmp_i2 = get_percentage_tagged_in_area(tmp_x,tmp_y,tmp_x,tmp_y)
+    if tmp_i2 < 100
       distance = get_distance_between_coords_2d($player_x,$player_y, tmp_x, tmp_y)
 
       if distance < closest_float
@@ -114,7 +111,7 @@ get_nearest_tag = routine do
     end
 
     tmp_i += 1
-    if tmp_i > 100
+    if tmp_i > ATTEMPTS_PER_RUN
       break
     end
   end

@@ -35,7 +35,7 @@ class GtaScm::RubyToScmCompiler
       if node.children[0].type == :send && node.children[0].children[1] == :loop
         emit_loop(node,node.children[2])
       elsif node.children[0].type == :send && node.children[0].children[1] == :emit
-        handle_conditional_emit(node)
+        handle_conditional_emit(node,node.children[0].children[2].type == :true)
       else
         raise "unknown block type: #{node.inspect}"
       end
@@ -82,7 +82,11 @@ class GtaScm::RubyToScmCompiler
 
     when :if
 
-      emit_if(node)
+      if node.children[0].type == :send && node.children[0].children[1] == :emit
+        handle_conditional_emit(node, node.children[0].children[2].type == :true)
+      else
+        emit_if(node)
+      end
 
     when :send
 
@@ -109,9 +113,13 @@ class GtaScm::RubyToScmCompiler
     ttt
   end
 
-  def handle_conditional_emit(node)
-    do_emit = node.children[0].children[2].type == :true
-    nodes = transform_node(node.children[2])
+  def handle_conditional_emit(node,do_emit = true)
+    # do_emit = node.children[0].children[2].type == :true
+    if node.children[1].type == :begin
+      nodes = transform_node(node.children[1])
+    else
+      nodes = transform_node(node.children[2])
+    end
     if do_emit
       nodes
     else

@@ -439,6 +439,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       if self.emit_nodes
         node.offset = offset
         self.nodes << node
+      else
+        # debugger
+        node
       end
 
       self.offsets_to_files_lines[offset] = [file_name,line_idx]
@@ -458,7 +461,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   end
 
   def use_touchup(node_offset,array_keys,touchup_name,use_type = nil)
-    self.touchup_uses[touchup_name] << [node_offset,array_keys]
+    if self.emit_nodes
+      self.touchup_uses[touchup_name] << [node_offset,array_keys]
+    end
     if use_type
       self.touchup_types[touchup_name] = use_type
     end
