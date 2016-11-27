@@ -8,6 +8,7 @@ class GtaScm::RubyToScmCompiler
   def initialize
     self.local_method_names_to_labels = {}
     self.label_prefix = "label_"
+    self.var_arrays = {}
     install_constants!
   end
 
@@ -595,8 +596,10 @@ class GtaScm::RubyToScmCompiler
         arg_def = opcode_def.arguments[i]
         if arg.type == :lvasgn
           args << lvar( arg.children[0] , arg_def[:type] )
+        elsif arg.type == :gvasgn
+          args << gvar( arg.children[0] , arg_def[:type] )
         else
-          raise "can only handle lvar assigns"
+          raise "can only handle lvar assigns #{variable_node.inspect}"
         end
       end
     else
@@ -709,9 +712,9 @@ class GtaScm::RubyToScmCompiler
       # elsif node.children[1].is_a?(Symbol)
       #   return emit_opcode_call(node)
       else
-        raise "???"
+        raise "??? #{node.inspect}"
       end
-    elsif node.children.size == 4 && node.children[1].is_a?(Symbol)
+    elsif node.children.size >= 4 && node.children[1].is_a?(Symbol)
       return emit_opcode_call(node)
     else
       debugger
@@ -807,8 +810,11 @@ class GtaScm::RubyToScmCompiler
         array_var = node.children[0]
         index_type = node.children[2].type == :gvar ? :var : :lvar
         index_var = node.children[2]
+        # debugger
         if array_type == :var_array && (array_def = self.var_arrays[ node.children[0].children[0] ])
           [ :var_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
+        elsif array_var.type == :gvar && array_var.children[0] == :$_0
+          [ :var_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
         else
           raise "undefined array #{node.inspect}"
         end

@@ -398,7 +398,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
 
     data = self.settings[:gvars].map.each_with_index do |gvar,idx|
       label = self.settings[:names][idx] || "gvar #{gvar}"
-      value = process.read_scm_var(gvar,self.settings[:types][idx])
+      value = process.read_scm_var(gvar,self.settings[:types][idx]).to_s
       ["#{gvar}",label,value]
     end.compact
     self.elements[:table].set_table(data)
