@@ -146,6 +146,7 @@ routines do
     end
   end
 
+  # FIXME: does this correctly handle no valid pickups?
   display_nearest_tag = routine do
     if displayed_float == displayed_float2
       # do nothing

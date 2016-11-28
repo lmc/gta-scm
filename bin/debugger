@@ -20,6 +20,10 @@ require 'rutui'
 require 'gta_scm/rutui_ext'
 Thread.abort_on_exception = true
 SIZE = RuTui::Screen.size
+# current font size = 102 x 60
+# smaller font size = 120 x 76
+#   wider thread list - thread ids, favourite threads, group named threads together with count
+
 # puts SIZE
 # exit
 

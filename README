@@ -23,11 +23,11 @@ NEXT:
 
 * DONE: game: remake collectables finder in ruby
 * game: remake collectables finder manager in ruby
-* game: rewrite rpc thread in ruby
+* game: rewrite rpc thread in ruby (?)
 * game: chill with homies
 
-* compiler: gosubs as a condition (return_true/false opcodes)
-* compiler: handle `return` with and without args
+* DONE: compiler: gosubs as a condition (return_true/false opcodes)
+* compiler: handle `return` with and without args (return $var == -1)
 * compiler: perhaps make gosubs/jumps shorter by assembling as int16 where possible?
 * compiler: perhaps make gosubs/jumps shorter by making binary lookup table of offsets, then accessing with gosub(dmavar 50000 label_name) ?
 * compiler: perhaps make text lookups shorter by assembling binary table, then using global var array into it? (8 * 211+1 = 1696)
@@ -57,6 +57,7 @@ NEXT:
 * car-id-2-gxt if space permits? (~3600 bytes)
 * DONE: bitpacker accumulator routine
 * 2d/3d iterator helper
+* in-game year/month/day/hour/minute time value routine (use bitpacking?)
 
 * Ruby compiler
 * DONE: singleton global variable assigner
@@ -69,7 +70,7 @@ NEXT:
 * DONE: routines {} block, avoids jumps around routines
 * function calls using global vars for arguments/return values
 * thread {} block, named + scoped local vars (+export symbols)
-* conditional gosubs (routine call as condition, routine calls return_true/false + return)
+* DONE: conditional gosubs (routine call as condition, routine calls return_true/false + return)
 * DONE: debugger/breakpoints (reuse rpc code?) (rpc_breakpoints_enabled,rpc_breakpoint_pc) (GXTs: CHEATON, FEM_PWT)
 * DONE: fix parser bugs with global vars, multiple conditionals
 * MOSTLY DONE: pipeline for code/img/gxt compiles/installs

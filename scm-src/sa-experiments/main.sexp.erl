@@ -144,4 +144,4 @@
 
 % (DefineGxt "MAIN" "GSCM100" "Lol lol lol")
 (AssignGlobalVariables)
-% (AssembleExternal 78 "ext78")
+(AssembleExternal 78 "ext78")

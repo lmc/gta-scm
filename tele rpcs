@@ -1,0 +1,27 @@
+
+# unused 7/11  1
+sudo bundle exec ./bin/rpc 3 -25.8 -185.8 1004.0 0.0 17
+
+# unused 7/11  2
+sudo bundle exec ./bin/rpc 3 6.0 -29.0 1004.0 0.0 10
+
+# unused 7/11  3
+sudo bundle exec ./bin/rpc 3 -25.0 -139.0 1004.0 0.0 16
+
+
+
+# unused ammunation  1 (2-storey w/firing range)
+sudo bundle exec ./bin/rpc 3 314.0 -141.0 1000.0 0.0 7
+
+
+# intro airport terminal 
+sudo bundle exec ./bin/rpc 3 -1827.0 7.0 1061.0 0.0 14
+
+# wuzimu's apartment
+sudo bundle exec ./bin/rpc 3 -2158.0 641.0 1052.0 0.0 1
+
+# unused modern safehouse
+sudo bundle exec ./bin/rpc 3 2324.0 -1144.0 1050.0 0.0 12
+
+# sfpd hq
+sudo bundle exec ./bin/rpc 3 246.0 110.0 1004.0 0.0 10

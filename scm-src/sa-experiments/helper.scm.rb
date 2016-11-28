@@ -30,26 +30,6 @@ t_z = 11.0
 task_jetpack(PLAYER_CHAR)
 give_weapon_to_char(PLAYER_CHAR,41,1000)
 
-# THREAD_COLLECTABLES_FINDER = [:label, :thre]
-# start_new_script(THREAD_COLLECTABLES_FINDER)
-
-THREAD_CORONA = [:label, :thread_corona]
-# END_VAR_ARGS = [:end_var_args]
-# (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
-# start_new_script(THREAD_CORONA,2500.0,-1670.0,20.0,8.0,9,255,255,255)
-
-condition_routine_test = routine do
-  if is_ps2_keyboard_key_pressed(1)
-    return false
-  else
-    return true
-  end
-end
-
-# condition_routine_test2 = routine do
-#   return false
-# end
-
 loop do
   wait 100
 
@@ -73,16 +53,5 @@ loop do
     p_weapon = get_current_char_weapon(PLAYER_CHAR)
   else
     playing = 0
-  end
-
-  if $watchdog_timer == 0
-    $watchdog_timer = 0
-  end
-
-  if condition_routine_test()
-    add_one_off_sound(0.0,0.0,0.0,1057)
-    use_text_commands(0)
-    display_text(100.0,100.0,"DOLLAR")
-    display_text(200.0,100.0,"GSCM100")
   end
 end

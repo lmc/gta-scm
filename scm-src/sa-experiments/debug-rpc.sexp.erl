@@ -89,6 +89,19 @@
   (goto ((label debug_rpc_worker_syscall_exit_0)))
 (labeldef debug_rpc_worker_terminate_thread_after)
 
+% syscall 3 = teleport player (0,1,2 = x/y/z, 3 = heading, 4 = interior ID)
+(andor ((int8 0)))
+  (is_int_var_equal_to_number ((dmavar 7068 debug_rpc_syscall) (int8 3)))
+(goto_if_false ((label debug_rpc_worker_teleport_player_after)))
+  
+  (set_char_coordinates ((dmavar 12) (dmavar 7036 debug_rpc_int_arg_0) (dmavar 7040 debug_rpc_int_arg_1) (dmavar 7044 debug_rpc_int_arg_2)))
+  (set_char_heading ((dmavar 12) (dmavar 7048 debug_rpc_int_arg_3)))
+  (set_area_visible ((dmavar 7052 debug_rpc_int_arg_4)))
+  (set_char_area_visible ((dmavar 12) (dmavar 7052 debug_rpc_int_arg_4)))
+
+  (goto ((label debug_rpc_worker_syscall_exit_0)))
+(labeldef debug_rpc_worker_teleport_player_after)
+
 (goto ((label debug_rpc_worker_syscall_complete)))
 
 
@@ -107,9 +120,9 @@
 (set_var_int ((dmavar 7040 debug_rpc_int_arg_1) (int8 0)))
 (set_var_int ((dmavar 7044 debug_rpc_int_arg_2) (int8 0)))
 (set_var_int ((dmavar 7048 debug_rpc_int_arg_3) (int8 0)))
-% (set_var_int ((dmavar 7052 debug_rpc_int_arg_4) (int8 0)))
-% (set_var_int ((dmavar 7056 debug_rpc_int_arg_5) (int8 0)))
-% (set_var_int ((dmavar 7060 debug_rpc_int_arg_6) (int8 0)))
+(set_var_int ((dmavar 7052 debug_rpc_int_arg_4) (int8 0)))
+(set_var_int ((dmavar 7056 debug_rpc_int_arg_5) (int8 0)))
+(set_var_int ((dmavar 7060 debug_rpc_int_arg_6) (int8 0)))
 (set_var_int ((dmavar 7064 debug_rpc_int_arg_7) (int8 0)))
 (set_var_int ((dmavar 7068 debug_rpc_syscall) (int8 0)))
 
