@@ -20,6 +20,8 @@ emit(false) do
   t_x = 0.0
   t_y = 0.0
   t_z = 0.0
+
+  str_name = ""
 end
 
 wait(5000)

@@ -63,7 +63,11 @@ class GtaScm::RubyToScmCompiler
     # for opcodes, assigns seem to be the final args each time
     when :masgn
 
-      [ emit_assignment_opcode_call(node.children[1],node.children[0],:masgn) ]
+      if node.children[1].type == :send
+        [ emit_assignment_opcode_call(node.children[1],node.children[0],:masgn) ]
+      else
+        handle_multiple_assigns(node)
+      end
 
     # global var assign
     when :gvasgn
@@ -187,6 +191,13 @@ class GtaScm::RubyToScmCompiler
     ]
   end
 
+  def handle_multiple_assigns(node)
+    node.children[0].children.each_with_index.map do |left,i|
+      right = node.children[1].children[i]
+      emit_n_var_assign(node,:lvar,left,right)[0]
+    end
+  end
+
   def emit_block(node)
     sexps = []
     node.children.each do |c|
@@ -261,9 +272,9 @@ class GtaScm::RubyToScmCompiler
     self.emit_n_var_assign(node,:var)
   end
 
-  def emit_n_var_assign(node,var_type)
-    left = node.children[0]
-    right = node.children[1]
+  def emit_n_var_assign(node,var_type,left = nil, right = nil)
+    left ||= node.children[0]
+    right ||= node.children[1]
     right_val = nil
 
     if !node.children[0].is_a?(Symbol) && node.children[0].type == :gvar && node.children[1] == :[]=
@@ -307,12 +318,12 @@ class GtaScm::RubyToScmCompiler
     # debugger
     if type == :int
       # right_val ||= [:int32,node.children[1].children[0]]
-      right_val ||= emit_value(node.children[1])
+      right_val ||= emit_value(right)
       left_var = case var_type
       when :var
-        gvar(node.children[0],:int)
+        gvar(left,:int)
       when :lvar
-        lvar(node.children[0],:int)
+        lvar(left,:int)
       else
         raise("???")
       end
@@ -320,12 +331,12 @@ class GtaScm::RubyToScmCompiler
     end
     if type == :float
       # right_val ||= [:float32,node.children[1].children[0]]
-      right_val ||= emit_value(node.children[1])
+      right_val ||= emit_value(right)
       var = case var_type
       when :var
-        gvar(node.children[0],:float)
+        gvar(left,:float)
       when :lvar
-        lvar(node.children[0],:float)
+        lvar(left,:float)
       else
         raise("???")
       end
@@ -414,29 +425,30 @@ class GtaScm::RubyToScmCompiler
     :* => ["mult","by"],
     :/ => ["div","by"],
   }
-  def emit_operator_assign(node,operator = nil)
-    left,right = nil,nil
-    operator ||= nil
+  def emit_operator_assign(node,operator = nil,left = nil, right = nil)
 
-    if node.children.size == 3 && ASSIGNMENT_OPERATORS[ node.children[1] ]
-      left = node.children[0]
-      left_type = left.type
-      left_value = nil
+    if !left && !right
+      if node.children.size == 3 && ASSIGNMENT_OPERATORS[ node.children[1] ]
+        left = node.children[0]
+        left_value = nil
 
-      right = node.children[2]
-      right_type = right.type
-      right_value = nil
+        right = node.children[2]
+        right_value = nil
 
-      operator = node.children[1]
-    elsif node.children.size == 2
-      left = node
-      left_type = node.type
-      right = node.children[1]
-      right_type = right.type
-      operator = :"="
-    else
-      raise "dunno???"
+        operator = node.children[1]
+      elsif node.children.size == 2
+        left = node
+        left_type = node.type
+        right = node.children[1]
+        right_type = right.type
+        operator = :"="
+      else
+        raise "dunno???"
+      end
     end
+    left_type ||= left.type
+    right_type ||= right.type
+
 
     prefix,middle = *ASSIGNMENT_OPERATORS[ operator ]
 
@@ -444,7 +456,7 @@ class GtaScm::RubyToScmCompiler
 
     if right_type == :int || right_type == :float
       opcode_name << "val"
-      right_value = emit_value(node.children[2])
+      right_value = emit_value(right)
     elsif right_type == :lvar
       right_var_type = self.lvar_names_to_types[ right.children[0] ]
       if operator == :"="
@@ -485,7 +497,7 @@ class GtaScm::RubyToScmCompiler
         left_var_type = right.type
       end
 
-      if operator == :"="
+      if operator == :"=" && right_type != :float && right_type != :int
         left_var_type = self.lvar_names_to_types[ right.children[0] ]
         opcode_name << "lvar_#{left_var_type}"
       else
@@ -724,7 +736,7 @@ class GtaScm::RubyToScmCompiler
           opcode_name << "#{left_var_type}_var"          
         else
           debugger
-          raise "can only handle lvars on left side"
+          raise "can only handle lvars on left side #{node.inspect}"
         end
 
         opcode_name << "_#{sign_operator}_"
@@ -758,14 +770,17 @@ class GtaScm::RubyToScmCompiler
         return emit_opcode_call(node)
       end
     elsif node.children.size == 2
-      if label = self.local_method_names_to_labels["#{node.children[1]}"]
+      if node.type == :send
+        return emit_opcode_call(node)
+      elsif label = self.local_method_names_to_labels["#{node.children[1]}"]
         return [:gosub,[[self.label_type,label]]]
-      elsif node.children[0].type == :send && node.children[1] == :!
+      elsif node.children[0] && node.children[0].type == :send
         # negated opcode call
-        return emit_opcode_call(node.children[0],true)
+        return emit_opcode_call(node.children[0],node.children[1] == :!)
       # elsif node.children[1].is_a?(Symbol)
       #   return emit_opcode_call(node)
       else
+        debugger
         raise "??? #{node.inspect}"
       end
     elsif node.children.size >= 4 && node.children[1].is_a?(Symbol)
@@ -800,7 +815,7 @@ class GtaScm::RubyToScmCompiler
 
     # TODO: handle bool check of variable `if var` (node.children[0].type == :lvar)
 
-    if [:send,:and,:or].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:gvasgn,:break].include?(node.children[1].type) && node.children[2].nil? # if/end
+    if [:send,:and,:or].include?(node.children[0].type) && [:begin,:send,:if,:op_asgn,:lvasgn,:gvasgn,:break,:masgn].include?(node.children[1].type) && node.children[2].nil? # if/end
       false_label = generate_label!
       [
         *andor,
@@ -938,6 +953,10 @@ class GtaScm::RubyToScmCompiler
     self.lvar_names_to_types ||= {}
     self.lvar_names_to_ids ||= {}
     self.generate_lvar_counter ||= -1
+
+    if name.is_a?(Parser::AST::Node)
+      name = name.children[0]
+    end
 
     id = if self.lvar_names_to_ids[name]
       if type && self.lvar_names_to_types[name] && type != self.lvar_names_to_types[name]
