@@ -88,6 +88,7 @@ class GtaScm::Parser < GtaScm::FileWalker
         break
       end
     end
+    self.add_jumps_to_nodes!(self.nodes)
   end
 
   def parse_headers!
