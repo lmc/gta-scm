@@ -8,7 +8,7 @@
 # NEXT:
 # ID integers from .ide files
 
-USE_CACHE = false
+USE_CACHE = true
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
@@ -92,7 +92,11 @@ end
 format = ARGV[3].present? ? ARGV[3] : nil
 if format
   logger.info "Outputting as #{format}"
-  dis = GtaScm::Disassembler.const_get(format).new(scm)
+  options = {
+    label_names: "./games/san-andreas/label_names.txt",
+    variable_names: "./games/san-andreas/variable_names.txt",
+  }
+  dis = GtaScm::Disassembler.const_get(format).new(scm,options)
 
   progress = ProgressBar.new(parser.size)
   dis.progress_callback = lambda do |offset,size,calls|

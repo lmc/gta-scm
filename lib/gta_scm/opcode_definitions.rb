@@ -98,10 +98,11 @@ class GtaScm::OpcodeDefinitions < Hash
       end
 
       overwrite_existing = !self[opcode_bytes]
-      if self[opcode_bytes] && self[opcode_bytes].arguments.size != arg_count
+      if self[opcode_bytes] && arg_count != -1 && self[opcode_bytes].arguments.size != arg_count
         # differing arity, allow the new def to overwrite the existing
         overwrite_existing = true
       end
+
       if overwrite_existing
         self[opcode_bytes] = GtaScm::OpcodeDefinition.new(opcode_bytes,name,arg_types)
         self.names2opcodes[name] = opcode_bytes

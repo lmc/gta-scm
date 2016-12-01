@@ -155,7 +155,7 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
     "???"
   end
 
-  def array_ir
+  def array_ir(scm,dis)
     [
       GtaScm::Types.bin2value(self[1],:uint16),
       GtaScm::Types.bin2value(self[2],:uint16),

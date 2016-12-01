@@ -8,6 +8,9 @@ class GtaScm::Disassembler::Base
 
   attr_accessor :output
 
+  attr_accessor :label_names
+  attr_accessor :variable_names
+
   def initialize(scm, options = {})
     self.scm = scm
     self.options = options.reverse_merge(
@@ -16,6 +19,22 @@ class GtaScm::Disassembler::Base
       emit_multiline_headers: true,
       use_enum_arguments: false
     )
+
+    self.label_names = {}
+    if options[:label_names]
+      self.label_names = Hash[ File.read(options[:label_names]).lines.map do |line|
+        offset,name = line.strip.split("=")
+        [offset.to_i,name]
+      end ]
+    end
+
+    self.variable_names = {}
+    if options[:variable_names]
+      self.variable_names = Hash[ File.read(options[:variable_names]).lines.map do |line|
+        offset,name = line.strip.split("=")
+        [offset.to_i,name]
+      end ]
+    end
   end
 
   def disassemble(destination_path)
@@ -86,6 +105,8 @@ class GtaScm::Disassembler::Base
       end
       abs_offset = mission_offset + offset.abs
       :"label_#{abs_offset}"
+    elsif name = self.label_names[offset]
+      :"#{name}"
     else
       :"label_#{offset}"
     end

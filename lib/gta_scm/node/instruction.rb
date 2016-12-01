@@ -54,10 +54,10 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
     ir << name
     if self.arguments.present?
       ir[1] = (self.arguments || []).map.each_with_index do |argument,idx|
-        if argument.end_var_args?
+        arg = if argument.end_var_args?
           [argument.arg_type_sym]
         elsif argument.array?
-          [argument.arg_type_sym].concat(argument.array_ir)
+          [argument.arg_type_sym].concat(argument.array_ir(scm,dis))
         elsif argument.string128?
           [:string128,argument.value]
         elsif argument.istring?
@@ -75,6 +75,12 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
         else
           [argument.arg_type_sym,argument.value]
         end
+
+        if arg[0] == :var && (name = dis.variable_names[ arg[1] ])
+          arg << :"#{name}"
+        end
+
+        arg
       end
     end
     ir

@@ -1,0 +1,16 @@
+8=player
+12=player_char
+292=tmp_x
+296=tmp_y
+300=tmp_z
+520=char_smoke
+524=char_sweet
+528=char_ryder
+544=car_sweet
+588=char_catalina
+792=mission_71_car
+1636=on_mission
+4124=audiol_active
+4128=audiol_string
+4136=audiol_audio_id
+34200=roulette_winnings
