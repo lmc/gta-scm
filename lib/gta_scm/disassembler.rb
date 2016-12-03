@@ -23,6 +23,7 @@ class GtaScm::Disassembler::Base
     self.label_names = {}
     if options[:label_names]
       self.label_names = Hash[ File.read(options[:label_names]).lines.map do |line|
+        next if line.strip.blank?
         offset,name = line.strip.split("=")
         [offset.to_i,name]
       end ]
@@ -31,6 +32,7 @@ class GtaScm::Disassembler::Base
     self.variable_names = {}
     if options[:variable_names]
       self.variable_names = Hash[ File.read(options[:variable_names]).lines.map do |line|
+        next if line.strip.blank?
         offset,name = line.strip.split("=")
         [offset.to_i,name]
       end ]
@@ -181,7 +183,7 @@ class GtaScm::Disassembler::Sexp < GtaScm::Disassembler::Base
 
   def emit_node(offset,node,file = nil)
     output = self.file_for_offset(offset,file)
-    if node.label?
+    if node.label? || self.label_names[offset]
       label = sexp( [:labeldef,self.label_for_offset(node.offset)] )
       output.puts()
       output.puts(label)

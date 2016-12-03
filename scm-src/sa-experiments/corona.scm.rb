@@ -1,4 +1,5 @@
 routines do
+  script_name("xcrngen")
   corona_inner = routine(end_with: nil) do
     if emit(false)
       x = 0.0

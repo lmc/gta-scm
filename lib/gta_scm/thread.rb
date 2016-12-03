@@ -494,4 +494,26 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     "#{thread_id}#{name == 'noname' ? '' : " #{name}"}"
   end
 
+  def prev_opcode_is_wait?(process)
+    opcode_prev = process.read(process.scm_offset + self.scm_pc - 7,8).bytes
+    # data4 << [opcode_prev.reverse[0..7].map{|g| g.to_s(16)}.join(" ")]
+    if opcode_prev.reverse[2..4].reverse == [0x01,0x00,0x04]
+      # data4 << ["int8 wait found"]
+      return true
+    elsif opcode_prev.reverse[3..5].reverse == [0x01,0x00,0x05]
+      # data4 << ["int16 wait found"]
+      return true
+    elsif opcode_prev.reverse[3..5].reverse == [0x01,0x00,0x02]
+      # data4 << ["var wait found"]
+      return true
+    elsif opcode_prev.reverse[3..5].reverse == [0x01,0x00,0x03]
+      # data4 << ["lvar wait found"]
+      return true
+    elsif opcode_prev.reverse[5..7].reverse == [0x01,0x00,0x01]
+      # data4 << ["int32 wait found"]
+      return true
+    end
+    return false
+  end
+
 end

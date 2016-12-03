@@ -116,7 +116,11 @@ class GtaScm::Process
   end
 
   def read(offset,size)
-    Ragweed::Wraposx::vm_read(self.process.task,offset,size)
+    begin
+      Ragweed::Wraposx::vm_read(self.process.task,offset,size)
+    rescue Ragweed::Wraposx::KErrno::INVALID_ADDRESS
+      nil
+    end
   end
 
   def write(offset,value)
