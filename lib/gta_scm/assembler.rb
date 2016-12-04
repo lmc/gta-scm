@@ -12,6 +12,7 @@ class GtaScm::Assembler::Base
 
   attr_accessor :parent
   attr_accessor :external
+  attr_accessor :external_id
 
   attr_accessor :parser
   attr_accessor :nodes
@@ -378,6 +379,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iasm.parent = self
           iasm.code_offset = 0
           iasm.external = true
+          iasm.external_id = external_id
           iasm.copy_touchups_from_parent!
 
           def iasm.install_features!

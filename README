@@ -24,6 +24,7 @@ NEXT:
 * game: remake collectables finder manager in ruby
 * game: rewrite rpc thread in ruby (?)
 * game: chill with homies
+* game: get nearby cars, allows you to ride trams?
 
 * DONE: compiler: gosubs as a condition (return_true/false opcodes)
 * compiler: handle `return` with and without args (return $var == -1)
@@ -37,6 +38,8 @@ NEXT:
 * compiler: trap/exception routines, goto to them to set global var + hit breakpoint in loop
 * compiler: breakpoints: global var to set wait/no-wait on breakpoint loop
 * compiler: tail-call optimisation (convert gosub+return into goto)
+* compiler: treat routine names as arguments (emit as (label routine_name)). ie. gosub(routine) / goto(routine)
+* compiler: function defs with global vars used for arguments/return values, assigned automatically around gosub to routine ( function(args: [:$bitpacker_value,:$bitpacker_bits], returns: [:$bitpacker_value]))
 
 * disassembler: tag all jumps
 * disassembler: make list of label names, use in disassembly
@@ -65,6 +68,11 @@ NEXT:
 * 2d/3d iterator helper
 * in-game year/month/day/hour/minute time value routine (use bitpacking?)
 * state machine helper?
+* distance sorter helper?
+* modulo helper
+* get nearby cars/actors helper
+
+useful for spawning cars? GET_PARKING_NODE_IN_AREA
 
 * Ruby compiler
 * DONE: singleton global variable assigner

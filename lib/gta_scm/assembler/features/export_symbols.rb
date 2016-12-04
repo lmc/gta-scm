@@ -9,6 +9,8 @@ module GtaScm::Assembler::Feature::ExportSymbols
       attr_accessor :threads
       attr_accessor :threads_lvars
       attr_accessor :gvars_names
+      attr_accessor :external_label_map
+      attr_accessor :external_threads
     end
     self.var_types = Hash.new
     self.label_map = Hash.new
@@ -16,6 +18,8 @@ module GtaScm::Assembler::Feature::ExportSymbols
     self.threads = Hash.new
     self.threads_lvars = Hash.new{|h,k| h[k] = {}}
     self.gvars_names = Hash.new
+    self.external_label_map = Hash.new{|h,k| h[k] = {}}
+    self.external_threads = Hash.new{|h,k| h[k] = {}}
   end
 
   def on_complete
@@ -95,6 +99,10 @@ module GtaScm::Assembler::Feature::ExportSymbols
     self.includes << { offset: offset, node: node, tokens: tokens }
   end
 
+  def interesting_label?(label)
+    !label.match(/^(l_|label_)/)
+  end
+
   def export_symbols!
     if self.parent
       self.parent.allocated_vars.merge!(self.allocated_vars)
@@ -102,15 +110,26 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
       return if !self.parent.respond_to?(:label_map)
 
-      self.label_map.each_pair do |label,offset|
-        self.parent.label_map[label] = offset + self.code_offset
+      if self.external
+        self.label_map.each_pair do |label,offset|
+          self.parent.external_label_map[self.external_id][label] = offset + self.code_offset
+        end
+      else
+        self.label_map.each_pair do |label,offset|
+          self.parent.label_map[label] = offset + self.code_offset
+        end
       end
 
       self.threads.each_pair do |thread_name,offset|
-        if offset
-          self.parent.threads[thread_name] = offset + self.code_offset
+        value = if offset
+          offset + self.code_offset
         else
-          self.parent.threads[thread_name] = nil
+          nil
+        end
+        if self.external
+          self.parent.external_threads[self.external_id][thread_name] = value
+        else
+          self.parent.threads[thread_name] = value
         end
       end
       
@@ -153,10 +172,17 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
         data[:labels] = {}
         self.label_map.each do |label,offset|
-          if !label.match(/^(l_|label_)/)
+          if self.interesting_label?(label)
             data[:labels][label] = offset
           end
         end
+
+        data[:external_labels] = self.external_label_map
+        data[:external_labels].each_pair do |external_id,label_map|
+          label_map.select!{|k,v| self.interesting_label?(k) }
+        end
+
+        data[:external_threads] = self.external_threads
 
         f << JSON.pretty_generate(data)
       end

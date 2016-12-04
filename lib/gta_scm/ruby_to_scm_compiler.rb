@@ -216,7 +216,7 @@ class GtaScm::RubyToScmCompiler
     # debugger
     method_name = node.children[0]
 
-    args = {}
+    args = {name: method_name}
     if node.children[1].andand.children.andand[0].andand.children.andand[2].andand.type == :hash
       node.children[1].children[0].children[2].children.each do |pair|
         args[ pair.children[0].children[0] ] = pair.children[1].children[0]
@@ -412,6 +412,7 @@ class GtaScm::RubyToScmCompiler
   def handle_routine_declare(node,args)
     code = []
     code << [:labeldef, args[:export]] if args[:export]
+    code << [:labeldef, :"routine_#{args[:name]}"]
     code += transform_node(node.children[1].children[2])
     code
   end
