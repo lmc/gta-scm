@@ -88,8 +88,11 @@ routines do
           entry_index = closest_entry_index
           read_entry_array()
           entry_z += SHIM_Z_MARKERS
+
+          # possibly use this instead? SET_BLIP_ENTRY_EXIT
           remove_user_3d_marker(closest_entry_marker)
           closest_entry_marker = create_user_3d_marker(entry_x,entry_y,entry_z,12)
+
           closest_entry_index = -1
           closest_entry_distance = 99999.9
         end
@@ -113,9 +116,12 @@ routines do
   end
 
   do_teleport_to_exit = routine do
-    set_char_area_visible(PLAYER_CHAR,exit_i)
     set_area_visible(exit_i)
+    set_char_area_visible(PLAYER_CHAR,exit_i)
     load_scene(exit_x,exit_y,exit_z)
+
+    # is this needed? peds don't seem to spawn inside unlike when proper enex used
+    set_ped_density_multiplier(1.0)
 
     exit_z -= SHIM_Z_EXITS
     set_char_coordinates(PLAYER_CHAR,exit_x, exit_y, exit_z)

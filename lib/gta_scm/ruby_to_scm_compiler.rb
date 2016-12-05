@@ -100,8 +100,9 @@ class GtaScm::RubyToScmCompiler
 
       if node.children[1] == :debugger
         emit_breakpoint()
+      elsif node.children[1] == :emit
+        emit_raw(node)
       elsif node.children[1] == :[]= && node.children[0].type == :gvar
-        # debugger
         emit_global_var_assign(node)
       else
         [ emit_opcode_call(node) ]
@@ -561,6 +562,7 @@ class GtaScm::RubyToScmCompiler
 
   end
 
+  attr_accessor :emit_opcode_call_callback
   def emit_opcode_call(node,force_not = false)
     if node.children[1] == :!
       force_not = true
@@ -583,6 +585,10 @@ class GtaScm::RubyToScmCompiler
       # if args.nil? || opcode_def.arguments.nil?
       #   debugger
       # end
+
+      if self.emit_opcode_call_callback
+        self.emit_opcode_call_callback.call(opcode_def,opcode_name,args)
+      end
 
       if !opcode_def
         debugger
@@ -801,6 +807,13 @@ class GtaScm::RubyToScmCompiler
       [:gosub,[[:int32, BREAKPOINT_PC]]],
       [:labeldef,label]
     ]
+  end
+
+  def emit_raw(node)
+    args = []
+    args << node.children[2].children[0]
+    args << node.children[3].children.map{|n| n.children[0]}
+    [args]
   end
 
   def emit_if(node)

@@ -68,6 +68,8 @@
 % 7084 - debug_rpc_feedback_enabled
 (labeldef debug_rpc)
 (Include "debug-rpc")
+(labeldef debug_breakpoint)
+(IncludeRuby "debug-breakpoint")
 % =====================================
 
 % == External Loader ==================
@@ -123,22 +125,22 @@
 
 (labeldef helper)
 (set_var_int ((var test) (int8 0)))
-(start_new_script ((label collectables_finder) (int8 -1) (int8 1) (end_var_args)))
-(start_new_script ((label interior_teleporter) (int8 -1) (end_var_args)))
-(start_new_script ((label test) (int8 -1) (end_var_args)))
+% (start_new_script ((label collectables_finder) (int8 -1) (int8 1) (end_var_args)))
+% (start_new_script ((label interior_teleporter) (int8 -1) (end_var_args)))
+% (start_new_script ((label test) (int8 -1) (end_var_args)))
 % (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
 (IncludeRuby "helper")
 
-(labeldef collectables_finder)
-(IncludeRuby "collectables-finder")
+% (labeldef collectables_finder)
+% (IncludeRuby "collectables-finder")
 
-(labeldef interior_teleporter)
-(IncludeRuby "interior-teleporter")
+% (labeldef interior_teleporter)
+% (IncludeRuby "interior-teleporter")
 
-(labeldef test)
-(wait ((int8 0)))
-(get_name_of_entry_exit_char_used ((dmavar 12) (var_string16 5008 teststr)))
-(goto ((label test)))
+% (labeldef test)
+% (wait ((int8 0)))
+% (get_name_of_entry_exit_char_used ((dmavar 12) (var_string16 5008 teststr)))
+% (goto ((label test)))
 
 % =====================================
 

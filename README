@@ -46,6 +46,8 @@ NEXT:
 * disassembler: make list of variable names, use in disasm
 * disassembler: use dmavar, not var in disasm
 
+* debugger: use electron for UI
+
 * more RPCs:
   DONE: teleport player: x/y/z/heading/interior id
 * DONE-FIXED: disable EmitNode feature, is dangerous (tries to put touchups into unassembled instructions)

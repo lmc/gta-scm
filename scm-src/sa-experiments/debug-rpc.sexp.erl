@@ -137,17 +137,17 @@
 
 % breakpoint handler
 % pause game as best we can, wait for external debugger to set debug_breakpoint_enabled = false
-(labeldef debug_breakpoint)
-(set_var_int ((dmavar 7076 debug_breakpoint_enabled) (int8 1)))
+% (labeldef debug_breakpoint)
+% (set_var_int ((dmavar 7076 debug_breakpoint_enabled) (int8 1)))
 
-(labeldef debug_breakpoint_idle)
-% (wait ((int8 0)))
+% (labeldef debug_breakpoint_idle)
+% % (wait ((int8 0)))
 
-(andor ((int8 21)))
-  (is_int_var_equal_to_number ((dmavar 7076 debug_breakpoint_enabled) (int8 0)))
-  (is_int_var_equal_to_number ((dmavar 7080 debug_breakpoint_pc) (int8 0)))
-(goto_if_false ((label debug_breakpoint_idle)))
+% (andor ((int8 21)))
+%   (is_int_var_equal_to_number ((dmavar 7076 debug_breakpoint_enabled) (int8 0)))
+%   (is_int_var_equal_to_number ((dmavar 7080 debug_breakpoint_pc) (int8 0)))
+% (goto_if_false ((label debug_breakpoint_idle)))
 
-(set_var_int ((dmavar 7076 debug_breakpoint_enabled) (int8 0)))
-(return)
-(goto ((label debug_breakpoint)))
+% (set_var_int ((dmavar 7076 debug_breakpoint_enabled) (int8 0)))
+% (return)
+% (goto ((label debug_breakpoint)))

@@ -540,6 +540,8 @@ class GtaScm::BreakpointPanel < GtaScm::Panel
       return
     end
 
+    return
+
     self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , :int32 )
     self.settings[:breakpoint_waiting] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_enabled") , :int32 )
     str_enable = self.settings[:breakpoint_enabled] == 1 ? "o: disable" : "o: enable"

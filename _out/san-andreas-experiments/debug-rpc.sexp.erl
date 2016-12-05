@@ -121,7 +121,7 @@
 (set_var_int ((var debug_breakpoint_enabled) (int8 1)))
 
 (labeldef debug_breakpoint_idle)
-% (wait ((int8 0)))
+(wait ((int8 0)))
 
 (andor ((int8 21)))
   (is_int_var_equal_to_number ((var debug_breakpoint_enabled) (int8 0)))

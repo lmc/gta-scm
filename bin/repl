@@ -1,0 +1,131 @@
+#!/usr/bin/env ruby
+
+# sudo bundle exec ./bin/debugger
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+print "\033]0;GtaScm Debugger\a"
+print "\n"
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+
+process.detect_pid_and_attach!
+
+scm = GtaScm::Scm.load_string("san-andreas","")
+scm.load_opcode_definitions!
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+Thread.abort_on_exception = true
+SIZE = RuTui::Screen.size
+RuTui::Theme.create :scm, {
+  :background => RuTui::Pixel.new(236,234,":"),
+  :border     => RuTui::Pixel.new(103,234,"-"),
+  :textcolor  => 250,
+  # :highlight  => 234,
+  # :highlight_fg  => 134,
+  :highlight  => 244,
+  :highlight_fg  => 234,
+  :rainbow    => [1,3,11,2,4,5]
+}
+RuTui::Theme.use :scm
+
+
+BREAKPOINT_VARS = [:breakpoint_enabled,:breakpoint_resumed,:breakpoint_halt_vm,:breakpoint_do_exec]
+BREAKPOINT_RETURN_VARS = [:breakpoint_repl_ret0,:breakpoint_repl_ret1,:breakpoint_repl_ret2,:breakpoint_repl_ret3]
+def print_breakpoint_status(process)
+  vars = {}
+  BREAKPOINT_VARS.each do |var|
+    vars[var] = process.read_scm_var(var,:int32)
+  end
+
+  # vars.each_pair do |k,v|
+  #   puts "  #{k}: #{v}"
+  # end
+  breakpoint_script = process.threads.detect{|t| t.active? && !t.prev_opcode_is_wait?(process)}
+  if breakpoint_script
+    puts "Script ID #{breakpoint_script.thread_id} '#{breakpoint_script.name}' at breakpoint"
+  end
+
+  puts "c: resume, d: disable breakpoints"
+end
+
+def compile_input(input,process,scm)
+  offset = 0
+  parsed = Parser::CurrentRuby.parse(input)
+
+  # hackily tell assembler to assign code/variables at alternate offsets
+  asm = GtaScm::Assembler::Sexp.new(nil)
+  asm.code_offset = offset
+  def asm.install_features!
+    class << self
+      include GtaScm::Assembler::Feature::VariableAllocator
+      include GtaScm::Assembler::Feature::VariableHeaderAllocator
+    end
+    self.on_feature_init()
+  end
+
+  compiler = GtaScm::RubyToScmCompiler.new
+  compiler.scm = scm
+  compiler.external = false
+
+  return_vars_types = []
+  compiler.emit_opcode_call_callback = lambda do |definition,name,args|
+    return_vars = BREAKPOINT_RETURN_VARS.dup
+    until definition.arguments.size == args.size
+      return_var = return_vars.shift
+      return_var_dma = process.scm_var_offset_for(return_var)
+      arg = [:dmavar,return_var_dma,return_var]
+      return_type = definition.arguments[args.size].andand[:type] || :int32
+      return_vars_types << return_type
+      args << arg
+    end
+  end
+  instructions = compiler.transform_node(parsed)
+  
+  bytecode = ""
+
+  bytecode << asm.assemble_instruction(scm,offset, instructions[0]).to_binary
+
+  breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)
+  bytecode << asm.assemble_instruction(scm,offset, [:goto,[[:int32,breakpoint_offset]]]).to_binary
+
+  [bytecode,return_vars_types]
+end
+
+puts "GTA-SCM console"
+puts "Waiting for breakpoint..."
+while process.read_scm_var(:breakpoint_enabled,:int32) == 0
+  sleep 0.1
+end
+print_breakpoint_status(process)
+loop do
+  print " > "
+  input = gets.strip
+
+  case input
+  when "c"
+    process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
+  when "d"
+    process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
+  else
+    bytecode,return_vars_types = compile_input(input,process,scm)
+    patchsite_offset = process.scm_label_offset_for(:debug_exec)
+    process.write(process.scm_offset + patchsite_offset, bytecode)
+    process.write_scm_var( :breakpoint_do_exec , 1 , :int32 )
+    until process.read_scm_var( :breakpoint_do_exec , :int32) == 0
+      sleep 0.1
+    end
+    return_values = BREAKPOINT_RETURN_VARS[0...return_vars_types.size].map.each_with_index do |var,idx|
+      process.read_scm_var(var,return_vars_types[idx])
+    end
+    puts "=> #{return_values.inspect}"
+  end
+
+end
+

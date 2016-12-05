@@ -25,8 +25,11 @@ emit(false) do
 end
 
 wait(5000)
+wait(5000)
+wait(5000)
+wait(5000)
 
-city = 2
+city = 1
 
 # task_jetpack(-1)
 # goto(1)
@@ -40,9 +43,12 @@ elsif city == 3
   t_y = 1390.0
   t_z = 11.0
 end
-set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
-task_jetpack(PLAYER_CHAR)
+# set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+# task_jetpack(PLAYER_CHAR)
 # give_weapon_to_char(PLAYER_CHAR,41,1000)
+
+LABEL_BREAKPOINT = [:label,:debug_breakpoint]
+gosub(LABEL_BREAKPOINT)
 
 loop do
   wait 100
@@ -50,7 +56,7 @@ loop do
 
   if is_player_playing(PLAYER)
     playing = 1
-    clear_wanted_level(PLAYER)
+    # clear_wanted_level(PLAYER)
     p_x,p_y,p_z = get_char_coordinates(PLAYER_CHAR)
     p_heading = get_char_heading(PLAYER_CHAR)
     p_height = get_char_height_above_ground(PLAYER_CHAR)
