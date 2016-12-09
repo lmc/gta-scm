@@ -72,12 +72,6 @@
 (IncludeRuby "debug-breakpoint")
 % =====================================
 
-% == External Loader ==================
-% Global vars used:
-% 4492 - external 78 instance count
-(Include "external-loader")
-% =====================================
-
 % Menu
 % Global vars used:
 % 7120
@@ -117,6 +111,12 @@
 % =====================================
 
 
+
+% == External Loader ==================
+% Global vars used:
+% 4492 - external 78 instance count
+(Include "external-loader")
+% =====================================
 
 % == Free Space =======================
 (IncludeRuby "global-variable-declares")

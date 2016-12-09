@@ -14,11 +14,6 @@ DEBUG_EXEC = [:label, :debug_exec]
 routines do
 
   debug_breakpoint = routine(export: :debug_breakpoint) do
-    $breakpoint_enabled = 1
-    $breakpoint_resumed = 0
-    $breakpoint_halt_vm = 1
-    $breakpoint_do_exec = 0
-
     $breakpoint_resumed = 0
     $breakpoint_do_exec = 0
 
@@ -40,6 +35,19 @@ routines do
     emit(:Rawhex,["B6","05"])
     emit(:Padding,[128])
     goto(DEBUG_BREAKPOINT)
+  end
+
+  # thread for handling execution requests from the external REPL
+  # simply sets $breakpoint_halt_vm = 0 so the game doesn't lock up during the breakpoint
+  # then hits the breakpoint in a loop so we can execute code in this thread from the REPL
+  debug_repl = routine(export: :debug_repl) do
+    script_name("xrepl")
+    $breakpoint_halt_vm = 0
+    $breakpoint_enabled = 1
+    loop do
+      wait(0)
+      debug_breakpoint()
+    end
   end
 
 end

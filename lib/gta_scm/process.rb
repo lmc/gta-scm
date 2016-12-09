@@ -242,6 +242,9 @@ class GtaScm::Process
 
   def scm_var_offset_for(variable_name)
     variable_name = variable_name.to_s
+    if matches = variable_name.match(/^_(\d+)$/)
+      return matches[1].to_i
+    end
     self.symbols_var_offsets[variable_name] || raise("no scm_var_offset_for #{variable_name.inspect}")
   end
 

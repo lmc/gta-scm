@@ -100,6 +100,10 @@ class GtaScm::Scm
     end
   end
 
+  def opcode_names
+    self.opcodes.names2opcodes
+  end
+
 
   # Parse the scm_file, building our internal structures off it
   # def parse!
