@@ -24,43 +24,44 @@ if emit(false)
   closest_entry_marker = 0
 end
 
-ENTRIES_COUNT = 6
 SHIM_Z_MARKERS = 1.0
 SHIM_Z_EXITS = 1.65
+
+ENTRIES_COUNT = 6
 
 routines do
   read_entry_array = routine do
     entry_has_enex = 0
     if entry_index == 0
-      entry_x, entry_y, entry_z, entry_r     = 2177.1, -1311.0,   24.0, 1.0
-      exit_x, exit_y, exit_z =  -25.0,  -139.0, 1003.5
-      exit_h, exit_r, exit_i = 0.0, 2.0, 16
+      entry_x, entry_y, entry_z, entry_r =  2177.1 , -1311.0 ,   24.0 , 1.0
+      exit_x, exit_y, exit_z             =   -25.0 ,  -139.0 , 1003.5
+      exit_h, exit_r, exit_i             =     0.0 ,     2.0 , 16
     elsif entry_index == 1
-      entry_x, entry_y, entry_z, entry_r     =  -26.0,  -141.0, 1003.5, 1.0
-      exit_x, exit_y, exit_z = 2177.1, -1311.0, 24.0
-      exit_h, exit_r, exit_i = 0.0, 2.0, 0
+      entry_x, entry_y, entry_z, entry_r =   -26.0 ,  -141.0 , 1003.5 , 1.0
+      exit_x, exit_y, exit_z             =  2177.1 , -1311.0 ,   24.0
+      exit_h, exit_r, exit_i             =     0.0 ,     2.0 , 0
       entry_has_enex = 1
     elsif entry_index == 2
       # sf pd street entrance -> main interior entrance
-      entry_x, entry_y, entry_z, entry_r     =  -1605.5,  711.2, 13.8, 2.0
-      exit_x, exit_y, exit_z = 246.3, 108.9, 1003.2
-      exit_h, exit_r, exit_i = 0.0, 2.0, 10
+      entry_x, entry_y, entry_z, entry_r = -1605.5 ,   711.2 ,   13.8 , 2.0
+      exit_x, exit_y, exit_z             =   246.3 ,   108.9 , 1003.2
+      exit_h, exit_r, exit_i             =     0.0 ,     2.0 , 10
     elsif entry_index == 3
       # sf pd main interior entrance -> street entrance
-      entry_x, entry_y, entry_z, entry_r     =  246.3, 108.9, 1003.2, 1.0
-      exit_x, exit_y, exit_z = -1605.5,  711.2, 13.8
-      exit_h, exit_r, exit_i = 0.0, 2.0, 0
+      entry_x, entry_y, entry_z, entry_r =   246.3 ,   108.9 , 1003.2 , 1.0
+      exit_x, exit_y, exit_z             = -1605.5 ,   711.2 , 13.8
+      exit_h, exit_r, exit_i             =     0.0 ,     2.0 , 0
       entry_has_enex = 1
     elsif entry_index == 4
       # sf pd car park door -> side interior area
-      entry_x, entry_y, entry_z, entry_r     =  -1592.6,  716.2, -5.2, 2.0
-      exit_x, exit_y, exit_z = 215.6, 125.5, 1003.2
-      exit_h, exit_r, exit_i = 0.0, 2.0, 10
+      entry_x, entry_y, entry_z, entry_r = -1592.6 ,   716.2 ,   -5.2 , 2.0
+      exit_x, exit_y, exit_z             =   215.6 ,   125.5 , 1003.2
+      exit_h, exit_r, exit_i             =     0.0 ,     2.0 , 10
     elsif entry_index == 5
       # sf pd side interior area -> car park door
-      entry_x, entry_y, entry_z, entry_r     =  215.6, 125.5, 1003.2, 1.0
-      exit_x, exit_y, exit_z = -1592.6,  716.2, -5.2
-      exit_h, exit_r, exit_i = 180.0, 2.0, 0
+      entry_x, entry_y, entry_z, entry_r =   215.6 ,   125.5 , 1003.2 , 1.0
+      exit_x, exit_y, exit_z             = -1592.6 ,   716.2 ,   -5.2
+      exit_h, exit_r, exit_i             =   180.0 ,     2.0 , 0
     end
   end
 

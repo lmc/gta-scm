@@ -242,15 +242,15 @@ loop do
       process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
     when "d"
       process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
-    when /^\$(\w+)(\.\w+)?$/
+    when /^\$(\w+)(\.\w+)?$/ # global var
       gvar = $1.dup rescue nil
       cast = $2.dup rescue nil
       type = extract_cast!(cast)
       offset = process.scm_var_offset_for(gvar)
-      raise "No global var #{gvar}" if !offset
+      raise "No global var '#{gvar}'" if !offset
       return_value = process.read_scm_var(offset, type || process.symbols_var_types[offset] || :int)
       puts "#{iprompt}#{return_value.inspect}"
-    when /^(\w+)(\.\w+)?$/
+    when /^(\w+)(\.\w+)?$/ # local var
       lvar = $1.dup rescue nil
       cast = $2.dup rescue nil
       type = extract_cast!(cast)
@@ -258,13 +258,13 @@ loop do
       symbols = process.thread_symbols[thread.name]
       return_value = nil
       lvar_def = symbols.detect{|k,v| v[0] == lvar}
-      raise "No local var #{lvar} for script #{thread.name}" if !lvar_def
+      raise "No local var '#{lvar}' for script #{thread.name}" if !lvar_def
       lvar_idx = lvar_def[0].to_i
       type ||= lvar_def[1][1] || :int
       lvars_cast = type == :float ? thread.local_variables_floats : thread.local_variables_ints
       return_value = lvars_cast[lvar_idx]
       puts "#{iprompt}#{return_value.inspect}"
-    else
+    else # eval code
       bytecode,return_vars_types = compile_input(input,process,scm)
       write_and_execute_bytecode(bytecode,process)
       return_values = get_return_values(return_vars_types,process)

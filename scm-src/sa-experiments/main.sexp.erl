@@ -98,12 +98,14 @@
 (IncludeBin ("games/san-andreas/data/script/main.scm" 61312 61763))
 % replace goto at bottom of main loop with a goto to our extension
 (goto ((label main_loop_ext)))
+(PadUntil (61770))
 
 % more MAIN code
 (IncludeBin ("games/san-andreas/data/script/main.scm" 61770 88020))
 
 % replace gosub in save thread to our extension
 (gosub ((label save_thread_ext)))
+(PadUntil (88027))
 
 % rest of MAIN code
 (IncludeBin ("games/san-andreas/data/script/main.scm" 88027 194125))
@@ -126,13 +128,16 @@
 (labeldef helper)
 (set_var_int ((var test) (int8 0)))
 % (start_new_script ((label collectables_finder) (int8 -1) (int8 1) (end_var_args)))
+(start_new_script ((label collectables_finder_manager) (int8 -1) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
 % (start_new_script ((label interior_teleporter) (int8 -1) (end_var_args)))
 % (start_new_script ((label test) (int8 -1) (end_var_args)))
 % (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
 (IncludeRuby "helper")
 
-% (labeldef collectables_finder)
-% (IncludeRuby "collectables-finder")
+(labeldef collectables_finder)
+(IncludeRuby "collectables-finder")
+(labeldef collectables_finder_manager)
+(IncludeRuby "collectables-finder-manager")
 
 % (labeldef interior_teleporter)
 % (IncludeRuby "interior-teleporter")
