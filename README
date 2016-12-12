@@ -22,9 +22,11 @@ NEXT:
 
 * DONE: game: remake collectables finder in ruby
 * game: remake collectables finder manager in ruby
+  - need to handle respawn timer (and activity timer)
 * game: rewrite rpc thread in ruby (?)
 * game: chill with homies
 * game: get nearby cars, allows you to ride trams?
+* game: inventory, bank snacks for health regen in levels (consume 1 snack every 10/8/6/4/2 seconds when below n% health)
 
 * DONE: compiler: gosubs as a condition (return_true/false opcodes)
 * compiler: handle `return` with and without args (return $var == -1)
@@ -36,12 +38,12 @@ NEXT:
 * compiler: lvar array = use any local args by reference?
 * compiler: lvar array = register remapping?
 * compiler: trap/exception routines, goto to them to set global var + hit breakpoint in loop
-* compiler: breakpoints: global var to set wait/no-wait on breakpoint loop
+* DONE: compiler: breakpoints: global var to set wait/no-wait on breakpoint loop
 * compiler: tail-call optimisation (convert gosub+return into goto)
 * compiler: treat routine names as arguments (emit as (label routine_name)). ie. gosub(routine) / goto(routine)
 * compiler: function defs with global vars used for arguments/return values, assigned automatically around gosub to routine ( function(args: [:$bitpacker_value,:$bitpacker_bits], returns: [:$bitpacker_value]))
 
-* disassembler: tag all jumps
+* disassembler: tag all jumps (start_mission/switch statements)
 * disassembler: make list of label names, use in disassembly
 * disassembler: make list of variable names, use in disasm
 * disassembler: use dmavar, not var in disasm
