@@ -898,6 +898,8 @@ class GtaScm::RubyToScmCompiler
           [ :var_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
         elsif array_var.type == :gvar && array_var.children[0] == :$_0
           [ :var_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
+        elsif array_type == :lvar_array && (array_def = self.lvar_arrays[ node.children[0].children[0] ])
+          [ :lvar_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
         else
           raise "undefined array #{node.inspect}"
         end
