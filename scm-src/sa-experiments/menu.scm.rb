@@ -40,7 +40,7 @@ $_7128_cars = IntegerArray.new(8)
 $_7128_cars_1 = -536329075
 $_7132_cars_2 = -533329747
 $_7136_cars_3 = 461380
-$_7140_cars_4 = -1
+$_7140_cars_4 = 71979
 $_7144_cars_5 = -1
 $_7148_cars_6 = -1
 $_7152_cars_7 = -1
@@ -195,7 +195,13 @@ spawn_car = routine do
   request_model(tmp_car_id)
   load_all_models_now()
 
-  despawn_car()
+  if not is_car_dead(car)
+    tmp_f,tmp_f2,tmp_f3 = get_car_coordinates(car)
+    tmp_f3 = get_distance_between_coords_3d(spawn_x,spawn_y,spawn_z, tmp_f,tmp_f2,tmp_f3)
+    if tmp_f3 < 5.0
+      despawn_car()
+    end
+  end
 
   tmp_car_variation = 15
   if tmp_car_variation < 15
@@ -217,7 +223,6 @@ spawn_car = routine do
 
   mark_car_as_no_longer_needed(car)
   mark_model_as_no_longer_needed(tmp_car_id)
-
 end
 
 set_factory_colours = routine do

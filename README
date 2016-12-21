@@ -20,13 +20,17 @@ NEXT:
 * generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
+* game: garage manager - have drop-off areas for it, charge money?
+* game: garage manager - deliver cars in traffic, don't just spawn?
 * DONE: game: remake collectables finder in ruby
 * game: remake collectables finder manager in ruby
   - need to handle respawn timer (and activity timer)
+  - read/write these to global vars
 * game: rewrite rpc thread in ruby (?)
 * game: chill with homies
 * game: get nearby cars, allows you to ride trams?
 * game: inventory, bank snacks for health regen in levels (consume 1 snack every 10/8/6/4/2 seconds when below n% health)
+* game: organise code into subdirs, update assembler to handle if needed
 
 * DONE: compiler: gosubs as a condition (return_true/false opcodes)
 * compiler: handle `return` with and without args (return $var == -1)

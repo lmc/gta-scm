@@ -29,4 +29,9 @@ routines do
     script_name("xcrncol")
     corona_inner()
   end
+
+  corona_col = routine(export: :thread_corona_crf, end_with: nil) do
+    script_name("xcrncrf")
+    corona_inner()
+  end
 end

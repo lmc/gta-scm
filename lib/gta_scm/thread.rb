@@ -350,6 +350,15 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     self.pc = val
   end
 
+  def scm_pc_w_base
+    v = self.scm_pc
+    if self.base_pc_scm && self.base_pc_scm > 0
+      v -= base_pc_scm
+      v *= -1
+    end
+    v
+  end
+
   def base_pc
     val = GtaScm::Types.bin2value(self[3],:int32)
     val

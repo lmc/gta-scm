@@ -54,14 +54,14 @@ is_current_car_in_set = routine do
   end
 end
 
-wait(10000)
-request_model(FEATURE_CAR_ID)
-load_all_models_now()
-tmp_x2,tmp_y2,tmp_z2 = get_char_coordinates(PLAYER_CHAR)
-tmp_x2 += 5.0
-tmp_y2 += 5.0
-tmp_i = create_car(FEATURE_CAR_ID,tmp_x2,tmp_y2,tmp_z2)
-mark_car_as_no_longer_needed(tmp_i)
+# wait(10000)
+# request_model(FEATURE_CAR_ID)
+# load_all_models_now()
+# tmp_x2,tmp_y2,tmp_z2 = get_char_coordinates(PLAYER_CHAR)
+# tmp_x2 += 5.0
+# tmp_y2 += 5.0
+# tmp_i = create_car(FEATURE_CAR_ID,tmp_x2,tmp_y2,tmp_z2)
+# mark_car_as_no_longer_needed(tmp_i)
 
 loop do
   wait(0)

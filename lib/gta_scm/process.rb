@@ -1,6 +1,8 @@
 require 'ragweed'
 require 'ragweed/debuggerosx'
 
+require 'gta_scm/thread'
+
 class GtaScm::Process
 
   attr_accessor :pid
@@ -20,7 +22,7 @@ class GtaScm::Process
   end
 
   def detect_pid!
-    self.pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+    self.pid = `ps -A | grep -m1 '[S]an Andreas.app' | awk '{print $1}'`.to_i
   end
 
   def attach!
@@ -29,6 +31,10 @@ class GtaScm::Process
     rescue Ragweed::Wraposx::KernelCallError
       nil
     end
+  end
+
+  def detach!
+    self.process = nil
   end
 
   def attached?
