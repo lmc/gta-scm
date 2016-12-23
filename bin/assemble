@@ -52,3 +52,32 @@ asm.assemble(scm,ARGV[2],path)
 mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
 logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 # logger.info "GC stats: #{GC.stat.inspect}"
+
+offset = 194255
+offset = 60030
+size = 1740
+
+nscm = GtaScm::Scm.load(scm.game_id,"#{path}/main.scm")
+nscm.load_opcode_definitions!
+parser = GtaScm::Parser.new(nscm,offset)
+parser.load_opcode_definitions(nscm.opcodes)
+parser.seek(offset)
+parser.end_offset = offset + size
+puts "parser.parse_instructions!"
+parser.parse_instructions!
+parser.add_jumps_to_nodes!(parser.nodes)
+
+nscm.load_from_parser(parser)
+require 'gta_scm/control_flow_graph'
+cfg = nscm.control_flow_graph(offset,size)
+puts "Control Flow Graph:"
+
+cfg.gourge!
+# cfg.nodes.each do |node|
+#   puts node.inspect
+# end
+
+File.open("call-graph.json","w"){|f| f << cfg.to_json }
+
+cfg.generate_png!
+

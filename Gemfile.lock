@@ -129,6 +129,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.4.0)
     rspec-support (3.4.1)
+    ruby-graphviz (1.2.2)
     rutui (0.7.1)
     sprockets (3.5.2)
       concurrent-ruby (~> 1.0)
@@ -159,6 +160,7 @@ DEPENDENCIES
   ragweed
   rails
   rspec
+  ruby-graphviz
   rutui
 
 RUBY VERSION

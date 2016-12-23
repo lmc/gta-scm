@@ -20,6 +20,7 @@ class GtaScm::Parser < GtaScm::FileWalker
 
   def initialize(scm, offset = 0, end_offset = nil)
     self.scm = scm
+    
     super(scm.scm_file, offset, end_offset)
 
     self.nodes = []
@@ -215,6 +216,7 @@ class GtaScm::Parser < GtaScm::FileWalker
   end
 
   def on_eat_node(node)
+    self.node = node
     self.nodes << node
     self.offsets << node.offset
 

@@ -169,7 +169,12 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
   def jumps_for_switch
     jump_args = JUMP_ARGUMENT_OPCODES[self.opcode]
     jump_args.map do |jump_arg_idx|
-      {type: :switch, to: self.arguments[jump_arg_idx].value}
-    end
+      value = self.arguments[jump_arg_idx - 1].value
+      if value == -1
+        nil
+      else
+        {type: :switch, to: self.arguments[jump_arg_idx].value, switch_value: value}
+      end
+    end.compact
   end
 end

@@ -17,8 +17,25 @@ Unused/debug code:
                 :  7,217
 NEXT:
 
-* generate call graph
+* DONE: generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
+
+* code reloader:
+  get malloc space
+  insert header+code
+  header: magic string, size of code, routine offsets for: init/loop/shutdown
+  when new code is inserted, either:
+    * trigger shutdown of old code, start new code
+    * trigger old code to jump to new code, retaining local var state
+    routines {
+      init{}
+      loop{}
+      shutdown{}
+    }
+    init()
+    loop()
+    shutdown()
+    terminate_this_script()
 
 * game: garage manager - have drop-off areas for it, charge money?
 * game: garage manager - deliver cars in traffic, don't just spawn?
@@ -78,6 +95,13 @@ NEXT:
 * state machine helper?
 * distance sorter helper?
 * modulo helper
+  a - (a/b)*b
+  tmp1 = a
+  tmp2 = a
+  tmp2 /= b
+  tmp2 *= b
+  tmp1 -= tmp2
+  tmp1
 * get nearby cars/actors helper
 
 useful for spawning cars? GET_PARKING_NODE_IN_AREA

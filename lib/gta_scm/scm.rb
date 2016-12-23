@@ -104,6 +104,10 @@ class GtaScm::Scm
     self.opcodes.names2opcodes
   end
 
+  def control_flow_graph(offset,bytes = 4096)
+    GtaScm::ControlFlowGraph.new(self,offset,bytes)
+  end
+
 
   # Parse the scm_file, building our internal structures off it
   # def parse!
