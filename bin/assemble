@@ -55,7 +55,8 @@ logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
 
 offset = 194255
 offset = 60030
-size = 1740
+offset = 194913
+size = 196006-offset
 
 nscm = GtaScm::Scm.load(scm.game_id,"#{path}/main.scm")
 nscm.load_opcode_definitions!

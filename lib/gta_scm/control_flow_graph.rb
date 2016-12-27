@@ -8,6 +8,8 @@ class GtaScm::ControlFlowGraph
 
   attr_accessor :limit
 
+  # FIXME: change `node` to `block`
+
   def initialize(scm,offset,bytes = 4096)
     self.scm = scm
     self.offset = offset
@@ -67,8 +69,12 @@ class GtaScm::ControlFlowGraph
       NodeGroup.new(:return)
     elsif instruction.opcode == [0x02,0x00] # GOTO
       NodeGroup.new(:goto)
+    elsif instruction.opcode == [0x50,0x00] # GOSUB
+      NodeGroup.new(:gosub)
     elsif instruction.opcode == [0x71,0x08] # SWITCH_START
       NodeGroup.new(:switch)
+    elsif instruction.opcode == [0x4e,0x00] # SWITCH_START
+      NodeGroup.new(:terminate_this_script)
     else
       nil
     end
@@ -99,7 +105,7 @@ class GtaScm::ControlFlowGraph
     # close current node-group if we're at the end of an if statement
     if self.current_node.type == :if && instruction.opcode == [0x4D,0x00]
       self.current_node = nil
-    elsif [:return,:goto].include?(self.current_node.type)
+    elsif [:return,:goto,:gosub,:terminate_this_script].include?(self.current_node.type)
       self.current_node = nil
     elsif self.current_node.type == :switch && next_instruction.opcode != [0x72,0x08] # SWITCH_CONTINUED
       self.current_node = nil
@@ -131,7 +137,7 @@ class GtaScm::ControlFlowGraph
     # "#{node_group.type}" + "\n" +
     node_group.map do |i|
       # "#{i.offset} #{scm.opcodes[i.opcode].andand.name}(#{i.arguments.map(&:value).join(",")})"
-      "#{scm.opcodes[i.opcode].andand.name}(#{i.arguments.map(&:value).join(",")})"
+      "#{scm.opcodes[i.opcode].andand.name}(#{i.arguments.map(&:value).map(&:inspect).join(",")})"
     end.join("\n")
   end
 
@@ -140,6 +146,9 @@ class GtaScm::ControlFlowGraph
 
     # Create a new graph
     g = GraphViz.new( :G, :type => :digraph )
+
+    g.node[:shape] = "box"
+    g.node[:fontname] = "Monaco"
 
     gnodes = {}
     self.nodes.each do |ng|
@@ -181,11 +190,16 @@ class GtaScm::ControlFlowGraph
           [:true_branch, self.last.offset + self.last.size],
           [:false_branch, self.last.arguments.last.value]
         ]
-      when :return
+      when :return, :terminate_this_script
         []
       when :goto
         [
           [:goto, self.last.arguments.last.value ]
+        ]
+      when :gosub
+        [
+          # [:gosub, self.last.arguments.last.value ],
+          [:implicit, self.last.offset + self.last.size]
         ]
       when :switch
         # debugger
