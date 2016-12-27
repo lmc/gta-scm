@@ -1,5 +1,7 @@
 module GtaScm::Types
 
+  # TODO: refactor into instance methods, make other classes include this module
+
   # FIXME: only for vice city
   TYPES = {
     0x01 => :int32,

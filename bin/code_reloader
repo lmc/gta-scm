@@ -1,0 +1,298 @@
+#!/usr/bin/env ruby
+
+# sudo bundle exec ./bin/code_reloader
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+print "\033]0;GtaScm Debugger\a"
+print "\n"
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+process = GtaScm::Process.new
+process.load_symbols!("symbols.gta-scm-symbols")
+
+process.detect_pid_and_attach!
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+Thread.abort_on_exception = true
+SIZE = RuTui::Screen.size
+RuTui::Theme.create :scm, {
+  :background => RuTui::Pixel.new(236,234,":"),
+  :border     => RuTui::Pixel.new(103,234,"-"),
+  :textcolor  => 250,
+  :highlight  => 244,
+  :highlight_fg  => 234,
+  :rainbow    => [1,3,11,2,4,5]
+}
+RuTui::Theme.use :scm
+
+
+BASE_ALLOC_OFFSET = (2**30) + (2**29)
+$panels = {}
+
+$exit = false
+
+class GtaScm::Panel
+  attr_accessor :x
+  attr_accessor :y
+  attr_accessor :width
+  attr_accessor :height
+  attr_accessor :elements
+  attr_accessor :settings
+  attr_accessor :controller
+
+  def initialize(x,y,width,height)
+    self.x = x
+    self.y = y
+    self.width = width
+    self.height = height
+    self.elements = {}
+    self.settings = {}
+  end
+
+  def add_elements_to_screen(screen)
+    self.elements.each_pair do |key,element|
+      screen.add(element)
+    end
+  end
+
+  def update(process,is_attached)
+    
+  end
+
+  def input(key,is_attached,process)
+    
+  end
+
+  def dx(xo)
+    self.x + xo
+  end
+  def dy(yo)
+    self.y + yo
+  end
+
+  def panel_list(data,rows,empty_row)
+    list_height = rows - 2
+    data = data[0...list_height]
+    while data.size < list_height
+      data << empty_row
+    end
+    data
+  end
+end
+
+
+class GtaScm::CodeReloaderPanel < GtaScm::Panel
+  def initialize(*)
+    super
+    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    self.elements[:alloc_text] = RuTui::Text.new(x: dx(0), y: dy(2), text: "")
+    set_text
+
+    self.elements[:alloc_table] = RuTui::Table.new({
+      x: self.dx(0),
+      y: self.dy(3),
+      table: [["default","","","","","","","",""]],
+      cols: [
+        { title: "Offset"      , length: 12 },
+        { title: "Magic"       , length:  8 },
+        { title: "Size"        , length:  5 },
+        { title: "Prev Block"  , length:  12 },
+        { title: "Init offset" , length: 12 },
+        { title: "Loop offset" , length: 12 },
+        { title: "Kill offset" , length: 12 },
+        { title: "Body offset" , length: 12 },
+        { title: "#"           , length:  1 },
+      ],
+      header: true,
+      hover: RuTui::Theme.get(:highlight),
+      hover_fg: RuTui::Theme.get(:highlight_fg),
+    })
+  end
+
+  def set_text(process = nil)
+    str = "Code Reloader"
+    str = str.center(self.width)
+    self.elements[:text].bg = 7
+    self.elements[:text].fg = 0
+    self.elements[:text].set_text(str)
+
+    return if !process || !process.attached?
+    self.elements[:alloc_text].set_text("Allocations"+(" "*10)+"Base offset: #{BASE_ALLOC_OFFSET}"+(" "*10)+"SCM Offset: #{process.scm_offset}")
+  end
+
+  MAGIC_STRING = "GtaScmReloader1".freeze
+  attr_accessor :written
+  def update(process,is_attached)
+    # data = [["","","","",""]]
+    return if !is_attached
+
+    if !self.written
+      offsets = []
+
+      # FIXME: include opcode in structure (debug_string)
+
+      offsets << BASE_ALLOC_OFFSET
+      payload  = MAGIC_STRING.dup.ljust(16,"_")
+      payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
+      payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
+      payload += GtaScm::Types.value2bin(    -1 , :int32 ) # previous_block
+      payload += GtaScm::Types.value2bin(   123 , :int32 ) # 
+      payload += GtaScm::Types.value2bin(   444 , :int32 ) # 
+      payload += GtaScm::Types.value2bin(   567 , :int32 ) # 
+      payload += GtaScm::Types.value2bin(   888 , :int32 ) # 
+      process.write(offsets[0],payload)
+
+      offsets << BASE_ALLOC_OFFSET+420
+      payload  = MAGIC_STRING.dup.ljust(16,"_")
+      payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
+      payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
+      payload += GtaScm::Types.value2bin(offsets[0], :int32 ) # previous_block
+      payload += GtaScm::Types.value2bin(   999 , :int32 ) # 
+      payload += GtaScm::Types.value2bin(   876 , :int32 ) # 
+      payload += GtaScm::Types.value2bin(   555 , :int32 ) # 
+      payload += GtaScm::Types.value2bin(   432 , :int32 ) # 
+      process.write(offsets[1],payload)
+
+      self.written = true
+    end
+
+    blocks = []
+    block = nil
+    offset = BASE_ALLOC_OFFSET
+    loop do
+      block = read_block_at(process,offset)
+      break if !block
+      offset += block[2] # block size
+      blocks << block
+    end
+
+    data = blocks.map do |block|
+      block.map(&:to_s)
+    end
+
+    if data.size == 0
+      data = [["#{blocks.size}","","","","","","","",""]]
+    end
+
+    if data[0] && data[0].size == 9
+      self.elements[:alloc_table].set_table(data)
+    end
+
+    set_text(process)
+
+
+  end
+
+  def input(key,is_attached,process)
+
+  end
+
+
+  def read_block_at(process,offset)
+    return nil if !process || !process.attached?
+    begin
+      magic = process.read(offset,MAGIC_STRING.size)
+    rescue
+      return nil
+    end
+    return nil if magic != MAGIC_STRING
+    i = 16
+    _offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    # return nil if _offset != offset
+    size            = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    previous_block = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    init_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    loop_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    kill_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    body_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+
+    return [offset,magic,size,previous_block,init_offset,loop_offset,kill_offset,body_offset,nil]
+  end
+end
+
+
+
+# $panels[:process] = GtaScm::ProcessPanel.new(0,0,80,0)
+$panels[:code_reloader] = GtaScm::CodeReloaderPanel.new(0,0,80,0)
+
+
+screen = RuTui::Screen.new
+
+$panels.each_pair do |_,panel|
+  panel.add_elements_to_screen(screen)
+end
+
+RuTui::ScreenManager.add :default, screen
+RuTui::ScreenManager.set_current :default
+
+thr = ::Thread.new do
+  loop do
+    break if $exit
+
+    start = Time.now
+
+    begin
+      begin
+        process.detect_pid_and_attach!
+      rescue
+        #whatevs
+      end
+
+      is_attached = false
+      if process.attached?
+        is_attached = true
+      else
+        # not attached
+      end
+
+      $panels.each_pair do |_,panel|
+        panel.update(process,is_attached)
+      end
+
+      RuTui::ScreenManager.draw
+    ensure
+      sleep_time = (start + 0.5) - Time.now
+      sleep(sleep_time) if sleep_time > 0.0
+    end
+
+  end
+end
+
+thr2 = ::Thread.new do
+  loop do
+    break if $exit
+
+    key = RuTui::Input.getc
+
+    sleep 0.1
+
+    $key = key
+
+    if key == :ctrl_c
+      $exit = true
+    end
+
+    $panels.each_pair do |_,panel|
+      panel.input(key,true,process)
+    end
+
+
+  end
+end
+
+thr.join
+thr2.join
+
+print RuTui::Ansi.clear_color + RuTui::Ansi.clear
