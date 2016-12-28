@@ -93,6 +93,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
   def initialize(*)
     super
     self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    self.elements[:help_text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
     self.elements[:alloc_text] = RuTui::Text.new(x: dx(0), y: dy(2), text: "")
     set_text
 
@@ -131,6 +132,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
     return if !process || !process.attached?
     self.elements[:alloc_text].set_text("Allocations"+(" "*10)+"Base offset: #{BASE_ALLOC_OFFSET}"+(" "*10)+"SCM Offset: #{process.scm_offset}")
+    self.elements[:help_text].set_text("p: debug inject")
   end
 
   MAGIC_STRING = "GtaScmReloader1".force_encoding("ASCII-8BIT").freeze
@@ -139,58 +141,26 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     # data = [["","","","",""]]
     return if !is_attached
 
-    if !self.written
-      offsets = []
+    # if !self.written
+    #   offsets = []
 
-      # FIXME: include opcode in structure (debug_string)
+    #   offsets << BASE_ALLOC_OFFSET
+    #   payload,symbols = self.bytecode(offsets[-1],"inject/test",offsets[-2] || -1,process.scm_offset)
+    #   add_packed_header!(payload,symbols)
+    #   puts "==="
+    #   puts hex(payload)
+    #   puts "==="
+    #   process.write(offsets[-1],payload)
+    #   process.rpc(1,offsets[-1]-process.scm_offset)
 
-      # offsets << BASE_ALLOC_OFFSET
-      # payload  = [0xB6,0x05].map(&:chr).join("")
-      # payload += MAGIC_STRING.dup.ljust(16,"_")
-      # payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
-      # payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
-      # payload += GtaScm::Types.value2bin(    -1 , :int32 ) # previous_block
-      # payload += GtaScm::Types.value2bin(   123 , :int32 ) # 
-      # payload += GtaScm::Types.value2bin(   444 , :int32 ) # 
-      # payload += GtaScm::Types.value2bin(   567 , :int32 ) # 
-      # payload += GtaScm::Types.value2bin(   888 , :int32 ) # 
-      # process.write(offsets[0],payload)
+    #   50.times { puts }
 
-      # offsets << BASE_ALLOC_OFFSET+420
-      # payload  = [0xB6,0x05].map(&:chr).join("")
-      # payload += MAGIC_STRING.dup.ljust(16,"_")
-      # payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
-      # payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
-      # payload += GtaScm::Types.value2bin(offsets[0], :int32 ) # previous_block
-      # payload += GtaScm::Types.value2bin(   999 , :int32 ) # 
-      # payload += GtaScm::Types.value2bin(   876 , :int32 ) # 
-      # payload += GtaScm::Types.value2bin(   555 , :int32 ) # 
-      # payload += GtaScm::Types.value2bin(   432 , :int32 ) # 
-      # process.write(offsets[1],payload)
-
-      offsets << BASE_ALLOC_OFFSET
-      payload,symbols = self.bytecode(offsets[-1],"inject/test",offsets[-2] || -1,process.scm_offset)
-      add_packed_header!(payload,symbols)
-      puts "==="
-      puts hex(payload)
-      puts "==="
-      process.write(offsets[-1],payload)
-      process.rpc(1,offsets[-1]-process.scm_offset)
-
-      # offsets << BASE_ALLOC_OFFSET+symbols[:size]
-      # payload,symbols = self.bytecode(offsets[-1],"inject/test",offsets[-2] || -1,process.scm_offset)
-      # add_packed_header!(payload,symbols)
-      # process.write(offsets[-1],payload)
-
-
-      50.times { puts }
-
-      self.written = true
-    end
+    #   self.written = true
+    # end
 
     blocks = []
     block = nil
-    offset = BASE_ALLOC_OFFSET
+    offset = BASE_ALLOC_OFFSET+process.scm_offset
     loop do
       block = read_block_at(process,offset)
       break if !block
@@ -203,7 +173,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     end
 
     if data.size == 0
-      data = [["#{blocks.size}","","","","","","","","","","","","",""]]
+      data = [["#{blocks.size}","#{BASE_ALLOC_OFFSET}","","","","","","","","","","","","#{hex(process.read(BASE_ALLOC_OFFSET-2,16))}"]]
     end
 
     if data[0] && data[0].size == 14
@@ -216,7 +186,18 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
   end
 
   def input(key,is_attached,process)
+    return if !is_attached
 
+    $last_inject_offset ||= -1
+    $current_inject_offset ||= BASE_ALLOC_OFFSET
+    if key == "p"
+      aaa = $panels[:code_reloader].bytecode($current_inject_offset,"inject/test",$last_inject_offset,process.scm_offset)
+      aaa[0] = $panels[:code_reloader].add_packed_header!(aaa[0],aaa[1])
+      process.write($current_inject_offset+process.scm_offset,aaa[0])
+      process.rpc(1,$current_inject_offset)
+      $last_inject_offset = $current_inject_offset+process.scm_offset
+      $current_inject_offset += aaa[0].size
+    end
   end
 
 
@@ -335,7 +316,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     data[:base_offset_mem] = offset
     data[:size] = code.bytesize
     data[:previous_block_mem] = previous_block_offset
-    data[:base_offset_scm] = offset - scm_offset
+    data[:base_offset_scm] = offset
     data[:code_init] = symbols[:labels][:inject_init]
     data[:code_loop] = symbols[:labels][:inject_loop]
     data[:code_exit] = symbols[:labels][:inject_exit]
@@ -404,28 +385,28 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:base_offset_scm],:int32)
     offset += 4
 
-    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:code_init],:int32)
-    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:code_init],:int32)
+    # payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
     offset += 4
 
-    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:code_loop],:int32)
-    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:code_loop],:int32)
+    # payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
     offset += 4
 
-    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:code_exit],:int32)
-    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:code_exit],:int32)
+    # payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
     offset += 4
 
-    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:patch_loop_head],:int32)
-    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:patch_loop_head],:int32)
+    # payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
     offset += 4
 
-    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:patch_loop_goto],:int32)
-    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:patch_loop_goto],:int32)
+    # payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
     offset += 4
 
-    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:patch_exit_goto],:int32)
-    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:patch_exit_goto],:int32)
+    # payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
     offset += 4
 
     payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:compiled_at].to_i,:int32)
@@ -435,7 +416,6 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     offset += 4
 
     payload
-
   end
 end
 
@@ -444,20 +424,16 @@ end
 # $panels[:process] = GtaScm::ProcessPanel.new(0,0,80,0)
 $panels[:code_reloader] = GtaScm::CodeReloaderPanel.new(0,0,80,0)
 
-aaa = $panels[:code_reloader].bytecode(BASE_ALLOC_OFFSET,"inject/test",-1,process.scm_offset)
-aaa[0] = $panels[:code_reloader].add_packed_header!(aaa[0],aaa[1])
-puts hex( aaa[0] )
-puts aaa[1].inspect
-puts aaa[2].inspect
+# aaa = $panels[:code_reloader].bytecode(BASE_ALLOC_OFFSET,"inject/test",-1,process.scm_offset)
+# aaa[0] = $panels[:code_reloader].add_packed_header!(aaa[0],aaa[1])
+# puts hex( aaa[0] )
+# puts aaa[1].inspect
+# puts aaa[2].inspect
 
-process.write(BASE_ALLOC_OFFSET+process.scm_offset,aaa[0])
-sleep(0.1)
-puts(hex(process.read(BASE_ALLOC_OFFSET+process.scm_offset-4,256)))
+# process.write(BASE_ALLOC_OFFSET+process.scm_offset,aaa[0])
+# process.rpc(1,BASE_ALLOC_OFFSET)
+
 # exit
-process.rpc(1,BASE_ALLOC_OFFSET)
-# process.rpc(1,194913)
-
-exit
 
 
 screen = RuTui::Screen.new
