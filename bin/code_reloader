@@ -31,7 +31,10 @@ RuTui::Theme.create :scm, {
 RuTui::Theme.use :scm
 
 
-BASE_ALLOC_OFFSET = (2**30) + (2**29)
+# BASE_ALLOC_OFFSET = (2**30)# + (2**29)
+# BASE_ALLOC_OFFSET = (2**28)
+# BASE_ALLOC_OFFSET = 200_000 + 70_000
+BASE_ALLOC_OFFSET = 196_100
 $panels = {}
 
 $exit = false
@@ -96,17 +99,22 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     self.elements[:alloc_table] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(3),
-      table: [["default","","","","","","","",""]],
+      table: [["default","","","","","","","","","","","","",""]],
       cols: [
+        { title: "ID"           , length:  3 },
         { title: "Offset"      , length: 12 },
         { title: "Magic"       , length:  8 },
         { title: "Size"        , length:  5 },
         { title: "Prev Block"  , length:  12 },
-        { title: "Init offset" , length: 12 },
-        { title: "Loop offset" , length: 12 },
-        { title: "Kill offset" , length: 12 },
-        { title: "Body offset" , length: 12 },
-        { title: "#"           , length:  1 },
+        { title: "SCM Offset"  , length:  12 },
+        { title: "xInit" , length: 5 },
+        { title: "xLoop" , length: 5 },
+        { title: "xKill" , length: 5 },
+        { title: "pLoopH" , length: 6 },
+        { title: "pLoopG" , length: 6 },
+        { title: "pExitG" , length: 6 },
+        { title: "Compiled At" , length: 25 },
+        { title: "Filename" , length: 25 },
       ],
       header: true,
       hover: RuTui::Theme.get(:highlight),
@@ -125,7 +133,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     self.elements[:alloc_text].set_text("Allocations"+(" "*10)+"Base offset: #{BASE_ALLOC_OFFSET}"+(" "*10)+"SCM Offset: #{process.scm_offset}")
   end
 
-  MAGIC_STRING = "GtaScmReloader1".freeze
+  MAGIC_STRING = "GtaScmReloader1".force_encoding("ASCII-8BIT").freeze
   attr_accessor :written
   def update(process,is_attached)
     # data = [["","","","",""]]
@@ -136,29 +144,46 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
       # FIXME: include opcode in structure (debug_string)
 
-      offsets << BASE_ALLOC_OFFSET
-      payload  = [0xB6,0x05].map(&:chr).join("")
-      payload += MAGIC_STRING.dup.ljust(16,"_")
-      payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
-      payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
-      payload += GtaScm::Types.value2bin(    -1 , :int32 ) # previous_block
-      payload += GtaScm::Types.value2bin(   123 , :int32 ) # 
-      payload += GtaScm::Types.value2bin(   444 , :int32 ) # 
-      payload += GtaScm::Types.value2bin(   567 , :int32 ) # 
-      payload += GtaScm::Types.value2bin(   888 , :int32 ) # 
-      process.write(offsets[0],payload)
+      # offsets << BASE_ALLOC_OFFSET
+      # payload  = [0xB6,0x05].map(&:chr).join("")
+      # payload += MAGIC_STRING.dup.ljust(16,"_")
+      # payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
+      # payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
+      # payload += GtaScm::Types.value2bin(    -1 , :int32 ) # previous_block
+      # payload += GtaScm::Types.value2bin(   123 , :int32 ) # 
+      # payload += GtaScm::Types.value2bin(   444 , :int32 ) # 
+      # payload += GtaScm::Types.value2bin(   567 , :int32 ) # 
+      # payload += GtaScm::Types.value2bin(   888 , :int32 ) # 
+      # process.write(offsets[0],payload)
 
-      offsets << BASE_ALLOC_OFFSET+420
-      payload  = [0xB6,0x05].map(&:chr).join("")
-      payload += MAGIC_STRING.dup.ljust(16,"_")
-      payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
-      payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
-      payload += GtaScm::Types.value2bin(offsets[0], :int32 ) # previous_block
-      payload += GtaScm::Types.value2bin(   999 , :int32 ) # 
-      payload += GtaScm::Types.value2bin(   876 , :int32 ) # 
-      payload += GtaScm::Types.value2bin(   555 , :int32 ) # 
-      payload += GtaScm::Types.value2bin(   432 , :int32 ) # 
-      process.write(offsets[1],payload)
+      # offsets << BASE_ALLOC_OFFSET+420
+      # payload  = [0xB6,0x05].map(&:chr).join("")
+      # payload += MAGIC_STRING.dup.ljust(16,"_")
+      # payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
+      # payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
+      # payload += GtaScm::Types.value2bin(offsets[0], :int32 ) # previous_block
+      # payload += GtaScm::Types.value2bin(   999 , :int32 ) # 
+      # payload += GtaScm::Types.value2bin(   876 , :int32 ) # 
+      # payload += GtaScm::Types.value2bin(   555 , :int32 ) # 
+      # payload += GtaScm::Types.value2bin(   432 , :int32 ) # 
+      # process.write(offsets[1],payload)
+
+      offsets << BASE_ALLOC_OFFSET
+      payload,symbols = self.bytecode(offsets[-1],"inject/test",offsets[-2] || -1,process.scm_offset)
+      add_packed_header!(payload,symbols)
+      puts "==="
+      puts hex(payload)
+      puts "==="
+      process.write(offsets[-1],payload)
+      process.rpc(1,offsets[-1]-process.scm_offset)
+
+      # offsets << BASE_ALLOC_OFFSET+symbols[:size]
+      # payload,symbols = self.bytecode(offsets[-1],"inject/test",offsets[-2] || -1,process.scm_offset)
+      # add_packed_header!(payload,symbols)
+      # process.write(offsets[-1],payload)
+
+
+      50.times { puts }
 
       self.written = true
     end
@@ -169,7 +194,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     loop do
       block = read_block_at(process,offset)
       break if !block
-      offset += block[2] # block size
+      offset += block[3] # block size
       blocks << block
     end
 
@@ -178,10 +203,10 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     end
 
     if data.size == 0
-      data = [["#{blocks.size}","","","","","","","",""]]
+      data = [["#{blocks.size}","","","","","","","","","","","","",""]]
     end
 
-    if data[0] && data[0].size == 9
+    if data[0] && data[0].size == 14
       self.elements[:alloc_table].set_table(data)
     end
 
@@ -212,14 +237,28 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     i += 4
     previous_block = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
+    scm_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
     init_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
     loop_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
     kill_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
-    body_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    plooph = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
+    ploopg = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    pexitg = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+
+    compiled_at_i = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    compiled_at_u = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+    compiled_at = Time.at(compiled_at_i)
+    # compiled_at.usec = compiled_at_u
+
 
     # base offset (mem)
     # size
@@ -229,10 +268,12 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     # init offset (relative)
     # loop offset (relative)
     # exit offset (loop)
-    return [offset,magic,size,previous_block,init_offset,loop_offset,kill_offset,body_offset,nil]
+    # return [offset,magic,size,previous_block,init_offset,loop_offset,kill_offset,body_offset,nil]
+    return [nil,offset,magic,size,previous_block,scm_offset,init_offset,loop_offset,kill_offset,plooph,ploopg,pexitg,compiled_at.strftime("%Y-%m-%d %H:%M:%S %z"),nil]
   end
 
-  def bytecode(offset,name)
+  def bytecode(offset,name,previous_block_offset,scm_offset)
+    compiled_at = Time.now
     # offset = 2**30
     input_dir = "./scm-src/sa-experiments"
     # name = "inject/test"
@@ -248,7 +289,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     iscm.load_opcode_definitions!
 
     iasm = GtaScm::Assembler::Sexp.new(input_dir)
-    iasm.code_offset = offset
+    iasm.code_offset = offset# - scm_offset
 
     def iasm.install_features!
       class << self
@@ -261,6 +302,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
       self.on_feature_init()
     end
 
+    iasm.install_features!
     iasm.symbols_name = "inject"
 
     lines = tokens.map { |node| Elparser::encode(node) }
@@ -277,16 +319,48 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     iasm.emit_assembly!(iscm,"",output)
 
     output.rewind
-    code = output.read
+    code = output.read.force_encoding("ASCII-8BIT")
+    symbols = iasm.symbols_data
+
+    # base offset (mem)
+    # size
+    # prev offset (mem)
+    # base offset (scm)
+    # body offset (relative)
+    # init offset (relative)
+    # loop offset (relative)
+    # exit offset (loop)
+
+    data = {}
+    data[:base_offset_mem] = offset
+    data[:size] = code.bytesize
+    data[:previous_block_mem] = previous_block_offset
+    data[:base_offset_scm] = offset - scm_offset
+    data[:code_init] = symbols[:labels][:inject_init]
+    data[:code_loop] = symbols[:labels][:inject_loop]
+    data[:code_exit] = symbols[:labels][:inject_exit]
+    data[:patch_loop_head] = symbols[:labels][:inject_loop_head]
+    data[:patch_loop_goto] = symbols[:labels][:inject_loop_goto]
+    data[:patch_exit_goto] = symbols[:labels][:inject_exit_goto]
+    data[:filename] = name
+    data[:compiled_at] = compiled_at
+
+    [code,data,symbols]
   end
 
+
+
   def header_instructions
-    [                                         # total: 172
+    [                                         # total: 183
 
       [:Rawhex,["B6","05"]],                  # 2
       [:Padding,[128]],                       # 128
+      [:labeldef,:header_tail],
+
+      [:script_name,[[:string8,"xinj003"]]],  # 11
 
       [:gosub,[[:label,:inject_init]]],       # 7
+      # [:terminate_this_script],               # 2
 
       [:labeldef,:inject_loop_head],          # 
       [:wait,[[:int16,0]]],                   # 5
@@ -294,6 +368,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
       # on reload, jump to new inject_loop_head here
       # on re-init, jump to inject_loop_tail
+      [:labeldef,:inject_loop_goto],
       [:goto, [[:label,:inject_loop_head]]],  # 7
 
       [:labeldef,:inject_loop_tail],          # 
@@ -301,12 +376,66 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
       [:gosub,[[:label,:inject_exit]]],       # 7
 
       # on re-init, jump to new block here
+      [:labeldef,:inject_exit_goto],
       [:goto, [[:label,:inject_exit_tail]]],  # 7
 
       [:labeldef,:inject_exit_tail],          # 
 
       [:terminate_this_script]                # 2
     ]
+  end
+
+  def add_packed_header!(payload,symbols)
+    offset = 2
+    payload = payload.dup
+    
+    payload[offset...offset+16] = MAGIC_STRING.ljust(16,"\0").force_encoding("ASCII-8BIT")
+    offset += 16
+    
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:base_offset_mem],:int32)
+    offset += 4
+
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:size],:int32)
+    offset += 4
+
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:previous_block_mem],:int32)
+    offset += 4
+
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:base_offset_scm],:int32)
+    offset += 4
+
+    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:code_init],:int32)
+    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    offset += 4
+
+    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:code_loop],:int32)
+    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    offset += 4
+
+    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:code_exit],:int32)
+    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    offset += 4
+
+    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:patch_loop_head],:int32)
+    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    offset += 4
+
+    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:patch_loop_goto],:int32)
+    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    offset += 4
+
+    # payload[offset..offset+4] = GtaScm::Types.value2bin(symbols[:patch_exit_goto],:int32)
+    payload[offset...offset+4] = "\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    offset += 4
+
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:compiled_at].to_i,:int32)
+    offset += 4
+
+    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:compiled_at].usec,:int32)
+    offset += 4
+
+    payload
+
   end
 end
 
@@ -315,8 +444,20 @@ end
 # $panels[:process] = GtaScm::ProcessPanel.new(0,0,80,0)
 $panels[:code_reloader] = GtaScm::CodeReloaderPanel.new(0,0,80,0)
 
-# puts hex( $panels[:code_reloader].bytecode )
+aaa = $panels[:code_reloader].bytecode(BASE_ALLOC_OFFSET,"inject/test",-1,process.scm_offset)
+aaa[0] = $panels[:code_reloader].add_packed_header!(aaa[0],aaa[1])
+puts hex( aaa[0] )
+puts aaa[1].inspect
+puts aaa[2].inspect
+
+process.write(BASE_ALLOC_OFFSET+process.scm_offset,aaa[0])
+sleep(0.1)
+puts(hex(process.read(BASE_ALLOC_OFFSET+process.scm_offset-4,256)))
 # exit
+process.rpc(1,BASE_ALLOC_OFFSET)
+# process.rpc(1,194913)
+
+exit
 
 
 screen = RuTui::Screen.new

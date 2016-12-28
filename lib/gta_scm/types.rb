@@ -81,6 +81,7 @@ module GtaScm::Types
   }
 
   def self.value2bin(value,o_type)
+    return nil if value.nil?
     if o_type == :istring8
       # return nil #FIXME? why nil??
       value[0...7]+"\x00"

@@ -11,6 +11,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
       attr_accessor :gvars_names
       attr_accessor :external_label_map
       attr_accessor :external_threads
+      attr_accessor :symbols_data
     end
     self.var_types = Hash.new
     self.label_map = Hash.new
@@ -20,6 +21,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
     self.gvars_names = Hash.new
     self.external_label_map = Hash.new{|h,k| h[k] = {}}
     self.external_threads = Hash.new{|h,k| h[k] = {}}
+
   end
 
   def on_complete
@@ -184,6 +186,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
 
         data[:external_threads] = self.external_threads
 
+        self.symbols_data = data
         f << JSON.pretty_generate(data)
       end
     end
