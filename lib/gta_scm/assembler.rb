@@ -311,6 +311,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           parsed = Parser::CurrentRuby.parse(ruby)
 
           iscm = GtaScm::Scm.load_string("san-andreas","")
+          iscm.logger.level = self.logger.level
           iscm.load_opcode_definitions!
 
           compiler = GtaScm::RubyToScmCompiler.new
@@ -334,6 +335,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           args = Hash[tokens[2..-1]]
 
           iscm = GtaScm::Scm.load_string("san-andreas","")
+          iscm.logger.level = self.logger.level
           iscm.load_opcode_definitions!
 
           iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
@@ -373,6 +375,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           # args = Hash[tokens[2..-1]]
 
           iscm = GtaScm::Scm.load_string("san-andreas","")
+          iscm.logger.level = self.logger.level
           iscm.load_opcode_definitions!
 
           iasm = GtaScm::Assembler::Sexp.new(self.input_dir)
@@ -693,6 +696,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.touchup_defines = self.parent.touchup_defines.dup
     # self.touchup_uses = self.parent.touchup_uses
     # self.touchup_types = self.parent.touchup_types
+  end
+
+  def logger
+    @logger ||= GtaScm.logger.dup.tap do |logger|
+      logger.level = parent.logger.level if parent
+    end
   end
 
 end

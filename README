@@ -23,19 +23,27 @@ NEXT:
 * code reloader:
   get malloc space
   insert header+code
-  header: magic string, size of code, routine offsets for: init/loop/shutdown
+  header: magic string, size of code, routine offsets for: init/loop/shutdown, base offsets (mem+scm relative)
   when new code is inserted, either:
     * trigger shutdown of old code, start new code
     * trigger old code to jump to new code, retaining local var state
+    debug_string("binary data with header")
+    init()
+    jump(to_next_instruction)
+    loop()
+    jump(to_next_instruction)
+    shutdown()
+    jump(to_next_instruction)
+    terminate_this_script()
     routines {
       init{}
       loop{}
       shutdown{}
     }
-    init()
-    loop()
-    shutdown()
-    terminate_this_script()
+
+  to halt current code, look at loop_offset, read wait instruction, write return instruction immediately afterwards
+  control whether it reloads or shutsdown/reinits by altering main body jumps
+  entry/re-entry points: with init: body+0, without init: body+14
 
 * game: garage manager - have drop-off areas for it, charge money?
 * game: garage manager - deliver cars in traffic, don't just spawn?

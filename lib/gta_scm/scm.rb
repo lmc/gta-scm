@@ -75,6 +75,7 @@ class GtaScm::Scm
   def load_opcode_definitions!
     self.opcodes.load_definitions!( self.game_id )
     # self.load_other_definitions!
+    logger.debug "Loaded #{opcodes.size} opcode definitions"
   end
 
   def load_other_definitions!
@@ -159,6 +160,10 @@ class GtaScm::Scm
   def mission_for_offset(offset)
     return nil if !missions_header
     missions_header.mission_for_offset(offset)
+  end
+
+  def logger
+    @logger ||= GtaScm.logger.dup
   end
 
 end

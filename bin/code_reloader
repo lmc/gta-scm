@@ -137,7 +137,8 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
       # FIXME: include opcode in structure (debug_string)
 
       offsets << BASE_ALLOC_OFFSET
-      payload  = MAGIC_STRING.dup.ljust(16,"_")
+      payload  = [0xB6,0x05].map(&:chr).join("")
+      payload += MAGIC_STRING.dup.ljust(16,"_")
       payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
       payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
       payload += GtaScm::Types.value2bin(    -1 , :int32 ) # previous_block
@@ -148,7 +149,8 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
       process.write(offsets[0],payload)
 
       offsets << BASE_ALLOC_OFFSET+420
-      payload  = MAGIC_STRING.dup.ljust(16,"_")
+      payload  = [0xB6,0x05].map(&:chr).join("")
+      payload += MAGIC_STRING.dup.ljust(16,"_")
       payload += GtaScm::Types.value2bin( 42069 , :int32 ) # offset
       payload += GtaScm::Types.value2bin(   420 , :int32 ) # size
       payload += GtaScm::Types.value2bin(offsets[0], :int32 ) # previous_block
@@ -196,12 +198,13 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
   def read_block_at(process,offset)
     return nil if !process || !process.attached?
     begin
-      magic = process.read(offset,MAGIC_STRING.size)
+      opcode = process.read(offset,2)
+      magic = process.read(offset+2,MAGIC_STRING.size)
     rescue
       return nil
     end
     return nil if magic != MAGIC_STRING
-    i = 16
+    i = 2+16
     _offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
     # return nil if _offset != offset
@@ -218,7 +221,92 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     body_offset = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
 
+    # base offset (mem)
+    # size
+    # prev offset (mem)
+    # base offset (scm)
+    # body offset (relative)
+    # init offset (relative)
+    # loop offset (relative)
+    # exit offset (loop)
     return [offset,magic,size,previous_block,init_offset,loop_offset,kill_offset,body_offset,nil]
+  end
+
+  def bytecode(offset,name)
+    # offset = 2**30
+    input_dir = "./scm-src/sa-experiments"
+    # name = "inject/test"
+    file = ""
+
+    tokens  = self.header_instructions
+    tokens += [
+      [:IncludeRuby,name]
+    ]
+
+    iscm = GtaScm::Scm.load_string("san-andreas","")
+    # iscm.logger.level = :none
+    iscm.load_opcode_definitions!
+
+    iasm = GtaScm::Assembler::Sexp.new(input_dir)
+    iasm.code_offset = offset
+
+    def iasm.install_features!
+      class << self
+        include GtaScm::Assembler::Feature::VariableAllocator
+        # include GtaScm::Assembler::Feature::ListVariableAllocator
+        include GtaScm::Assembler::Feature::VariableHeaderAllocator
+        include GtaScm::Assembler::Feature::ExportSymbols
+        # include GtaScm::Assembler::Feature::CoolOutput
+      end
+      self.on_feature_init()
+    end
+
+    iasm.symbols_name = "inject"
+
+    lines = tokens.map { |node| Elparser::encode(node) }
+
+    lines.each_with_index do |line,line_idx|
+      iasm.read_line(iscm,line,file,line_idx)
+    end
+    iasm.on_before_touchups()
+    iasm.install_touchup_values!
+    iasm.on_after_touchups()
+    iasm.on_complete()
+
+    output = StringIO.new
+    iasm.emit_assembly!(iscm,"",output)
+
+    output.rewind
+    code = output.read
+  end
+
+  def header_instructions
+    [                                         # total: 172
+
+      [:Rawhex,["B6","05"]],                  # 2
+      [:Padding,[128]],                       # 128
+
+      [:gosub,[[:label,:inject_init]]],       # 7
+
+      [:labeldef,:inject_loop_head],          # 
+      [:wait,[[:int16,0]]],                   # 5
+      [:gosub,[[:label,:inject_loop]]],       # 7
+
+      # on reload, jump to new inject_loop_head here
+      # on re-init, jump to inject_loop_tail
+      [:goto, [[:label,:inject_loop_head]]],  # 7
+
+      [:labeldef,:inject_loop_tail],          # 
+
+      [:gosub,[[:label,:inject_exit]]],       # 7
+
+      # on re-init, jump to new block here
+      [:goto, [[:label,:inject_exit_tail]]],  # 7
+
+      [:labeldef,:inject_exit_tail],          # 
+
+      [:terminate_this_script]                # 2
+    ]
   end
 end
 
@@ -226,6 +314,9 @@ end
 
 # $panels[:process] = GtaScm::ProcessPanel.new(0,0,80,0)
 $panels[:code_reloader] = GtaScm::CodeReloaderPanel.new(0,0,80,0)
+
+# puts hex( $panels[:code_reloader].bytecode )
+# exit
 
 
 screen = RuTui::Screen.new

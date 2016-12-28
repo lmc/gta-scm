@@ -39,6 +39,8 @@ class GtaScm::RubyToScmCompiler
         handle_conditional_emit(node,node.children[0].children[2].type == :true)
       elsif node.children[0].type == :send && node.children[0].children[1] == :routines
         handle_routines_declare(node)
+      # elsif node.children[0].type == :send && node.children[0].children[1] == :routine
+        
       else
         debugger
         raise "unknown block type: #{node.inspect}"

@@ -32,13 +32,13 @@ class GtaScm::GxtFile < GtaScm::FileWalker
     raise "Magic number 'TABL' not found (got #{hex(_tabl)})" if _tabl != 'TABL'
 
     tabl_size = GtaScm::Types.bin2value( self.read(4) , :int32 )
-    logger.info "tabl_size: #{tabl_size}"
+    # logger.info "tabl_size: #{tabl_size}"
 
     (tabl_size / TABL_BYTES).times do |idx|
       name = self.read(8).map(&:chr).join.strip
       offset = GtaScm::Types.bin2value( self.read(4) , :int32 )
       self.tabl[name] = offset
-      logger.info "#{name.inspect} #{offset}"
+      # logger.info "#{name.inspect} #{offset}"
     end
   end
 
@@ -64,7 +64,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
       name = self.read(8).map(&:chr).join.strip
       offset = GtaScm::Types.bin2value( self.read(4) , :int32 )
       self.tabl[name] = offset
-      logger.info "#{name.inspect} #{offset}"
+      # logger.info "#{name.inspect} #{offset}"
     end
   end
 
@@ -275,7 +275,7 @@ class GtaScm::GxtFile < GtaScm::FileWalker
     self.seek(offset)
     _tdat = self.read(4).map(&:chr).join
     size = GtaScm::Types.bin2value( self.read(4) , :int32 )
-    logger.info "tdat #{_tdat} #{size}"
+    # logger.info "tdat #{_tdat} #{size}"
   end
 
   attr_accessor :tkey_counter

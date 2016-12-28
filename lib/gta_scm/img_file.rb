@@ -18,7 +18,7 @@ class GtaScm::ImgFile < File
     self.parser = GtaScm::FileWalker.new(self,0)
     ver2 = self.parser.read(4)
     entry_count = GtaScm::Types.bin2value( self.parser.read(4) , :int32 )
-    logger.info "#{ver2} #{entry_count}"
+    # logger.info "#{ver2} #{entry_count}"
     parse_dir_entries!(entry_count)
   end
 
