@@ -225,7 +225,8 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     return if !is_attached
 
     if key == "p"
-      self.inject(process,"inject/test",:kill)
+      # self.inject(process,"inject/test",:kill)
+      self.inject(process,"inject/test",:reload)
     end
   end
 
@@ -261,12 +262,17 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     spawn_script = true
 
     if $last_inject_offset > 0 && (last_block = self.read_block_at(process,$last_inject_offset))
-      
+
       if handle_last_script == :kill
         loop_goto = last_block[:ploopg]
-        destination = $current_inject_offset + loop_goto + 7
+        destination = $last_inject_offset - process.scm_offset + loop_goto + 7
         process.write($last_inject_offset + loop_goto + 3, GtaScm::Types.value2bin(destination,:int32))
         spawn_script = true
+      elsif handle_last_script == :reload
+        loop_goto = last_block[:ploopg]
+        destination = $current_inject_offset + aaa[1][:patch_loop_head]
+        process.write($last_inject_offset + loop_goto + 3, GtaScm::Types.value2bin(destination,:int32))
+        spawn_script = false
       else
         spawn_script = false
       end
