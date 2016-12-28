@@ -100,7 +100,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     self.elements[:alloc_table] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(3),
-      table: [["default","","","","","","","","","","","","",""]],
+      table: [["default","","","","","","","","","","","","","","","",""]],
       cols: [
         { title: "ID"           , length:  3 },
         { title: "Offset"      , length: 12 },
@@ -116,6 +116,9 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
         { title: "pExitG" , length: 6 },
         { title: "Compiled At" , length: 25 },
         { title: "Filename" , length: 25 },
+        { title: "Active" , length: 6 },
+        { title: "Saved At" , length: 25 },
+        { title: "Status" , length: 16 },
       ],
       header: true,
       hover: RuTui::Theme.get(:highlight),
@@ -131,8 +134,8 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     self.elements[:text].set_text(str)
 
     return if !process || !process.attached?
-    self.elements[:alloc_text].set_text("Allocations"+(" "*10)+"Base offset: #{BASE_ALLOC_OFFSET}"+(" "*10)+"SCM Offset: #{process.scm_offset}")
-    self.elements[:help_text].set_text("p: debug inject")
+    self.elements[:alloc_text].set_text("Allocations"+(" "*10)+"Base offset: #{BASE_ALLOC_OFFSET}"+(" "*10)+"SCM Offset: #{process.scm_offset}, current_inject_offset: #{$current_inject_offset} last_inject_offset: #{$last_inject_offset}, block_data_offset: #{$block_data_offset}")
+    self.elements[:help_text].set_text("p: debug inject, o: reload ready script")
   end
 
   MAGIC_STRING = "GtaScmReloader1".force_encoding("ASCII-8BIT").freeze
@@ -140,6 +143,8 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
   def update(process,is_attached)
     # data = [["","","","",""]]
     return if !is_attached
+
+    self.read_persist_from_game!(process)
 
     # if !self.written
     #   offsets = []
@@ -158,25 +163,28 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     #   self.written = true
     # end
 
-    blocks = []
-    block = nil
-    offset = BASE_ALLOC_OFFSET+process.scm_offset
-    loop do
-      block = read_block_at(process,offset)
-      break if !block
-      offset += block[3] # block size
-      blocks << block
-    end
+    blocks = block_data(process)
 
     data = blocks.map do |block|
-      block.map(&:to_s)
+      # array = block.values.map{|v| v.is_a?(Time) ? v.strftime("%Y-%m-%d %H:%M:%S %z") : v.to_s}
+      array = block.values_at(:id,:offset,:magic,:size,:previous_block,:scm_offset,:init_offset,:loop_offset,:kill_offset,:plooph,:ploopg,:pexitg).map(&:to_s)
+      array << block[:compiled_at].strftime("%Y-%m-%d %H:%M:%S %z")
+      array << block[:filename]
+      array << block[:active].to_s
+      array << if block[:saved_at]
+        block[:saved_at].strftime("%Y-%m-%d %H:%M:%S %z")
+      else
+        "-1"
+      end
+      array << block[:status].to_s
+      array
     end
 
     if data.size == 0
-      data = [["#{blocks.size}","#{BASE_ALLOC_OFFSET}","","","","","","","","","","","","#{hex(process.read(BASE_ALLOC_OFFSET-2,16))}"]]
+      data = [["#{blocks.size}","#{BASE_ALLOC_OFFSET}","","","","","","","","","","","","","","#{hex(process.read(BASE_ALLOC_OFFSET-2,16))}",""]]
     end
 
-    if data[0] && data[0].size == 14
+    if data[0] && data[0].size == 17
       self.elements[:alloc_table].set_table(data)
     end
 
@@ -185,19 +193,95 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
   end
 
+
+  $block_data_offset = -1
+  def block_data(process)
+    blocks = []
+    block = nil
+    offset = $block_data_offset+process.scm_offset
+    loop do
+      block = read_block_at(process,offset)
+      break if !block
+
+      if block[:filename]
+        block[:saved_at] = File.mtime("scm-src/sa-experiments/#{block[:filename]}.scm.rb")
+      end
+
+      block[:status] = if block[:active] == 0
+        :dead
+      elsif block[:saved_at] && block[:compiled_at] && block[:saved_at] > block[:compiled_at]
+        :reload_ready
+      else
+        :unknown
+      end
+
+      offset += block[:size] # block size
+      blocks << block
+    end
+    blocks
+  end
+
   def input(key,is_attached,process)
     return if !is_attached
 
-    $last_inject_offset ||= -1
-    $current_inject_offset ||= BASE_ALLOC_OFFSET
     if key == "p"
-      aaa = $panels[:code_reloader].bytecode($current_inject_offset,"inject/test",$last_inject_offset,process.scm_offset)
-      aaa[0] = $panels[:code_reloader].add_packed_header!(aaa[0],aaa[1])
-      process.write($current_inject_offset+process.scm_offset,aaa[0])
-      process.rpc(1,$current_inject_offset)
-      $last_inject_offset = $current_inject_offset+process.scm_offset
-      $current_inject_offset += aaa[0].size
+      self.inject(process,"inject/test",:kill)
     end
+  end
+
+
+  def read_persist_from_game!(process)
+
+    if !$last_inject_offset && !$current_inject_offset
+      $block_data_offset = BASE_ALLOC_OFFSET
+      last_block = block_data(process).last
+
+      40.times{puts}
+      puts last_block.inspect
+      40.times{puts}
+
+      if last_block
+        $block_data_offset = BASE_ALLOC_OFFSET
+        $last_inject_offset = last_block[:offset]
+        $current_inject_offset = last_block[:offset] + last_block[:size] - process.scm_offset
+      else
+        $block_data_offset = BASE_ALLOC_OFFSET
+        $last_inject_offset = -1
+        $current_inject_offset = BASE_ALLOC_OFFSET
+      end
+    end
+
+  end
+
+  def inject(process,filename,handle_last_script = nil)
+    aaa = $panels[:code_reloader].bytecode($current_inject_offset,filename,$last_inject_offset)
+    aaa[0] = $panels[:code_reloader].add_packed_header!(aaa[0],aaa[1])
+    process.write($current_inject_offset+process.scm_offset,aaa[0])
+
+    spawn_script = true
+
+    if $last_inject_offset > 0 && (last_block = self.read_block_at(process,$last_inject_offset))
+      
+      if handle_last_script == :kill
+        loop_goto = last_block[:ploopg]
+        destination = $current_inject_offset + loop_goto + 7
+        process.write($last_inject_offset + loop_goto + 3, GtaScm::Types.value2bin(destination,:int32))
+        spawn_script = true
+      else
+        spawn_script = false
+      end
+
+      # set active to 0
+      active_offset = 62
+      process.write( $last_inject_offset + active_offset , GtaScm::Types.value2bin(0,:int32))
+    end
+
+    if spawn_script
+      process.rpc(1,$current_inject_offset)
+    end
+
+    $last_inject_offset = $current_inject_offset + process.scm_offset
+    $current_inject_offset += aaa[0].size
   end
 
 
@@ -235,11 +319,13 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
     compiled_at_i = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
     i += 4
-    compiled_at_u = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
-    i += 4
     compiled_at = Time.at(compiled_at_i)
-    # compiled_at.usec = compiled_at_u
 
+    active = GtaScm::Types.bin2value( process.read(offset+i,4) , :int32 )
+    i += 4
+
+    filename = process.read(offset+i,32).strip
+    i += 32
 
     # base offset (mem)
     # size
@@ -250,10 +336,28 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     # loop offset (relative)
     # exit offset (loop)
     # return [offset,magic,size,previous_block,init_offset,loop_offset,kill_offset,body_offset,nil]
-    return [nil,offset,magic,size,previous_block,scm_offset,init_offset,loop_offset,kill_offset,plooph,ploopg,pexitg,compiled_at.strftime("%Y-%m-%d %H:%M:%S %z"),nil]
+    # return [nil,offset,magic,size,previous_block,scm_offset,init_offset,loop_offset,kill_offset,plooph,ploopg,pexitg,compiled_at.strftime("%Y-%m-%d %H:%M:%S %z"),filename]
+
+    {
+      id: -1,
+      offset: offset,
+      magic: magic,
+      size: size,
+      previous_block: previous_block,
+      scm_offset: scm_offset,
+      init_offset: init_offset,
+      loop_offset: loop_offset,
+      kill_offset: kill_offset,
+      plooph: plooph,
+      ploopg: ploopg,
+      pexitg: pexitg,
+      compiled_at: compiled_at,
+      filename: filename,
+      active: active,
+    }
   end
 
-  def bytecode(offset,name,previous_block_offset,scm_offset)
+  def bytecode(offset,name,previous_block_offset)
     compiled_at = Time.now
     # offset = 2**30
     input_dir = "./scm-src/sa-experiments"
@@ -412,8 +516,12 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:compiled_at].to_i,:int32)
     offset += 4
 
-    payload[offset...offset+4] = GtaScm::Types.value2bin(symbols[:compiled_at].usec,:int32)
+    # active
+    payload[offset...offset+4] = GtaScm::Types.value2bin(1,:int32)
     offset += 4
+
+    payload[offset...offset+32] = "#{symbols[:filename]}".ljust(32,"\0")
+    offset += 32
 
     payload
   end
