@@ -2,6 +2,7 @@ GTA SCM
 =======
 
 Unused/debug code:
+ 55976 -  60030 :  4054       - unused after game boot, useful for temp variables? (within range, won't be saved into save)
  56124 -  56153 :    29       - jumped-over code
  56728 -  57945 :  1217       - jumped-over code during init
  59712 -  59754 :    42       - these launch_missions just hit terminate_this_script commands
@@ -15,6 +16,10 @@ Unused/debug code:
 152364 - 154839 :  2475       - unused gf debug
 
                 :  7,217
+
+intro mission launch site: 59976
+
+
 NEXT:
 
 * DONE: generate call graph

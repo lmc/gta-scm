@@ -7,6 +7,7 @@ class GtaScm::ControlFlowGraph
   attr_accessor :offset
 
   attr_accessor :limit
+  attr_accessor :mission_offset
 
   # FIXME: change `node` to `block`
 
@@ -125,11 +126,17 @@ class GtaScm::ControlFlowGraph
       offset = node_group.first.offset
       nodes << { offset: offset, offsets: node_group.map(&:offset), text: node_group_text(node_group), type: node_group.type, region: -1 }
       node_group.jumps.each do |(jump_type,jump_offset)|
+        jump_offset = absolute_jump_offset(jump_offset)
         edges << { from: offset, to: jump_offset, type: jump_type, region: -1}
       end
     end
 
     { nodes: nodes , edges: edges }
+  end
+
+  def absolute_jump_offset(jump_offset)
+    return jump_offset if jump_offset >= 0
+    self.mission_offset + jump_offset.abs
   end
 
   def node_group_text(node_group)
@@ -157,7 +164,7 @@ class GtaScm::ControlFlowGraph
 
     self.nodes.each do |ng|
       ng.jumps.each do |(jump_type,jump_offset)|
-        # debugger
+        jump_offset = absolute_jump_offset(jump_offset)
         if gnodes[ng.first.offset] && gnodes[ jump_offset ]
           edge = g.add_edges( gnodes[ng.first.offset] , gnodes[ jump_offset ] )
           # edge[:label] = "#{jump_type} -> #{jump_offset}"

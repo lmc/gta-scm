@@ -89,7 +89,15 @@
 % == Patches ==========================
 
 (PadUntil (57945))
-(IncludeBin ("games/san-andreas/data/script/main.scm" 57945 61294))
+
+(IncludeBin ("games/san-andreas/data/script/main.scm" 57945 59976))
+
+% patch out intro mission launcher
+% (load_and_launch_mission_internal ((int8 2)))
+(nop)
+(nop)
+
+(IncludeBin ("games/san-andreas/data/script/main.scm" 59980 61294))
 
 % patch out load_and_launch_mission_internal(4) to load bad duality game (we use it's global vars) 
 (set_var_int ((dmavar 1636) (int8 1)))

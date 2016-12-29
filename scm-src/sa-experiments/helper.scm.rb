@@ -24,10 +24,7 @@ emit(false) do
   str_name = ""
 end
 
-wait(5000)
-wait(5000)
-wait(5000)
-wait(5000)
+do_fade(100,1)
 
 city = 1
 
