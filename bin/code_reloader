@@ -95,11 +95,12 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     self.elements[:help_text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
     self.elements[:alloc_text] = RuTui::Text.new(x: dx(0), y: dy(2), text: "")
+    self.elements[:status_text] = RuTui::Text.new(x: dx(0), y: dy(3), text: "")
     set_text
 
     self.elements[:alloc_table] = RuTui::Table.new({
       x: self.dx(0),
-      y: self.dy(3),
+      y: self.dy(4),
       table: [["default","","","","","","","","","","","","","","","",""]],
       cols: [
         { title: "ID"           , length:  3 },
@@ -114,16 +115,18 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
         { title: "pLoopH" , length: 6 },
         { title: "pLoopG" , length: 6 },
         { title: "pExitG" , length: 6 },
-        { title: "Compiled At" , length: 25 },
-        { title: "Filename" , length: 25 },
+        { title: "Compiled At" , length: 19 },
+        { title: "Filename" , length: 12 },
         { title: "Active" , length: 6 },
-        { title: "Saved At" , length: 25 },
+        { title: "Saved At" , length: 19 },
         { title: "Status" , length: 16 },
       ],
       header: true,
       hover: RuTui::Theme.get(:highlight),
       hover_fg: RuTui::Theme.get(:highlight_fg),
     })
+
+    self.settings[:auto_reload] = true
   end
 
   def set_text(process = nil)
@@ -136,47 +139,29 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     return if !process || !process.attached?
     self.elements[:alloc_text].set_text("Allocations"+(" "*10)+"Base offset: #{BASE_ALLOC_OFFSET}"+(" "*10)+"SCM Offset: #{process.scm_offset}, current_inject_offset: #{$current_inject_offset} last_inject_offset: #{$last_inject_offset}, block_data_offset: #{$block_data_offset}")
     self.elements[:help_text].set_text("p: debug inject, o: reload ready script")
+    self.elements[:status_text].set_text("Auto Reload: #{self.settings[:auto_reload]} (m: toggle)")
   end
 
   MAGIC_STRING = "GtaScmReloader1".force_encoding("ASCII-8BIT").freeze
   attr_accessor :written
   def update(process,is_attached)
-    # data = [["","","","",""]]
     return if !is_attached
-
     self.read_persist_from_game!(process)
 
-    # if !self.written
-    #   offsets = []
-
-    #   offsets << BASE_ALLOC_OFFSET
-    #   payload,symbols = self.bytecode(offsets[-1],"inject/test",offsets[-2] || -1,process.scm_offset)
-    #   add_packed_header!(payload,symbols)
-    #   puts "==="
-    #   puts hex(payload)
-    #   puts "==="
-    #   process.write(offsets[-1],payload)
-    #   process.rpc(1,offsets[-1]-process.scm_offset)
-
-    #   50.times { puts }
-
-    #   self.written = true
-    # end
-
     blocks = block_data(process)
-
     data = blocks.map do |block|
       # array = block.values.map{|v| v.is_a?(Time) ? v.strftime("%Y-%m-%d %H:%M:%S %z") : v.to_s}
       array = block.values_at(:id,:offset,:magic,:size,:previous_block,:scm_offset,:init_offset,:loop_offset,:kill_offset,:plooph,:ploopg,:pexitg).map(&:to_s)
-      array << block[:compiled_at].strftime("%Y-%m-%d %H:%M:%S %z")
+      array << block[:compiled_at].strftime("%Y-%m-%d %H:%M:%S")
       array << block[:filename]
       array << block[:active].to_s
       array << if block[:saved_at]
-        block[:saved_at].strftime("%Y-%m-%d %H:%M:%S %z")
+        block[:saved_at].strftime("%Y-%m-%d %H:%M:%S")
       else
         "-1"
       end
       array << block[:status].to_s
+
       array
     end
 
@@ -190,7 +175,9 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
     set_text(process)
 
-
+    if self.settings[:auto_reload] && (reload_block = blocks.detect{|b| b[:status] == :reload_ready})
+      self.inject(process,"inject/test",:reload)
+    end
   end
 
 
@@ -212,7 +199,7 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
       elsif block[:saved_at] && block[:compiled_at] && block[:saved_at] > block[:compiled_at]
         :reload_ready
       else
-        :unknown
+        :running
       end
 
       offset += block[:size] # block size
@@ -223,6 +210,10 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
 
   def input(key,is_attached,process)
     return if !is_attached
+
+    if key == "m"
+      self.settings[:auto_reload] = !self.settings[:auto_reload]
+    end
 
     if key == "p"
       # self.inject(process,"inject/test",:kill)
@@ -376,10 +367,11 @@ class GtaScm::CodeReloaderPanel < GtaScm::Panel
     ]
 
     iscm = GtaScm::Scm.load_string("san-andreas","")
-    # iscm.logger.level = :none
+    iscm.logger.level = :none
     iscm.load_opcode_definitions!
 
     iasm = GtaScm::Assembler::Sexp.new(input_dir)
+    iasm.logger.level = iscm.logger.level
     iasm.code_offset = offset# - scm_offset
 
     def iasm.install_features!

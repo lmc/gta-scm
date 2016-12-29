@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/read_img
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/img_file'
+
+# img_file = GtaScm::ImgFile.open("./games/san-andreas/data/script/script.img")
+img_file = GtaScm::ImgFile.open("./mods.img","w")
+
+entries = []
+data = []
+
+entries << {name: "mikoto.dff"}
+data << File.read("./mikoto.dff")
+entries << {name: "mikoto.txd"}
+data << File.read("./mikoto.txd")
+
+entries.each_with_index do |entry,idx|
+  img_file.add_file(entry[:name],data[idx])
+end
+img_file.rebuild!
+
+
+
+
+
+# size = img_file.size
+# img_file_w.seek(0)
+# img_file_w << img_file.read
+# img_file_w << "\0" * 2048
+# img_file_w.close
+
+

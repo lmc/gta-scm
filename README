@@ -137,7 +137,7 @@ useful for spawning cars? GET_PARKING_NODE_IN_AREA
 * DONE: array handling
 * DSL for patching original scm?
 
-enable/disable keys
+enable/disable keys (hold down r1, use face buttons to navigate, disabling original functions)
 enter/ext vehicle: SET_PLAYER_ENTER_CAR_BUTTON
 duck: SET_PLAYER_DUCK_BUTTON
 shoot: SET_PLAYER_FIRE_BUTTON
