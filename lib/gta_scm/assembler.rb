@@ -304,17 +304,20 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           return
         when :IncludeRuby
           file = tokens[1]
+          filename = "#{file}.scm.rb"
           args = Hash[tokens[2..-1]]
           start_offset = offset
 
-          ruby = File.read("#{self.input_dir}/#{file}.scm.rb")
-          parsed = Parser::CurrentRuby.parse(ruby)
+          ruby = File.read("#{self.input_dir}/#{filename}")
 
           iscm = GtaScm::Scm.load_string("san-andreas","")
           iscm.logger.level = self.logger.level
           iscm.load_opcode_definitions!
 
           compiler = GtaScm::RubyToScmCompiler.new
+
+          parsed = compiler.parse_ruby(ruby,filename)
+
           compiler.scm = iscm
           compiler.label_prefix = "l_#{file}_"
           compiler.external = !!args[:external]

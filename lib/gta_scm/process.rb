@@ -139,7 +139,7 @@ class GtaScm::Process
     stop = start + (self.thread_size * self.thread_max)
     addr = start
     while addr < stop
-      bytes = Ragweed::Wraposx::vm_read(process.task,addr,self.thread_size)
+      bytes = self.read(addr,self.thread_size)
       bytes = GtaScm::FileWalker.new( StringIO.new(bytes) )
       thread = GtaScm::ThreadSa.new
       thread.scm_offset = self.scm_offset

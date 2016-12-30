@@ -205,7 +205,7 @@ class GtaScm::ControlFlowGraph
         ]
       when :gosub
         [
-          # [:gosub, self.last.arguments.last.value ],
+          [:gosub, self.last.arguments.last.value ],
           [:implicit, self.last.offset + self.last.size]
         ]
       when :switch

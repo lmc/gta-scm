@@ -25,6 +25,9 @@ NEXT:
 * DONE: generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
+* stack for function call args
+  is it safe to use if each script leaves the stack empty before yielding?
+
 * code reloader:
   get malloc space
   insert header+code
@@ -49,6 +52,12 @@ NEXT:
   to halt current code, look at loop_offset, read wait instruction, write return instruction immediately afterwards
   control whether it reloads or shutsdown/reinits by altering main body jumps
   entry/re-entry points: with init: body+0, without init: body+14
+
+  UI columns:
+  filename (16+)+3
+  mode (6)+3
+  injected at (9)+3
+  status (the rest)
 
 * game: garage manager - have drop-off areas for it, charge money?
 * game: garage manager - deliver cars in traffic, don't just spawn?

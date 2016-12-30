@@ -203,6 +203,8 @@ spawn_car = routine do
     end
   end
 
+  fff ( ;o2>@#$*
+
   tmp_car_variation = 15
   if tmp_car_variation < 15
     set_car_model_components(tmp_car_id,tmp_car_variation,-1)

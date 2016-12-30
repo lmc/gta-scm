@@ -22,6 +22,14 @@ class GtaScm::RubyToScmCompiler
     # self.constants_to_values[:BREAKPOINT_PC] = [:dmavar, 12]
   end
 
+  def parse_ruby(ruby,filename = nil)
+    begin
+      parsed = Parser::CurrentRuby.parse(ruby)
+    rescue Parser::SyntaxError => exception
+      raise GtaScm::RubyToScmCompiler::InputError.new("error",exception,{filename: filename})
+    end
+  end
+
   def transform_node(node)
     # debugger
     if !node.respond_to?(:type)
@@ -1046,6 +1054,23 @@ class GtaScm::RubyToScmCompiler
 
 
   # ERRORS
+  class InputError < ::ArgumentError;
+    def initialize(message,original_exception,metadata = {})
+      super(message)
+      @message = message
+      @original_exception = original_exception
+      @metadata = metadata
+    end
+
+    def message
+      case @original_exception
+      when Parser::SyntaxError
+        "Parser::SyntaxError - #{@message}\n#{@original_exception.diagnostic.render.join("\n").gsub(/^(\(string\))\:/m,"#{@metadata[:filename]}:")}"
+      else
+        @message
+      end
+    end
+  end
 
   class InvalidConditionalLogicalOperatorUse < ::ArgumentError; end
   class IncorrectArgumentCount < ::ArgumentError; end

@@ -11,9 +11,13 @@ routines do
     counter += 1
     use_text_commands(1)
     set_text_scale(5.0,5.0)
+
+    hey7s 32490 :fusdfm [ )
     # set_text_colour(0,255,0,255)
     # set_text_font(3)
     display_text_with_number(20.0,20.0,"NUMBER",counter)
+    $_59743 = 42069
+    display_text_with_number(20.0,200.0,"NUMBER",$_59743)
   end
 end
 
