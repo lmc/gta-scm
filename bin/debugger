@@ -80,6 +80,10 @@ class GtaScm::Panel
     
   end
 
+  def mouse_input(key,is_attached,process)
+    
+  end
+
   def dx(xo)
     self.x + xo
   end
@@ -125,7 +129,7 @@ class GtaScm::ProcessPanel < GtaScm::Panel
     else
       self.settings[:pid] = nil
     end
-    self.set_text(process)
+    # self.set_text(process)
   end
 
   def input(key,is_attached,process)
@@ -140,6 +144,12 @@ class GtaScm::ProcessPanel < GtaScm::Panel
         process.kill!
       end
     end
+
+    self.elements[:text].set_text("key: `#{key}` (#{key.bytes.inspect})")
+  end
+
+  def mouse_input(key,is_attached,process)
+    self.elements[:text].set_text("mouse: (#{key.bytes.inspect})")
   end
 end
 
@@ -942,8 +952,9 @@ thr = ::Thread.new do
       end
 
       RuTui::ScreenManager.draw
+      GC.start
     ensure
-      sleep_time = (start + 0.5) - Time.now
+      sleep_time = (start + 0.25) - Time.now
       sleep(sleep_time) if sleep_time > 0.0
     end
 
@@ -954,20 +965,28 @@ thr2 = ::Thread.new do
   loop do
     break if $exit
 
+    print "\e[?1000h"
+
     key = RuTui::Input.getc
 
     sleep 0.1
 
     $key = key
 
-    if key == :ctrl_c
-      $exit = true
-    end
+    if key.size > 0 && key.bytes[0] == 27
+      # mouse event
+      $panels.each_pair do |_,panel|
+        panel.mouse_input(key,true,process)
+      end
+    else
+      if key == :ctrl_c
+        $exit = true
+      end
 
-    $panels.each_pair do |_,panel|
-      panel.input(key,true,process)
+      $panels.each_pair do |_,panel|
+        panel.input(key,true,process)
+      end
     end
-
 
   end
 end

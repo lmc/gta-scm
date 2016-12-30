@@ -132,7 +132,65 @@ class RuTui::Screen
   def self.size
     rr = IO.console.winsize
     rr[0] -= 1
+    # rr[1] -= 2
     rr
+  end
+
+  # patch to use << instead of +=
+  def draw
+    lastpixel = RuTui::Pixel.new(rand(255), rand(255), ".")
+    @map = Marshal.load( Marshal.dump( @smap )) # Deep copy
+
+    # get all the objects
+    @objects.each do |o|
+      next if o.x.nil? or o.y.nil?
+      o.each do |ri,ci,pixel|
+        if !pixel.nil? and o.y+ri >= 0 and o.x+ci >= 0 and o.y+ri < @map.size and o.x+ci < @map[0].size
+          # -1 enables a "transparent" effect
+          if pixel.bg == -1
+            pixel.bg = @map[o.y + ri][o.x + ci].bg if !@map[o.y + ri][o.x + ci].nil?
+            pixel.bg = RuTui::Theme.get(:background).bg if pixel.bg == -1
+          end
+          if pixel.fg == -1
+            pixel.fg = @map[o.y + ri][o.x + ci].fg if !@map[o.y + ri][o.x + ci].nil?
+            pixel.fg = RuTui::Theme.get(:background).fg if pixel.fg == -1
+          end
+
+          @map[o.y + ri][o.x + ci] = pixel
+        end
+      end
+    end
+
+    out = "" # Color.go_home
+    # and DRAW!
+    @map.each do |line|
+      line.each do |pixel|
+        if lastpixel != pixel
+          # out += RuTui::Ansi.clear_color if lastpixel != 0
+          out << RuTui::Ansi.clear_color if lastpixel != 0
+          if pixel.nil?
+            # out += "#{RuTui::Ansi.bg(@default.bg)}#{RuTui::Ansi.fg(@default.fg)}#{@default.symbol}"
+            out << "#{RuTui::Ansi.bg(@default.bg)}#{RuTui::Ansi.fg(@default.fg)}#{@default.symbol}"
+          else
+            # out += "#{RuTui::Ansi.bg(pixel.bg)}#{RuTui::Ansi.fg(pixel.fg)}#{pixel.symbol}"
+            out << "#{RuTui::Ansi.bg(pixel.bg)}#{RuTui::Ansi.fg(pixel.fg)}#{pixel.symbol}"
+          end
+          lastpixel = pixel
+        else
+          if pixel.nil?
+            # out += @default.symbol
+            out << @default.symbol
+          else
+            # out += pixel.symbol
+            out << pixel.symbol
+          end
+        end
+      end
+    end
+
+    # draw out
+    print out.chomp
+    $stdout.flush
   end
 end
 
