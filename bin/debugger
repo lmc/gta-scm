@@ -965,6 +965,9 @@ end
 
 class GtaScm::ReplPanel < GtaScm::Panel
   BUFFER_LINES = 4
+
+  attr_accessor :opcode_names
+
   def initialize(*)
     super
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
@@ -1013,6 +1016,10 @@ class GtaScm::ReplPanel < GtaScm::Panel
 
     self.settings[:input] = "do_fade 1000 , 0"
     self.settings[:input_index] = self.settings[:input].size
+
+    # opcodes = GtaScm::OpcodeDefinitions.new
+    # opcodes.load_definitions!("san-andreas")
+    # self.opcode_names = opcodes.names2opcodes.keys
   end
 
   def update(process,is_attached,focused = false)
@@ -1037,6 +1044,13 @@ class GtaScm::ReplPanel < GtaScm::Panel
         element.set_text( "-")
       end
     end
+
+    input = self.settings[:input].dup
+    input_index = self.settings[:input_index]
+
+    colors = self.get_colors_for_input(input,input_index)
+    input[input_index] ||= " "
+    self.elements[:input].set_text_and_colors(input,colors)
 
   end
 
@@ -1079,18 +1093,50 @@ class GtaScm::ReplPanel < GtaScm::Panel
 
     self.settings[:input_index] = 0 if self.settings[:input_index] < 0
     self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
-
-    input = self.settings[:input].dup
-    input_index = self.settings[:input_index]
-
-    colors = self.get_colors_for_input(input,input_index)
-    input[input_index] ||= " "
-    self.elements[:input].set_text_and_colors(input,colors)
   end
 
-  def get_colors_for_input(input,input_index)
+  COLORS = {
+    opcode: [5],
+    integer: [1],
+    float: [2],
+    var: [3],
+    lvar: [4],
+    string: [6]
+  }
+  def get_colors_for_input(input,input_index,scm = nil)
     colors = {}
+
+    current_type = nil
+    current_colour = nil
+
+    c = 250
+    offset = 0
+    input.split(/([\(\) \t\,])/).each_with_index do |word,i|
+      color = if word.match(/^[\+\-]?[0-9]+$/)
+        COLORS[:integer]
+      elsif word.match(/^[\+\-]?[0-9\.]+$/)
+        COLORS[:float]
+      elsif word.match(/^\w+$/)
+        # if 
+        COLORS[:opcode]
+      end
+
+      if color
+        word.split("").each_with_index do |char,j|
+          colors[ offset + j ] = color
+        end
+      end
+      offset += word.size
+      c -= 5
+    end
+
+    if colors[input_index]
+      colors[input_index] = [ colors[input_index][1] , colors[input_index][0] ]
+    else
+      colors[input_index] = [RuTui::Theme.get(:background).bg,RuTui::Theme.get(:textcolor)]
+    end
     colors[input_index] = [RuTui::Theme.get(:background).bg,RuTui::Theme.get(:textcolor)]
+
     colors
   end
 end
