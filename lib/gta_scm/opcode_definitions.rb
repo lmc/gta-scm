@@ -130,6 +130,10 @@ class GtaScm::OpcodeDefinition
       when "ARGTYPE_VAR_LVAR_FLOAT"
         argdef[:var] = true
         argdef[:type] = :float
+      when "ARGTYPE_ANY_INT"
+        argdef[:type] = :int
+      when "ARGTYPE_ANY_FLOAT"
+        argdef[:type] = :float
       else
 
       end

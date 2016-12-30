@@ -1014,7 +1014,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
     self.settings[:prompt_input] = " > "
     self.settings[:prompt_output] = "=> "
 
-    self.settings[:input] = "char = create_char(24,290,1000.0,-2000.0,30.123)"
+    self.settings[:input] = "char = create_char( 24 , "
     self.settings[:input_buffer] = []
     self.settings[:input_index] = self.settings[:input].size
     self.settings[:input_buffer_index] = -1
@@ -1052,6 +1052,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
 
     colors = self.get_colors_for_input(input,input_index)
     input[input_index] ||= " "
+    self.add_opcode_annotation!(input,input_index,colors)
     self.elements[:input].set_text_and_colors(input,colors)
 
   end
@@ -1115,9 +1116,45 @@ class GtaScm::ReplPanel < GtaScm::Panel
     self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
   end
 
+  def add_opcode_annotation!(input,input_index,colors)
+    offset = 0
+    args_before_opcode = 0
+    args_after_opcode = 0
+    opcode_def = nil
+    input.split(/(#{WORD_REGEX})/).each_with_index do |word,word_index|
+      is_arg = true
+      is_arg = false if word.match(WORD_REGEX)
+      is_arg = false if word.match(/=/)
+      is_arg = false if word.blank?
+      if opcode_def
+        args_after_opcode += 1 if is_arg
+      elsif opcode_def = self.opcode_definitions[word.upcase]
+        word.split("").each_with_index do |char,j|
+          colors[ offset + j ] = [129]
+        end
+      else
+        args_before_opcode += 1 if is_arg
+      end
+      offset += word.size
+    end
+    
+    if opcode_def
+      remaining_args = opcode_def.arguments
+      remaining_args = remaining_args[0..-(args_before_opcode+1)]
+      remaining_args = remaining_args[args_after_opcode..-1]
+
+      remaining_args.each do |arg|
+        if arg[:var]
+          input << " returns"
+        end
+        input << " " << arg[:type].to_s
+      end
+    end
+  end
+
   def word_at_or_before_cursor(input,input_index)
     offset = 0
-    input.split(WORD_REGEX).each_with_index do |word,i|
+    input.split(/(#{WORD_REGEX})/).each_with_index do |word,i|
       if (offset..(offset+word.size)).include?(input_index)
         return word
       end
@@ -1126,7 +1163,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
     return nil
   end
 
-  WORD_REGEX = /([\(\) \t\,])/
+  WORD_REGEX = /[\(\) \t\,]/
   COLORS = {
     opcode: [40],
     integer: [39],
@@ -1143,7 +1180,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
     current_colour = nil
 
     offset = 0
-    input.split(WORD_REGEX).each_with_index do |word,i|
+    input.split(/(#{WORD_REGEX})/).each_with_index do |word,i|
       color = if word.match(/^[\+\-]?[0-9]+$/)
         COLORS[:integer]
       elsif word.match(/^[\+\-]?[0-9\.]+$/)
@@ -1152,7 +1189,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
         COLORS[:operator]
       elsif word.match(/^\w+$/)
         if self.opcode_definitions.names2opcodes[word.upcase]
-          COLORS[:opcode]
+          # COLORS[:opcode]
         else
           COLORS[:lvar]
         end
@@ -1204,7 +1241,7 @@ RuTui::ScreenManager.add :default, screen
 RuTui::ScreenManager.set_current :default
 
 $panels.values.each(&:on_blur)
-$focused_panel = :thread_selector
+$focused_panel = :repl
 
 
 thr = ::Thread.new do
