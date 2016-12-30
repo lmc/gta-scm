@@ -31,6 +31,7 @@ RuTui::Theme.create :scm, {
   :background => RuTui::Pixel.new(236,234,":"),
   :border     => RuTui::Pixel.new(103,234,"-"),
   :textcolor  => 250,
+  :unfocused  => 245,
   # :highlight  => 234,
   # :highlight_fg  => 134,
   :highlight  => 244,
@@ -62,8 +63,8 @@ class GtaScm::Panel
     self.y = y
     self.width = width
     self.height = height
-    self.elements = {}
-    self.settings = {}
+    self.elements = Hash.new
+    self.settings = Hash.new
   end
 
   def add_elements_to_screen(screen)
@@ -72,7 +73,7 @@ class GtaScm::Panel
     end
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     
   end
 
@@ -80,7 +81,17 @@ class GtaScm::Panel
     
   end
 
-  def mouse_input(key,is_attached,process)
+  def mouse_click(x,y,is_attached,process)
+    
+  end
+  def abs_mouse_click(x,y,is_attached,process)
+    
+  end
+
+  def mouse_move(x,y,is_attached,process)
+    
+  end
+  def abs_mouse_move(x,y,is_attached,process)
     
   end
 
@@ -98,6 +109,18 @@ class GtaScm::Panel
       data << empty_row
     end
     data
+  end
+
+  def on_focus
+    self.elements.each_pair do |name,element|
+      element.fg = RuTui::Theme.get(:textcolor)
+    end
+  end
+
+  def on_blur
+    self.elements.each_pair do |name,element|
+      element.fg = RuTui::Theme.get(:unfocused)
+    end
   end
 end
 
@@ -122,7 +145,7 @@ class GtaScm::ProcessPanel < GtaScm::Panel
     self.elements[:text].set_text(str)
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     # return if !is_attached
     if is_attached
       self.settings[:pid] = process.pid
@@ -130,6 +153,7 @@ class GtaScm::ProcessPanel < GtaScm::Panel
       self.settings[:pid] = nil
     end
     # self.set_text(process)
+    # self.elements[:text].set_text("focused_panel: #{$focused_panel}")
   end
 
   def input(key,is_attached,process)
@@ -148,8 +172,8 @@ class GtaScm::ProcessPanel < GtaScm::Panel
     self.elements[:text].set_text("key: `#{key}` (#{key.bytes.inspect})")
   end
 
-  def mouse_input(key,is_attached,process)
-    self.elements[:text].set_text("mouse: (#{key.bytes.inspect})")
+  def abs_mouse_click(x,y,is_attached,process)
+    self.elements[:text].set_text("mouse: (#{x},#{y})")
   end
 end
 
@@ -174,7 +198,7 @@ class GtaScm::ThreadSelectorPanel < GtaScm::Panel
     self.elements[:text].set_text(str)
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     return if !is_attached
     self.set_text(process)
   end
@@ -197,6 +221,7 @@ end
 class GtaScm::LvarsPanel < GtaScm::Panel
   def initialize(*)
     super
+    self.elements = {}
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     set_text
     self.elements[:table] = RuTui::Table.new({
@@ -227,7 +252,7 @@ class GtaScm::LvarsPanel < GtaScm::Panel
   end
 
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -386,7 +411,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
     self.elements[:header].set_text(str)
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -460,7 +485,7 @@ class GtaScm::MissionSkipperPanel < GtaScm::Panel
     0x35, 0x07, 0x04,       # ps2 key pressed int8
   ]
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -545,7 +570,7 @@ class GtaScm::BreakpointPanel < GtaScm::Panel
     self.elements[:text].set_text(str2.center(self.width))
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -649,7 +674,7 @@ class GtaScm::CodeInjectorPanel < GtaScm::Panel
 
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -731,7 +756,7 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
     self.settings[:selected_row] = 0
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -741,7 +766,7 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
     self.elements[:table].clear_highlight_lines!
     self.elements[:table].set_highlight_line_color(3)
 
-    data = self.panel_list( process.threads.reverse.map.each_with_index do |thread,idx|
+    data = self.panel_list( threads(process).map.each_with_index do |thread,idx|
       if thread.thread_id == self.settings[:thread_id]
         self.settings[:selected_row] = idx
       end
@@ -760,6 +785,19 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
     self.elements[:table].clear_highlight!
     self.elements[:table].highlight( self.settings[:selected_row] )
     self.elements[:table].set_table(data)
+  end
+
+  def mouse_click(x,y,is_attached,process)
+    self.settings[:selected_row] = 80
+    if y >= 1 && y < self.height - 1
+      if thread = threads(process)[y - 1]
+        self.controller.settings[:thread_id] = thread.thread_id
+      end
+    end
+  end
+
+  def threads(process)
+    process.threads.reverse
   end
 end
 
@@ -812,7 +850,7 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
     })
   end
 
-  def update(process,is_attached)
+  def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
@@ -903,9 +941,10 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
   end
 end
 
+begin
 
-$panels[:process] = GtaScm::ProcessPanel.new(63,0,62,0)
-$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,62,0)
+$panels[:process] = GtaScm::ProcessPanel.new(63,0,62,1)
+$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,62,SIZE[0]-1)
 $panels[:thread_info] = GtaScm::ThreadInfoPanel.new(10+4,1,42,50)
 $panels[:thread_info].controller = $panels[:thread_selector]
 $panels[:thread_list] = GtaScm::ThreadListPanel.new(0,1,10,74)
@@ -914,7 +953,7 @@ $panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,48,32)
 $panels[:lvars].controller = $panels[:thread_selector]
 $panels[:gvars] = GtaScm::GvarsPanel.new(63,24,62,32)
 $panels[:breakpoint] = GtaScm::BreakpointPanel.new(63,2,62,4)
-$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(63,4,62,4)
+$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(63,4,62,9)
 # $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(63,15,28,32)
 
 
@@ -926,6 +965,10 @@ end
 
 RuTui::ScreenManager.add :default, screen
 RuTui::ScreenManager.set_current :default
+
+$panels.values.each(&:on_blur)
+$focused_panel = :thread_selector
+
 
 thr = ::Thread.new do
   loop do
@@ -947,8 +990,8 @@ thr = ::Thread.new do
         # not attached
       end
 
-      $panels.each_pair do |_,panel|
-        panel.update(process,is_attached)
+      $panels.each_pair do |name,panel|
+        panel.update(process,is_attached,$focused_panel == name)
       end
 
       RuTui::ScreenManager.draw
@@ -965,24 +1008,52 @@ thr2 = ::Thread.new do
   loop do
     break if $exit
 
-    print "\e[?1000h"
+    print "\e[?25l" # hide cursor
+    print "\e[?1000h" # get mouse coords as keypress
+    # print "\e[?1003h" # get mouse coords as keypress
 
     key = RuTui::Input.getc
+    # print "\e[?1000l" # get mouse coords as keypress
+    # print "\e[?1003l" # get mouse coords as keypress
 
     sleep 0.1
 
-    $key = key
+    if key == :ctrl_c
+      $exit = true
+      break
+    end
 
-    if key.size > 0 && key.bytes[0] == 27
+    $key = key.force_encoding("ASCII-8BIT")
+
+    if key.size > 1 # && key.bytes[0] == 27
+      x = key.bytes[4] - 32 - 1
+      y = key.bytes[5] - 32 - 1
       # mouse event
-      $panels.each_pair do |_,panel|
-        panel.mouse_input(key,true,process)
+      $panels.each_pair do |panel_name,panel|
+        panel.abs_mouse_click(x,y,true,process)
+        panel.abs_mouse_move(x,y,true,process)
+
+        if x >= panel.x && x < panel.x + panel.width
+          if y >= panel.y && y < panel.y + panel.height
+
+            if key.bytes[0] == 27 && key.bytes[3] == 32 # 32 = mouse down, 35 = mouse up
+
+              if $focused_panel != panel_name
+                $panels[$focused_panel].on_blur()
+                $focused_panel = panel_name
+                $panels[$focused_panel].on_focus()
+              end
+
+              panel.mouse_click(x-panel.x,y-panel.y,true,process)
+            elsif key.bytes[0] == 27 && key.bytes[3] == 67 # 67 = mouse move
+              panel.mouse_move(x-panel.x,y-panel.y,true,process)
+            end
+
+          end
+        end
+
       end
     else
-      if key == :ctrl_c
-        $exit = true
-      end
-
       $panels.each_pair do |_,panel|
         panel.input(key,true,process)
       end
@@ -1004,4 +1075,17 @@ thr.join
 thr2.join
 # thr3.join
 
+rescue => ex
+
+  50.times { puts }
+  puts ex.message
+  puts ex.backtrace
+  50.times { puts }
+
+  raise ex
+ensure
+print "\e[?1000l" # get mouse coords as keypress
+# print "\e[?1003l" # get mouse coords as keypress
 print RuTui::Ansi.clear_color + RuTui::Ansi.clear
+`reset`
+end

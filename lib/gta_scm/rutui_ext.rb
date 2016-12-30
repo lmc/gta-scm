@@ -17,13 +17,31 @@ require 'timeout'
 #   end
 # end
 
+class RuTui::Box
+  def fg=(val)
+    @horizontal.fg = val
+    @vertical.fg = val
+    @corner.fg = val
+  end
+end
+
 class RuTui::Table
+
+  attr_accessor :fg
+  attr_accessor :bg
+
   def initialize_with_highlight_fg(options)
     initialize_without_highlight_fg(options)
     @hover_fg = options[:hover_fg]
   end
   alias initialize_without_highlight_fg initialize
   alias initialize initialize_with_highlight_fg
+
+  def fg=(val)
+    @fg = val
+    @pixel = RuTui::Pixel.new(val,@bg,@pixel.symbol)
+  end
+
 
   # make highlight method actually work like the developer intended (arg absent = get, arg present = set)
   def highlight(line_id = nil)
