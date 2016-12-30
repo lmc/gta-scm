@@ -95,6 +95,15 @@ class GtaScm::Panel
     
   end
 
+  def mouse_scroll(x,y,dir,is_attached,process)
+    
+  end
+
+  def has_textfield
+    false
+  end
+
+
   def dx(xo)
     self.x + xo
   end
@@ -113,13 +122,21 @@ class GtaScm::Panel
 
   def on_focus
     self.elements.each_pair do |name,element|
-      element.fg = RuTui::Theme.get(:textcolor)
+      if name.to_s.match(/header/)
+        # element.fg = RuTui::Theme.get(:textcolor)
+      else
+        element.fg = RuTui::Theme.get(:textcolor)
+      end
     end
   end
 
   def on_blur
     self.elements.each_pair do |name,element|
-      element.fg = RuTui::Theme.get(:unfocused)
+      if name.to_s.match(/header/)
+
+      else
+        element.fg = RuTui::Theme.get(:unfocused)
+      end
     end
   end
 end
@@ -169,7 +186,7 @@ class GtaScm::ProcessPanel < GtaScm::Panel
       end
     end
 
-    self.elements[:text].set_text("key: `#{key}` (#{key.bytes.inspect})")
+    self.elements[:text].set_text("key: #{key.inspect} (#{key.bytes.inspect if key.is_a?(String)})")
   end
 
   def abs_mouse_click(x,y,is_attached,process)
@@ -342,7 +359,7 @@ class GtaScm::GvarsPanel < GtaScm::Panel
     self.elements[:table] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(1),
-      table: [["",""]],
+      table: [["","",""]],
       cols: [
         { title: "", length: 5 },
         { title: "", length: (self.width.to_f * 0.6).to_i - 7 },
@@ -941,6 +958,89 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
   end
 end
 
+
+class GtaScm::ReplPanel < GtaScm::Panel
+  BUFFER_LINES = 4
+  def initialize(*)
+    super
+    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    self.elements[:header].bg = 7
+    self.elements[:header].fg = 0
+    self.elements[:header].set_text("REPL".center(self.width))
+
+    self.settings[:buffer_lines] = self.height - 1 - 3
+
+    ty = 1
+    self.settings[:buffer_lines].times do |i|
+      self.elements[:"buffer_line_#{i}"] = RuTui::Text.new(x: dx(2), y: dy(ty), text: "")
+      ty += 1
+    end
+
+    self.settings[:buffer_offset] = 0
+    self.settings[:buffer] = []
+    (self.settings[:buffer_lines]).times do |i|
+      self.settings[:buffer] << ["input #{i}",[:input]]
+      self.settings[:buffer] << ["output #{i}",[:output]]
+    end
+
+    ty = 1
+
+    self.elements[:history_box] = RuTui::Box.new(
+      x: dx(0),
+      y: dy(ty),
+      width: self.width,
+      height: self.settings[:buffer_lines],
+      corner: RuTui::Pixel.new(RuTui::Theme.get(:border).fg,RuTui::Theme.get(:background).bg,"+")
+    )
+    ty += self.settings[:buffer_lines]
+
+    self.elements[:input_box] = RuTui::Box.new(
+      x: dx(0),
+      y: dy(ty - 1),
+      width: self.width,
+      height: 3,
+      corner: RuTui::Pixel.new(RuTui::Theme.get(:border).fg,RuTui::Theme.get(:background).bg,"+")
+    )
+  end
+
+  def update(process,is_attached,focused = false)
+    
+    buffer_offset = self.settings[:buffer_offset]
+    buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
+
+    # self.elements[:header].set_text("buffer_offset: #{buffer_offset}")
+
+    self.settings[:buffer_lines].times do |i|
+      line = self.settings[:buffer][(0 - i - self.settings[:buffer_offset])]
+      element = self.elements[:"buffer_line_#{self.settings[:buffer_lines] - i - 1}"]
+      if line
+        text = line[0]
+        if line[1].include?(:input)
+          element.fg = 6
+        elsif line[1].include?(:output)
+          element.fg = 5
+        end
+        element.set_text(text)
+      else
+        element.set_text( "-")
+      end
+    end
+
+  end
+
+  def mouse_scroll(x,y,dir,is_attached,process)
+    self.settings[:buffer_offset] += dir
+    self.settings[:buffer_offset] = 0 if self.settings[:buffer_offset] < 0
+
+    max = self.settings[:buffer].size - self.settings[:buffer_lines] / 2
+    self.settings[:buffer_offset] = max if self.settings[:buffer_offset] > max
+  end
+
+  def has_textfield
+    true
+  end
+end
+
 begin
 
 $panels[:process] = GtaScm::ProcessPanel.new(63,0,62,1)
@@ -951,9 +1051,10 @@ $panels[:thread_list] = GtaScm::ThreadListPanel.new(0,1,10,74)
 $panels[:thread_list].controller = $panels[:thread_selector]
 $panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,48,32)
 $panels[:lvars].controller = $panels[:thread_selector]
-$panels[:gvars] = GtaScm::GvarsPanel.new(63,24,62,32)
+$panels[:gvars] = GtaScm::GvarsPanel.new(63,SIZE[0]-35,62,32)
 $panels[:breakpoint] = GtaScm::BreakpointPanel.new(63,2,62,4)
-$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(63,4,62,9)
+$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(63,3,62,10)
+$panels[:repl] = GtaScm::ReplPanel.new(63,15,62,14)
 # $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(63,15,28,32)
 
 
@@ -1005,38 +1106,35 @@ thr = ::Thread.new do
 end
 
 thr2 = ::Thread.new do
+  print "\e[?1000h" # get mouse coords as keypress
+  print "\e[?25l" # hide cursor
   loop do
     break if $exit
 
     print "\e[?25l" # hide cursor
-    print "\e[?1000h" # get mouse coords as keypress
-    # print "\e[?1003h" # get mouse coords as keypress
-
     key = RuTui::Input.getc
-    # print "\e[?1000l" # get mouse coords as keypress
-    # print "\e[?1003l" # get mouse coords as keypress
-
-    sleep 0.1
 
     if key == :ctrl_c
       $exit = true
       break
     end
 
-    $key = key.force_encoding("ASCII-8BIT")
+    key = key.force_encoding("ASCII-8BIT") if key.is_a?(String)
 
-    if key.size > 1 # && key.bytes[0] == 27
+    $key = key
+
+    if key.is_a?(String) && key.size > 1 && key.bytes[0] == 27
       x = key.bytes[4] - 32 - 1
       y = key.bytes[5] - 32 - 1
       # mouse event
       $panels.each_pair do |panel_name,panel|
-        panel.abs_mouse_click(x,y,true,process)
+        panel.abs_mouse_click(key.bytes[0],key.bytes[3],true,process)
         panel.abs_mouse_move(x,y,true,process)
 
         if x >= panel.x && x < panel.x + panel.width
           if y >= panel.y && y < panel.y + panel.height
 
-            if key.bytes[0] == 27 && key.bytes[3] == 32 # 32 = mouse down, 35 = mouse up
+            if key.bytes[3] == 32 # 32 = mouse down, 35 = mouse up
 
               if $focused_panel != panel_name
                 $panels[$focused_panel].on_blur()
@@ -1045,8 +1143,12 @@ thr2 = ::Thread.new do
               end
 
               panel.mouse_click(x-panel.x,y-panel.y,true,process)
-            elsif key.bytes[0] == 27 && key.bytes[3] == 67 # 67 = mouse move
+            elsif key.bytes[3] == 67 # 67 = mouse move
               panel.mouse_move(x-panel.x,y-panel.y,true,process)
+            elsif key.bytes[3] == 96 # scroll up
+              panel.mouse_scroll(x-panel.x,y-panel.y,+1,true,process)
+            elsif key.bytes[3] == 97 # scroll down
+              panel.mouse_scroll(x-panel.x,y-panel.y,-1,true,process)
             end
 
           end

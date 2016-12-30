@@ -19,9 +19,17 @@ require 'timeout'
 
 class RuTui::Box
   def fg=(val)
-    @horizontal.fg = val
-    @vertical.fg = val
-    @corner.fg = val
+    @horizontal = RuTui::Pixel.new(val,@horizontal.bg,@horizontal.symbol)
+    @vertical = RuTui::Pixel.new(val,@horizontal.bg,@vertical.symbol)
+    @corner = RuTui::Pixel.new(val,@corner.bg,@corner.symbol)
+    self.create
+  end
+end
+
+class RuTui::Text
+  def fg=(val)
+    @fg = val
+    self.create
   end
 end
 
@@ -40,6 +48,7 @@ class RuTui::Table
   def fg=(val)
     @fg = val
     @pixel = RuTui::Pixel.new(val,@bg,@pixel.symbol)
+    self.create
   end
 
 
