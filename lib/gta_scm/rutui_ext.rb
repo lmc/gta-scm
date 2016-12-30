@@ -61,7 +61,7 @@ class RuTui::TextWithColors < RuTui::Text
     texts.each do |l|
       tmp = []
       l.split("").each_with_index do |t,i|
-        t = RuTui::Ansi.bold(t) if @bold
+        t = RuTui::Ansi.bold(t) if @bold || self.colors.andand[i].andand[2].andand.include?(:bold)
         t = RuTui::Ansi.thin(t) if @thin
         t = RuTui::Ansi.italic(t) if @italic
         t = RuTui::Ansi.underline(t) if @underline

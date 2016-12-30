@@ -966,7 +966,7 @@ end
 class GtaScm::ReplPanel < GtaScm::Panel
   BUFFER_LINES = 4
 
-  attr_accessor :opcode_names
+  attr_accessor :opcode_definitions
 
   def initialize(*)
     super
@@ -1014,12 +1014,14 @@ class GtaScm::ReplPanel < GtaScm::Panel
     self.settings[:prompt_input] = " > "
     self.settings[:prompt_output] = "=> "
 
-    self.settings[:input] = "do_fade 1000 , 0"
+    self.settings[:input] = "char = create_char(24,290,1000.0,-2000.0,30.123)"
+    self.settings[:input_buffer] = []
     self.settings[:input_index] = self.settings[:input].size
+    self.settings[:input_buffer_index] = -1
 
-    # opcodes = GtaScm::OpcodeDefinitions.new
-    # opcodes.load_definitions!("san-andreas")
-    # self.opcode_names = opcodes.names2opcodes.keys
+    opcodes = GtaScm::OpcodeDefinitions.new
+    opcodes.load_definitions!("san-andreas")
+    self.opcode_definitions = opcodes
   end
 
   def update(process,is_attached,focused = false)
@@ -1027,7 +1029,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
     buffer_offset = self.settings[:buffer_offset]
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
-    self.elements[:header].set_text("input_index: #{self.settings[:input_index]}")
+    self.elements[:header].set_text("self.settings[:input_buffer_index]: #{self.settings[:input_buffer_index]}")
 
     self.settings[:buffer_lines].times do |i|
       line = self.settings[:buffer][(0 - i - self.settings[:buffer_offset])]
@@ -1070,10 +1072,19 @@ class GtaScm::ReplPanel < GtaScm::Panel
     cursor_at_end = self.settings[:input_index] == self.settings[:input].size
 
     case key
-    when :left
-      self.settings[:input_index] -= 1
-    when :right
-      self.settings[:input_index] += 1
+    when :up,:down
+      self.settings[:input_buffer_index] += key == :up ? +1 : -1
+      self.settings[:input_buffer_index] = -1 if self.settings[:input_buffer_index] <= -1
+      self.settings[:input_buffer_index] = self.settings[:input_buffer].size - 1 if self.settings[:input_buffer_index] >= self.settings[:input_buffer].size
+      if self.settings[:input_buffer_index] == -1
+        self.settings[:input] = ""
+      else
+        line = self.settings[:input_buffer][ -(self.settings[:input_buffer_index]+1) ]
+        self.settings[:input] = line.dup
+      end
+      self.settings[:input_index] = self.settings[:input].size
+    when :left,:right
+      self.settings[:input_index] += key == :right ? +1 : -1
     when :backspace, :ctrl_h
       self.settings[:input].slice!( self.settings[:input_index] - 1 )
       if cursor_at_end
@@ -1081,6 +1092,14 @@ class GtaScm::ReplPanel < GtaScm::Panel
       else
         self.settings[:input_index] -= 1
       end
+    when :enter
+      self.settings[:input_buffer] << self.settings[:input].dup
+      self.settings[:buffer] << [self.settings[:input].dup,[:input]]
+      self.settings[:input] = ""
+      self.settings[:input_index] = 0
+      self.settings[:input_buffer_index] = -1
+    when Symbol
+
     else
       if cursor_at_end
         self.settings[:input] += key
@@ -1089,19 +1108,33 @@ class GtaScm::ReplPanel < GtaScm::Panel
         self.settings[:input][ self.settings[:input_index] ] = "#{key}#{self.settings[:input][ self.settings[:input_index] ]}"
         self.settings[:input_index] += 1
       end
+      self.settings[:input_buffer_index] = -1
     end
 
     self.settings[:input_index] = 0 if self.settings[:input_index] < 0
     self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
   end
 
+  def word_at_or_before_cursor(input,input_index)
+    offset = 0
+    input.split(WORD_REGEX).each_with_index do |word,i|
+      if (offset..(offset+word.size)).include?(input_index)
+        return word
+      end
+      offset += word.size
+    end
+    return nil
+  end
+
+  WORD_REGEX = /([\(\) \t\,])/
   COLORS = {
-    opcode: [5],
-    integer: [1],
-    float: [2],
+    opcode: [40],
+    integer: [39],
+    float: [51],
     var: [3],
-    lvar: [4],
-    string: [6]
+    lvar: [178],
+    string: [6],
+    operator: [40]
   }
   def get_colors_for_input(input,input_index,scm = nil)
     colors = {}
@@ -1109,16 +1142,20 @@ class GtaScm::ReplPanel < GtaScm::Panel
     current_type = nil
     current_colour = nil
 
-    c = 250
     offset = 0
-    input.split(/([\(\) \t\,])/).each_with_index do |word,i|
+    input.split(WORD_REGEX).each_with_index do |word,i|
       color = if word.match(/^[\+\-]?[0-9]+$/)
         COLORS[:integer]
       elsif word.match(/^[\+\-]?[0-9\.]+$/)
         COLORS[:float]
+      elsif word.match(/^[\+\-\*\\\=]+$/)
+        COLORS[:operator]
       elsif word.match(/^\w+$/)
-        # if 
-        COLORS[:opcode]
+        if self.opcode_definitions.names2opcodes[word.upcase]
+          COLORS[:opcode]
+        else
+          COLORS[:lvar]
+        end
       end
 
       if color
@@ -1127,7 +1164,6 @@ class GtaScm::ReplPanel < GtaScm::Panel
         end
       end
       offset += word.size
-      c -= 5
     end
 
     if colors[input_index]
