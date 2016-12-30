@@ -1029,21 +1029,39 @@ class GtaScm::ReplPanel < GtaScm::Panel
     buffer_offset = self.settings[:buffer_offset]
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
-    self.elements[:header].set_text("self.settings[:input_buffer_index]: #{self.settings[:input_buffer_index]}")
+    self.elements[:header].set_text("tab_word: #{self.settings[:tab_word]}")
 
-    self.settings[:buffer_lines].times do |i|
-      line = self.settings[:buffer][(0 - i - self.settings[:buffer_offset])]
-      element = self.elements[:"buffer_line_#{self.settings[:buffer_lines] - i - 1}"]
-      if line
-        text = line[0]
-        if line[1].include?(:input)
-          element.fg = 6
-        elsif line[1].include?(:output)
-          element.fg = 5
-        end
+    if self.settings[:tab_word]
+      columns = 2
+      column_width = ((self.width - 4) / columns).ceil - 1
+      suggestions = self.opcode_definitions.names2opcodes.keys.grep(Regexp.new(self.settings[:tab_word],"i"))
+      suggestions.map!(&:downcase)
+      suggestions.sort_by!(&:size)
+      suggestions = suggestions[0..(columns * self.settings[:buffer_lines])]
+      self.settings[:buffer_lines].times do |i|
+        text = columns.times.map do |j|
+          (suggestions[ i + (j * self.settings[:buffer_lines]) ] || "-").ljust(column_width," ")[0..column_width]
+        end.join(" ")
+
+        element = self.elements[:"buffer_line_#{self.settings[:buffer_lines] - i - 1}"]
+        element.fg = RuTui::Theme.get(:textcolor)
         element.set_text(text)
-      else
-        element.set_text( "-")
+      end
+    else
+      self.settings[:buffer_lines].times do |i|
+        line = self.settings[:buffer][(0 - i - self.settings[:buffer_offset])]
+        element = self.elements[:"buffer_line_#{self.settings[:buffer_lines] - i - 1}"]
+        if line
+          text = line[0]
+          if line[1].include?(:input)
+            element.fg = 6
+          elsif line[1].include?(:output)
+            element.fg = 5
+          end
+          element.set_text(text)
+        else
+          element.set_text( "-")
+        end
       end
     end
 
@@ -1093,6 +1111,12 @@ class GtaScm::ReplPanel < GtaScm::Panel
       else
         self.settings[:input_index] -= 1
       end
+    when :tab
+      if self.settings[:tab_word]
+        self.settings[:tab_word] = nil
+      else
+        self.settings[:tab_word] = self.word_at_or_before_cursor(self.settings[:input],self.settings[:input_index])
+      end
     when :enter
       self.settings[:input_buffer] << self.settings[:input].dup
       self.settings[:buffer] << [self.settings[:input].dup,[:input]]
@@ -1110,6 +1134,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
         self.settings[:input_index] += 1
       end
       self.settings[:input_buffer_index] = -1
+      self.settings[:tab_word] = nil
     end
 
     self.settings[:input_index] = 0 if self.settings[:input_index] < 0
