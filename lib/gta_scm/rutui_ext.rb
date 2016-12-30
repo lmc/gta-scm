@@ -33,6 +33,59 @@ class RuTui::Text
   end
 end
 
+class RuTui::TextWithColors < RuTui::Text
+  attr_accessor :colors
+  def initialize(*)
+    super
+    clear_colors!
+  end
+  def clear_colors!
+    self.colors = {}
+  end
+  def set_text_and_colors(text,colors)
+    self.colors = colors
+    set_text(text)
+  end
+  def create
+    if @do_rainbow
+      rainbow = 0
+    end
+    @width = @text.size
+    @obj = []
+
+    texts = [@text]
+    if !@max_width.nil?
+      texts = @text.chars.each_slice(@max_width).map(&:join)
+    end
+
+    texts.each do |l|
+      tmp = []
+      l.split("").each_with_index do |t,i|
+        t = RuTui::Ansi.bold(t) if @bold
+        t = RuTui::Ansi.thin(t) if @thin
+        t = RuTui::Ansi.italic(t) if @italic
+        t = RuTui::Ansi.underline(t) if @underline
+        t = RuTui::Ansi.blink(t) if @blink
+
+        # fg = @fg
+        # bg = @bg
+
+        fg = self.colors.andand[i].andand[0] || @fg
+        bg = self.colors.andand[i].andand[1] || @bg
+
+        if @do_rainbow
+          tmp << RuTui::Pixel.new(@@rainbow[rainbow],@bg,t)
+          rainbow += 1
+          rainbow = 0 if rainbow >= @@rainbow.size
+        else
+          tmp << RuTui::Pixel.new(fg,bg,t)
+        end
+      end
+      @obj << tmp
+    end
+  end
+end
+
 class RuTui::Table
 
   attr_accessor :fg

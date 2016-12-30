@@ -103,6 +103,10 @@ class GtaScm::Panel
     false
   end
 
+  def textfield_input(key,is_attached,process)
+
+  end
+
 
   def dx(xo)
     self.x + xo
@@ -1001,6 +1005,14 @@ class GtaScm::ReplPanel < GtaScm::Panel
       height: 3,
       corner: RuTui::Pixel.new(RuTui::Theme.get(:border).fg,RuTui::Theme.get(:background).bg,"+")
     )
+
+    self.elements[:input] = RuTui::TextWithColors.new(x: dx(2), y: dy(ty), text: " > herp derp input")
+
+    self.settings[:prompt_input] = " > "
+    self.settings[:prompt_output] = "=> "
+
+    self.settings[:input] = "do_fade 1000 , 0"
+    self.settings[:input_index] = self.settings[:input].size
   end
 
   def update(process,is_attached,focused = false)
@@ -1008,7 +1020,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
     buffer_offset = self.settings[:buffer_offset]
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
-    # self.elements[:header].set_text("buffer_offset: #{buffer_offset}")
+    self.elements[:header].set_text("input_index: #{self.settings[:input_index]}")
 
     self.settings[:buffer_lines].times do |i|
       line = self.settings[:buffer][(0 - i - self.settings[:buffer_offset])]
@@ -1038,6 +1050,48 @@ class GtaScm::ReplPanel < GtaScm::Panel
 
   def has_textfield
     true
+  end
+
+  def textfield_input(key,is_attached,process)
+    cursor_at_end = self.settings[:input_index] == self.settings[:input].size
+
+    case key
+    when :left
+      self.settings[:input_index] -= 1
+    when :right
+      self.settings[:input_index] += 1
+    when :backspace, :ctrl_h
+      self.settings[:input].slice!( self.settings[:input_index] - 1 )
+      if cursor_at_end
+        self.settings[:input_index] = self.settings[:input].size
+      else
+        self.settings[:input_index] -= 1
+      end
+    else
+      if cursor_at_end
+        self.settings[:input] += key
+        self.settings[:input_index] = self.settings[:input].size
+      else
+        self.settings[:input][ self.settings[:input_index] ] = "#{key}#{self.settings[:input][ self.settings[:input_index] ]}"
+        self.settings[:input_index] += 1
+      end
+    end
+
+    self.settings[:input_index] = 0 if self.settings[:input_index] < 0
+    self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
+
+    input = self.settings[:input].dup
+    input_index = self.settings[:input_index]
+
+    colors = self.get_colors_for_input(input,input_index)
+    input[input_index] ||= " "
+    self.elements[:input].set_text_and_colors(input,colors)
+  end
+
+  def get_colors_for_input(input,input_index)
+    colors = {}
+    colors[input_index] = [RuTui::Theme.get(:background).bg,RuTui::Theme.get(:textcolor)]
+    colors
   end
 end
 
@@ -1155,6 +1209,8 @@ thr2 = ::Thread.new do
         end
 
       end
+    elsif $panels[$focused_panel].has_textfield
+      $panels[$focused_panel].textfield_input(key,true,process)
     else
       $panels.each_pair do |_,panel|
         panel.input(key,true,process)
