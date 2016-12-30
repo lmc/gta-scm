@@ -4,6 +4,7 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :scm
   attr_accessor :label_prefix
   attr_accessor :external
+  attr_accessor :metadata
 
   def initialize
     self.local_method_names_to_labels = {}
@@ -22,15 +23,16 @@ class GtaScm::RubyToScmCompiler
     # self.constants_to_values[:BREAKPOINT_PC] = [:dmavar, 12]
   end
 
-  def parse_ruby(ruby,filename = nil)
+  def parse_ruby(ruby)
     begin
       parsed = Parser::CurrentRuby.parse(ruby)
     rescue Parser::SyntaxError => exception
-      raise GtaScm::RubyToScmCompiler::InputError.new("error",exception,{filename: filename})
+      raise GtaScm::RubyToScmCompiler::InputError.new("error",exception,self.metadata)
     end
   end
 
   def transform_node(node)
+  begin
     # debugger
     if !node.respond_to?(:type)
       debugger
@@ -50,8 +52,8 @@ class GtaScm::RubyToScmCompiler
       # elsif node.children[0].type == :send && node.children[0].children[1] == :routine
         
       else
-        debugger
         raise "unknown block type: #{node.inspect}"
+        raise UnhandledNodeError.new(node)
       end
 
     when :begin
@@ -134,6 +136,9 @@ class GtaScm::RubyToScmCompiler
     # puts "transform_node - #{ttt.inspect}"
 
     ttt
+  rescue GtaScm::RubyToScmCompiler::NodeError => exception
+    raise InputError.new("transform_node",exception,self.metadata)
+  end
   end
 
   def handle_conditional_emit(node,do_emit = true)
@@ -224,7 +229,6 @@ class GtaScm::RubyToScmCompiler
 
   attr_accessor :local_method_names_to_labels
   def emit_method_def(node)
-    # debugger
     method_name = node.children[0]
 
     args = {name: method_name}
@@ -241,7 +245,6 @@ class GtaScm::RubyToScmCompiler
       when :begin
         transform_node(node.children[1])
       when :block
-        # debugger
         if node.children[1].children[0].type == :send && node.children[1].children[0].children[1] == :routine
           handle_routine_declare(node,args)
         else
@@ -601,8 +604,7 @@ class GtaScm::RubyToScmCompiler
       end
 
       if !opcode_def
-        debugger
-        raise "unknown opcode #{opcode_name} (#{node.inspect})"
+        raise UnknownOpcodeError.new(node,name: opcode_name)
       end
 
       if opcode_name == :start_new_script
@@ -1055,22 +1057,60 @@ class GtaScm::RubyToScmCompiler
 
   # ERRORS
   class InputError < ::ArgumentError;
-    def initialize(message,original_exception,metadata = {})
+    def initialize(message,original_exception,metadata = nil)
       super(message)
       @message = message
       @original_exception = original_exception
-      @metadata = metadata
+      @metadata = metadata || {}
     end
 
     def message
       case @original_exception
       when Parser::SyntaxError
-        "Parser::SyntaxError - #{@message}\n#{@original_exception.diagnostic.render.join("\n").gsub(/^(\(string\))\:/m,"#{@metadata[:filename]}:")}"
+        "Parser::SyntaxError - #{@original_exception.message}\n#{self.blame_lines.join("\n")}"
+      when GtaScm::RubyToScmCompiler::NodeError
+        "#{self.blame_lines.join("\n")}"
       else
         @message
       end
     end
+
+    def blame_lines
+      lines = case @original_exception
+      when Parser::SyntaxError
+        @original_exception.diagnostic.render
+      when GtaScm::RubyToScmCompiler::NodeError
+        @original_exception.blame_lines
+      end
+      lines.map{|l| self.replace_filename(l)}
+    end
+
+    def replace_filename(str)
+      str.gsub(/^(\(string\))\:/m,"#{@metadata[:filename]}:")
+    end
   end
+
+  class NodeError < ::ArgumentError;
+    def initialize(node,metadata)
+      @node = node
+      @metadata = metadata
+    end
+
+    def blame_lines
+      line = @node.loc.line
+      column = @node.loc.column
+      prefix = "(string):#{line}"
+
+      [
+        prefix + ":#{column}: #{self.class.name.gsub(/^GtaScm::RubyToScmCompiler::/,'').gsub(/Error$/,'').gsub(/([a-z])([A-Z])/,'\\1 \\2')}" + (@metadata.size > 0 ? " - "+@metadata.map{|k,v| "#{k}: #{v}"}.join(", ") : ""),
+        prefix + @node.loc.expression.source_buffer.source.lines[line-1].chomp,
+        prefix + "".ljust(column," ") + "^"
+      ]
+    end
+  end
+
+  class UnhandledNodeError < NodeError; end
+  class UnknownOpcodeError < NodeError; end
 
   class InvalidConditionalLogicalOperatorUse < ::ArgumentError; end
   class IncorrectArgumentCount < ::ArgumentError; end

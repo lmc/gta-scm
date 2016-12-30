@@ -43,8 +43,11 @@ if path == "GAME"
   path = "#{GAME_PATH}/data/script/"
   logger.notice "Compiling into game dir..."
 end
-asm.external = external
-asm.assemble(scm,ARGV[2],path)
+
+exit_code = 1
+begin
+  asm.external = external
+  asm.assemble(scm,ARGV[2],path)
 
 # gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))
 # gxt.read_tabl!
@@ -52,11 +55,28 @@ asm.assemble(scm,ARGV[2],path)
 # gxt.read_tdat!
 # gxt.rebuild!
 
-mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
-logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
-# logger.info "GC stats: #{GC.stat.inspect}"
+  rescue GtaScm::RubyToScmCompiler::InputError => exception
 
-exit
+    logger.error exception.message
+    exception.backtrace.each{|bt| logger.error bt }
+
+    logger.error ""
+    logger.error ""
+    logger.error "There's a problem with your code!"
+    logger.error ""
+    exception.blame_lines.each{|bl| logger.error bl}
+    logger.error ""
+
+
+  # TODO: handle Assembler errors too
+
+  ensure
+    mem_use_bytes = (`ps -o rss= -p #{$$}`.to_i * 1024)
+    logger.info "Memory usage: #{mem_use_bytes/1024/1024} MB"
+    # logger.info "GC stats: #{GC.stat.inspect}"
+  end
+
+exit(exit_code)
 
 
 

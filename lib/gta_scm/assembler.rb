@@ -315,8 +315,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iscm.load_opcode_definitions!
 
           compiler = GtaScm::RubyToScmCompiler.new
+          compiler.metadata = {filename: filename}
 
-          parsed = compiler.parse_ruby(ruby,filename)
+          parsed = compiler.parse_ruby(ruby)
 
           compiler.scm = iscm
           compiler.label_prefix = "l_#{file}_"

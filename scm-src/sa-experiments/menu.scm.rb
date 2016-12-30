@@ -203,7 +203,7 @@ spawn_car = routine do
     end
   end
 
-  fff ( ;o2>@#$*
+  fade(100,0)
 
   tmp_car_variation = 15
   if tmp_car_variation < 15
