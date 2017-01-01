@@ -9,7 +9,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
-    self.elements[:header].set_text("REPL".center(self.width))
+    self.elements[:header].set_text("REPL - ctrl+r: attach".center(self.width))
 
     self.elements[:status] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
 
