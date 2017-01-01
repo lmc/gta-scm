@@ -116,9 +116,9 @@ class GtaScm::Panel
   end
 
   def panel_list(data,rows,empty_row)
-    list_height = rows - 2
-    data = data[0...list_height]
-    while data.size < list_height
+    list_height = rows - 1
+    data = data[0..list_height]
+    while data.size < list_height - 2
       data << empty_row
     end
     data
@@ -316,6 +316,10 @@ class GtaScm::LvarsPanel < GtaScm::Panel
           nil
         end
       end.compact
+      data += [
+        ["Timer A","#{thread.timer_a}"],
+        ["Timer B","#{thread.timer_b}"],
+      ]
 
       # data << ["#{self.settings[:thread_id]}","#{$key}","#{self.settings[:key]}",""]
       # self.settings[:thread_id] -= 1
@@ -461,6 +465,9 @@ class GtaScm::GvarsPanel < GtaScm::Panel
       value = process.read_scm_var(gvar,self.settings[:types][idx]).to_s
       ["#{gvar}",label,value]
     end.compact
+
+    data = self.panel_list(data,self.height - 3,[["","",""]])
+
     self.elements[:table].set_table(data)
   end
 end
@@ -801,7 +808,7 @@ class GtaScm::ThreadListPanel < GtaScm::Panel
       [
         "#{thread.status_icon} #{(thread.nice_name||"").ljust(8," ")}"
       ]
-    end, self.height , [""])
+    end, self.height - 2 , [""])
 
     self.elements[:table].clear_highlight!
     self.elements[:table].highlight( self.settings[:selected_row] )
@@ -826,49 +833,59 @@ end
 class GtaScm::ThreadInfoPanel < GtaScm::Panel
   def initialize(*)
     super
-    # self.elements[:table2] = RuTui::Table.new({
-    #   x: self.dx(0),
-    #   y: self.dy(9),
-    #   table: [[""]*11],
-    #   cols: ([{ title: "", length: 1 }] * 9)+[{ title: "", length: 4 }] * 2,
-    #   header: false,
-    #   hover: RuTui::Theme.get(:highlight),
-    #   hover_fg: RuTui::Theme.get(:highlight_fg),
-    # })
-    self.elements[:table1] = RuTui::Table.new({
+    ty = 0
+
+    self.elements[:box] = RuTui::Box.new(
+      x: dx(0),
+      y: dy(ty),
+      width: self.width,
+      height: 12,
+      corner: RuTui::Pixel.new(RuTui::Theme.get(:border).fg,RuTui::Theme.get(:background).bg,"+")
+    )
+    ty += 12
+
+    self.elements[:table] = RuTui::Table.new({
       x: self.dx(0),
-      y: self.dy(0),
-      table: [["",""]],
+      y: self.dy(ty - 1),
+      table: [["",""]]*9,
       cols: [
-        { title: "", length: (self.width.to_f * 0.6).to_i },
-        { title: "", length: (self.width.to_f * 0.4).to_i },
+        { title: "", length: (self.width.to_f * 0.6).to_i - 3 },
+        { title: "", length: (self.width.to_f * 0.4).to_i - 3 },
       ],
       header: false,
       hover: RuTui::Theme.get(:highlight),
       hover_fg: RuTui::Theme.get(:highlight_fg),
     })
-    self.elements[:table3] = RuTui::Table.new({
-      x: self.dx(20),
-      y: self.dy(13),
-      table: [[""]],
-      cols: [
-        { title: "", length: 12 },
-      ],
-      header: false,
-      hover: RuTui::Theme.get(:highlight),
-      hover_fg: RuTui::Theme.get(:highlight_fg),
-    })
-    self.elements[:table4] = RuTui::Table.new({
-      x: self.dx(0),
-      y: self.dy(13),
-      table: [[""]],
-      cols: [
-        { title: "", length: 17 },
-      ],
-      header: false,
-      hover: RuTui::Theme.get(:highlight),
-      hover_fg: RuTui::Theme.get(:highlight_fg),
-    })
+
+    tx = 2
+    txx = 12
+    ty = 1
+    7.times do |i|
+      self.elements[:"left_label_#{i}"] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "label #{i}")
+      self.elements[:"left_text_#{i}"] = RuTui::Text.new(x: dx(tx+txx), y: dy(ty), text: "left #{i}")
+      ty += 1
+    end
+    self.elements[:left_label_0].set_text("ID:")
+    self.elements[:left_label_1].set_text("Name:")
+    self.elements[:left_label_2].set_text("Wake:")
+    self.elements[:left_label_3].set_text("")
+    self.elements[:left_label_4].set_text("Type:")
+    self.elements[:left_label_5].set_text("Base PC:")
+    self.elements[:left_label_6].set_text("Skip PC:")
+
+    ty += 1
+
+    2.times do |i|
+      tx = 2
+      txx = 11
+      4.times do |j|
+        self.elements[:"flag_#{i}_#{j}"] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "flag:  12")
+        tx += txx
+      end
+      ty += 1
+    end
+
+
   end
 
   def update(process,is_attached,focused = false)
@@ -879,6 +896,30 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
     if thread = process.threads[self.settings[:thread_id]]
+
+      self.elements[:left_text_0].set_text("#{thread.thread_id}")
+      self.elements[:left_text_1].set_text("#{thread.name}")
+      self.elements[:left_text_2].set_text("#{thread.wake_time}")
+      self.elements[:left_text_3].set_text("")
+      self.elements[:left_text_4].set_text("#{thread.status}")
+      self.elements[:left_text_5].set_text("#{thread.base_pc_scm}")
+      self.elements[:left_text_6].set_text("#{thread.scm_scene_skip_pc}")
+
+      self.elements[:flag_0_0].set_text("If1:  #{thread.branch_result}")
+      self.elements[:flag_1_0].set_text("If2:  #{thread.branch_result2}")
+
+      self.elements[:flag_0_1].set_text("Not:  #{thread.not_flag}")
+      self.elements[:flag_1_1].set_text("Mis:  #{thread.mission_flag}")
+
+      self.elements[:flag_0_2].set_text("Da1:  #{thread.death_arrest_state}")
+      self.elements[:flag_1_2].set_text("Da2:  #{thread.death_arrest_executed}")
+
+      self.elements[:flag_0_3].set_text("Un1:  #{thread.unknown1}")
+      self.elements[:flag_1_3].set_text("Un2:  #{thread.unknown2}")
+
+
+
+
       data1 = [
         ["#{thread.thread_id.to_s.rjust(2,"0")} #{(thread.name || "").ljust(7," ")}","#{thread.status}"],
         ["",""],
@@ -950,14 +991,14 @@ class GtaScm::ThreadInfoPanel < GtaScm::Panel
       # opcode_at = process.read(process.scm_offset + thread.scm_pc,16)
       # data4 << [ opcode_at.bytes.map{|b| b.to_s(16)}.join(" ") ]
 
-      self.elements[:table1].clear_highlight!
-      self.elements[:table1].set_table(data1)
-      # self.elements[:table2].clear_highlight!
-      # self.elements[:table2].set_table(data2)
-      self.elements[:table3].clear_highlight!
-      self.elements[:table3].set_table(data3)
-      self.elements[:table4].clear_highlight!
-      self.elements[:table4].set_table(data4)
+      # self.elements[:table1].clear_highlight!
+      # self.elements[:table1].set_table(data1)
+      # # self.elements[:table2].clear_highlight!
+      # # self.elements[:table2].set_table(data2)
+      # self.elements[:table3].clear_highlight!
+      # self.elements[:table3].set_table(data3)
+      # self.elements[:table4].clear_highlight!
+      # self.elements[:table4].set_table(data4)
     end
   end
 end
@@ -977,7 +1018,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
 
     self.settings[:buffer_lines] = self.height - 1 - 3
 
-    ty = 1
+    ty = 2
     self.settings[:buffer_lines].times do |i|
       self.elements[:"buffer_line_#{i}"] = RuTui::Text.new(x: dx(2), y: dy(ty), text: "")
       ty += 1
@@ -990,7 +1031,7 @@ class GtaScm::ReplPanel < GtaScm::Panel
       self.settings[:buffer] << ["output #{i}",[:output]]
     end
 
-    ty = 1
+    ty = 2
 
     self.elements[:history_box] = RuTui::Box.new(
       x: dx(0),
@@ -1239,21 +1280,31 @@ class GtaScm::ReplPanel < GtaScm::Panel
   end
 end
 
+
 begin
 
-$panels[:process] = GtaScm::ProcessPanel.new(63,0,62,1)
-$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,0,62,SIZE[0]-1)
-$panels[:thread_info] = GtaScm::ThreadInfoPanel.new(10+4,1,42,50)
+ty = 0
+console_lines = 16
+console_at_top = false
+if console_at_top
+  ty = 23
+  $panels[:repl] = GtaScm::ReplPanel.new(0,0,125,ty-1)
+else
+  $panels[:repl] = GtaScm::ReplPanel.new(0,61,125,console_lines+6)
+end
+
+$panels[:process] = GtaScm::ProcessPanel.new(63,ty+0,62,1)
+$panels[:thread_selector] = GtaScm::ThreadSelectorPanel.new(0,ty+0,62,1)
+$panels[:thread_info] = GtaScm::ThreadInfoPanel.new(10+4,ty+1,48,10 + 8 + 2 + 2)
 $panels[:thread_info].controller = $panels[:thread_selector]
-$panels[:thread_list] = GtaScm::ThreadListPanel.new(0,1,10,74)
+$panels[:thread_list] = GtaScm::ThreadListPanel.new(0,ty+1,10,60-1)
 $panels[:thread_list].controller = $panels[:thread_selector]
-$panels[:lvars] = GtaScm::LvarsPanel.new(10+4,SIZE[0]-35,48,32)
+$panels[:lvars] = GtaScm::LvarsPanel.new(10+4,ty+23,48,37)
 $panels[:lvars].controller = $panels[:thread_selector]
-$panels[:gvars] = GtaScm::GvarsPanel.new(63,SIZE[0]-35,62,32)
-$panels[:breakpoint] = GtaScm::BreakpointPanel.new(63,2,62,4)
-$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(63,3,62,10)
-$panels[:repl] = GtaScm::ReplPanel.new(63,15,62,14)
-# $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(63,15,28,32)
+$panels[:gvars] = GtaScm::GvarsPanel.new(63,ty+23,62,37)
+# $panels[:breakpoint] = GtaScm::BreakpointPanel.new(63,ty+2,62,4)
+$panels[:code_injector] = GtaScm::CodeInjectorPanel.new(63,ty+12,62,11)
+# $panels[:mission_skipper] = GtaScm::MissionSkipperPanel.new(63,ty+15,28,32)
 
 
 screen = RuTui::Screen.new

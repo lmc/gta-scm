@@ -25,8 +25,19 @@ NEXT:
 * DONE: generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
-* stack for function call args
+* stack for function call args?
   is it safe to use if each script leaves the stack empty before yielding?
+
+* debugger: more mouse click events
+* debugger: finalise script viewer
+* debugger: persist panels settings
+* debugger: hook up code reloader
+* debugger: hook up repl
+
+
+* docs: generate list of used/supported opcodes in SA
+
+
 
 * code reloader:
   get malloc space

@@ -472,6 +472,11 @@ class GtaScm::ThreadSa < GtaScm::Node::Base
     end.compact
   end
 
+  def scm_scene_skip_pc
+    return nil if self.scene_skip_pc <= 0
+    self.scene_skip_pc - self.scm_offset
+  end
+
   def status
     if !active?
       "dead"
