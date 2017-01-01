@@ -2,6 +2,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   BUFFER_LINES = 4
 
   attr_accessor :opcode_definitions
+  attr_accessor :scm
 
   def initialize(*)
     super
@@ -9,6 +10,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
     self.elements[:header].set_text("REPL".center(self.width))
+
+    self.elements[:status] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
 
     self.settings[:buffer_lines] = self.height - 1 - 3
 
@@ -54,9 +57,12 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:input_index] = self.settings[:input].size
     self.settings[:input_buffer_index] = -1
 
-    opcodes = GtaScm::OpcodeDefinitions.new
-    opcodes.load_definitions!("san-andreas")
-    self.opcode_definitions = opcodes
+    self.settings[:thread_id] = nil
+
+
+    self.scm = GtaScm::Scm.load_string("san-andreas","")
+    self.scm.load_opcode_definitions!
+    self.opcode_definitions = scm.opcodes
   end
 
   def update(process,is_attached,focused = false)
@@ -64,7 +70,11 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     buffer_offset = self.settings[:buffer_offset]
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
-    self.elements[:header].set_text("tab_word: #{self.settings[:tab_word]}")
+    if self.settings[:thread_id]
+      self.elements[:status].set_text("Attached to script id: #{self.settings[:thread_id]}")
+    else
+      self.elements[:status].set_text("Not attached")
+    end
 
     if self.settings[:tab_word]
       columns = 2
@@ -133,6 +143,10 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:input_index] = self.settings[:input].size
   end
 
+  def set_input_index_to_input_size_plus_one
+    self.settings[:input_index] = self.settings[:input].size + 1
+  end
+
   def clamp_input_index
     self.settings[:input_index] = 0 if self.settings[:input_index] < 0
     self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
@@ -148,16 +162,69 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:input_index] == self.settings[:input].size
   end
 
-  def submit_input!
+  def submit_input!(process)
     input = self.settings[:input].dup
     self.settings[:input_buffer] << input.dup
     self.settings[:buffer] << [input.dup,[:input]]
-    handle_input(input)
-    self.settings[:buffer] << ["the results of `#{input.dup}`",[:output]]
+    results = handle_input(input,process)
+    results.each do |result|
+      self.settings[:buffer] << [result,[:output]]
+    end
   end
 
-  def handle_input(input)
-    
+  def handle_input(input,process)
+    case input
+    when ""
+      return [""]
+    when "exit"
+      $exit = true
+    when "c"
+      process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
+      return ["breakpoint_resumed = 1"]
+    when "d"
+      process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
+      return ["breakpoint_enabled = 0"]
+    when /^\$(\w+)(\.\w+)?$/ # global var
+      gvar = $1.dup rescue nil
+      cast = $2.dup rescue nil
+      type = extract_cast!(cast)
+      offset = process.scm_var_offset_for(gvar)
+      raise "No global var '#{gvar}'" if !offset
+      return_value = process.read_scm_var(offset, type || process.symbols_var_types[offset] || :int)
+      return [return_value.inspect]
+    when /^(\w+)(\.\w+)?$/ # local var
+      if !self.settings[:thread_id]
+        return ["not attached to script"]
+      end
+      lvar = $1.dup rescue nil
+      cast = $2.dup rescue nil
+      type = extract_cast!(cast)
+      # thread = active_thread(process)
+      thread = process.threads[ self.settings[:thread_id] ]
+      symbols = process.thread_symbols[thread.name]
+      return_value = nil
+      lvar_def = symbols.detect{|k,v| v[0] == lvar}
+      # raise "No local var '#{lvar}' for script #{thread.name}" if !lvar_def
+      return ["no local var `#{lvar}` for script `#{thread.name}` (#{thread.thread_id})"]
+      lvar_idx = lvar_def[0].to_i
+      type ||= lvar_def[1][1] || :int
+      lvars_cast = type == :float ? thread.local_variables_floats : thread.local_variables_ints
+      return_value = lvars_cast[lvar_idx]
+      return [return_value.inspect]
+    else # eval code
+      if !self.settings[:thread_id]
+        return ["not attached to script"]
+      end
+      bytecode,return_vars_types = nil,nil
+      begin
+        bytecode,return_vars_types = compile_input(input,process,self.scm)
+      rescue GtaScm::RubyToScmCompiler::InputError => exception
+        return exception.blame_lines
+      end
+      write_and_execute_bytecode(bytecode,process)
+      return_values = get_return_values(return_vars_types,process)
+      return [return_values.inspect]
+    end
   end
 
   def textfield_input(key,is_attached,process)
@@ -172,15 +239,14 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         line = self.settings[:input_buffer][ -(self.settings[:input_buffer_index]+1) ]
         self.settings[:input] = line.dup
       end
-      set_input_index_to_input_size
+      set_input_index_to_input_size_plus_one
     when :left,:right
       self.settings[:input_index] += key == :right ? +1 : -1
     when :backspace, :ctrl_h
       self.settings[:input].slice!( self.settings[:input_index] - 1 )
+      self.settings[:input_index] -= 1
       if cursor_at_end?
-        set_input_index_to_input_size
-      else
-        self.settings[:input_index] -= 1
+        self.settings[:input_index] += 1
       end
     when :tab
       if self.settings[:tab_word]
@@ -189,13 +255,22 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         self.settings[:tab_word] = self.word_at_or_before_cursor(self.settings[:input],self.settings[:input_index])
       end
     when :enter
-      submit_input!
+      submit_input!(process)
       clear_for_next_input
     when :ctrl_c
       if self.settings[:input] == ""
         $exit = true
       else
         clear_for_next_input
+      end
+    when :ctrl_r
+      if thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
+        self.settings[:thread_id] = thread.thread_id
+      else
+        offset = process.scm_label_offset_for(:debug_repl)
+        process.rpc(1,offset)
+        thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
+        self.settings[:thread_id] = thread.thread_id
       end
     when Symbol
 
@@ -244,9 +319,11 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       remaining_args = remaining_args[0..-(args_before_opcode+1)]
       remaining_args = remaining_args[args_after_opcode..-1]
 
+      return_added = false
       remaining_args.each do |arg|
-        if arg[:var]
+        if arg[:var] && !return_added
           input << " returns"
+          return_added = true
         end
         input << " " << arg[:type].to_s
       end
@@ -312,5 +389,81 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     colors[input_index] = [RuTui::Theme.get(:background).bg,RuTui::Theme.get(:textcolor)]
 
     colors
+  end
+
+  BREAKPOINT_VARS = [:breakpoint_enabled,:breakpoint_resumed,:breakpoint_halt_vm,:breakpoint_do_exec]
+  BREAKPOINT_RETURN_VARS = [:breakpoint_repl_ret0,:breakpoint_repl_ret1,:breakpoint_repl_ret2,:breakpoint_repl_ret3]
+
+  def compile_input(input,process,scm)
+    offset = 0
+    # parsed = Parser::CurrentRuby.parse(input)
+
+    # hackily tell assembler to assign code/variables at alternate offsets
+    asm = GtaScm::Assembler::Sexp.new(nil)
+    asm.code_offset = offset
+    def asm.install_features!
+      class << self
+        include GtaScm::Assembler::Feature::VariableAllocator
+        include GtaScm::Assembler::Feature::VariableHeaderAllocator
+      end
+      self.on_feature_init()
+    end
+
+    compiler = GtaScm::RubyToScmCompiler.new
+    compiler.scm = scm
+    compiler.external = false
+
+    parsed = compiler.parse_ruby(input)
+
+    return_vars_types = []
+    compiler.emit_opcode_call_callback = lambda do |definition,name,args|
+      return if !definition
+      return_vars = BREAKPOINT_RETURN_VARS.dup
+      until definition.arguments.size == args.size
+        return_var = return_vars.shift
+        return_var_dma = process.scm_var_offset_for(return_var)
+        arg = [:dmavar,return_var_dma,return_var]
+        return_type = definition.arguments[args.size].andand[:type] || :int32
+        return_vars_types << return_type
+        args << arg
+      end
+    end
+    instructions = compiler.transform_node(parsed)
+    
+    bytecode = ""
+
+    bytecode << asm.assemble_instruction(scm,offset, instructions[0]).to_binary
+
+    breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)
+    bytecode << asm.assemble_instruction(scm,offset, [:goto,[[:int32,breakpoint_offset]]]).to_binary
+
+    [bytecode,return_vars_types]
+  end
+
+  def get_return_values(return_vars_types = [],process)
+    BREAKPOINT_RETURN_VARS[0...return_vars_types.size].map.each_with_index do |var,idx|
+      process.read_scm_var(var,return_vars_types[idx])
+    end
+  end
+
+  def write_and_execute_bytecode(bytecode,process)
+    patchsite_offset = process.scm_label_offset_for(:debug_exec)
+    process.write(process.scm_offset + patchsite_offset, bytecode)
+    process.write_scm_var( :breakpoint_do_exec , 1 , :int32 )
+    until process.read_scm_var( :breakpoint_do_exec , :int32) == 0
+      sleep 0.1
+    end
+  end
+
+  def extract_cast!(var_name)
+    return nil if var_name.nil?
+    if var_name.match(/\.to_i$/)
+      var_name.gsub!(/\.to_i$/,'')
+      return :int
+    elsif var_name.match(/\.to_f$/)
+      var_name.gsub!(/\.to_f$/,'')
+      return :float
+    end
+    return nil
   end
 end
