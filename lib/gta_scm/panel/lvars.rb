@@ -42,6 +42,7 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
     if thread = process.threads[self.settings[:thread_id]]
 
       if thread_symbols = process.thread_symbols[thread.name]
+        self.settings[:names] = [nil] * 32
         thread_symbols.each_pair do |lvar,info|
           if info[1]
             self.settings[:types][ lvar.to_i ] = info[1].to_sym
@@ -112,8 +113,27 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
       self.settings[:types][ self.settings[:lvar_selected] ] = new_type
       self.settings[:key] = "c"
     end
+    cap_lvar_selected
+  end
 
-    self.settings[:lvar_selected] = 32 if self.settings[:lvar_selected] >= 32
+  def mouse_click(x,y,is_attached,process)
+    if y >= 2 && y < self.height - 1
+      self.settings[:lvar_selected] = y - 2
+    end
+  end
+
+  def focused_input(key,is_attached,process)
+    case key
+    when :up
+      self.settings[:lvar_selected] -= 1
+    when :down
+      self.settings[:lvar_selected] += 1
+    end
+    cap_lvar_selected
+  end
+
+  def cap_lvar_selected
+    self.settings[:lvar_selected] = 33 if self.settings[:lvar_selected] >= 33
     self.settings[:lvar_selected] = 0  if self.settings[:lvar_selected] <= 0
   end
 end

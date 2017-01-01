@@ -94,6 +94,7 @@ class RuTui::Table
   def initialize_with_highlight_fg(options)
     initialize_without_highlight_fg(options)
     @hover_fg = options[:hover_fg]
+    @underline_lines = []
   end
   alias initialize_without_highlight_fg initialize
   alias initialize initialize_with_highlight_fg
@@ -121,6 +122,10 @@ class RuTui::Table
 
   def row_count
     @table.size
+  end
+
+  def underline_all_lines!
+    @underline_lines = [true] * @table.size
   end
 
   def create
@@ -177,6 +182,7 @@ class RuTui::Table
         max_chars = @cols[index][:length]+1 if !@cols[index].nil? and !@cols[index][:length].nil?
         chars.each_with_index do |e, char_count|
           break if !max_chars.nil? and char_count >= max_chars
+          e = RuTui::Ansi.underline(e) if @underline_lines.andand[lindex] && e != " "
           _obj << RuTui::Pixel.new(fg,bg,e)
         end
         (@meta[:max_widths][index]-chars.size+1).times do |i|

@@ -29,6 +29,9 @@ class GtaScm::Panel::Base
   def input(key,is_attached,process)
     
   end
+  def focused_input(key,is_attached,process)
+    
+  end
 
   def mouse_click(x,y,is_attached,process)
     

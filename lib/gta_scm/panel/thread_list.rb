@@ -43,15 +43,20 @@ class GtaScm::Panel::ThreadList < GtaScm::Panel::Base
     end, self.height - 2 , [""])
 
     self.elements[:table].clear_highlight!
+    # self.elements[:table].underline_all_lines!
     self.elements[:table].highlight( self.settings[:selected_row] )
     self.elements[:table].set_table(data)
   end
 
+  def focused_input(key,is_attached,process)
+    self.controller.focused_input(key,is_attached,process)
+  end
+
   def mouse_click(x,y,is_attached,process)
-    self.settings[:selected_row] = 80
     if y >= 1 && y < self.height - 1
       if thread = threads(process)[y - 1]
         self.controller.settings[:thread_id] = thread.thread_id
+        self.controller.cap_thread_id
       end
     end
   end

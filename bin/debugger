@@ -50,10 +50,10 @@ $exit = false
 begin
 ty = 0
 console_lines = 16
-console_at_top = false
+console_at_top = true
 if console_at_top
   ty = 23
-  $panels[:repl] = GtaScm::Panel::Repl.new(0,0,125,ty-1)
+  $panels[:repl] = GtaScm::Panel::Repl.new(0,0,125,ty)
 else
   $panels[:repl] = GtaScm::Panel::Repl.new(0,61,125,console_lines+6)
 end
@@ -62,7 +62,7 @@ $panels[:process] = GtaScm::Panel::Process.new(63,ty+0,62,1)
 $panels[:thread_selector] = GtaScm::Panel::ThreadSelector.new(0,ty+0,62,1)
 $panels[:thread_info] = GtaScm::Panel::ThreadInfo.new(10+4,ty+1,48,10 + 8 + 2 + 2)
 $panels[:thread_info].controller = $panels[:thread_selector]
-$panels[:thread_list] = GtaScm::Panel::ThreadList.new(0,ty+1,10,60-1)
+$panels[:thread_list] = GtaScm::Panel::ThreadList.new(0,ty+1,14,60-1)
 $panels[:thread_list].controller = $panels[:thread_selector]
 $panels[:lvars] = GtaScm::Panel::Lvars.new(10+4,ty+23,48,37)
 $panels[:lvars].controller = $panels[:thread_selector]
@@ -84,6 +84,23 @@ RuTui::ScreenManager.set_current :default
 $panels.values.each(&:on_blur)
 $focused_panel = :repl
 
+def dump_persist_json
+  File.open("debugger-persist.json","w") do |f|
+    json = {}
+    json[:version] = 1
+    json[:focused_panel] = $focused_panel
+    json[:panels] = {}
+    $panels.each_pair do |name,panel|
+      json[:panels][name] = {}
+      json[:panels][name][:x] = panel.x
+      json[:panels][name][:y] = panel.y
+      json[:panels][name][:width] = panel.width
+      json[:panels][name][:height] = panel.height
+      json[:panels][name][:settings] = panel.settings
+    end
+    f << JSON.pretty_generate(json)
+  end
+end
 
 thr = ::Thread.new do
   loop do
@@ -128,7 +145,7 @@ thr2 = ::Thread.new do
     print "\e[?25l" # hide cursor
     key = RuTui::Input.getc
 
-    if key == :ctrl_c
+    if key == :ctrl_q
       $exit = true
       break
     end
@@ -171,7 +188,12 @@ thr2 = ::Thread.new do
       end
     elsif $panels[$focused_panel].has_textfield
       $panels[$focused_panel].textfield_input(key,true,process)
+    elsif key == :ctrl_p
+      dump_persist_json
+    elsif key == :ctrl_c || key == :ctrl_q
+      $exit = true
     else
+      $panels[$focused_panel].focused_input(key,true,process)
       $panels.each_pair do |_,panel|
         panel.input(key,true,process)
       end

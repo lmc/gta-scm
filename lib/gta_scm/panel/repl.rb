@@ -122,27 +122,63 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     true
   end
 
-  def textfield_input(key,is_attached,process)
-    cursor_at_end = self.settings[:input_index] == self.settings[:input].size
+  def incr_input_buffer_index(val)
+    # self.settings[:input_buffer_index] += key == :up ? +1 : -1
+    self.settings[:input_buffer_index] += val
+    self.settings[:input_buffer_index] = -1 if self.settings[:input_buffer_index] <= -1
+    self.settings[:input_buffer_index] = self.settings[:input_buffer].size if self.settings[:input_buffer_index] >= self.settings[:input_buffer].size
+  end
 
+  def set_input_index_to_input_size
+    self.settings[:input_index] = self.settings[:input].size
+  end
+
+  def clamp_input_index
+    self.settings[:input_index] = 0 if self.settings[:input_index] < 0
+    self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
+  end
+
+  def clear_for_next_input
+    self.settings[:input] = ""
+    self.settings[:input_index] = 0
+    self.settings[:input_buffer_index] = -1
+  end
+
+  def cursor_at_end?
+    self.settings[:input_index] == self.settings[:input].size
+  end
+
+  def submit_input!
+    input = self.settings[:input].dup
+    self.settings[:input_buffer] << input.dup
+    self.settings[:buffer] << [input.dup,[:input]]
+    handle_input(input)
+    self.settings[:buffer] << ["the results of `#{input.dup}`",[:output]]
+  end
+
+  def handle_input(input)
+    
+  end
+
+  def textfield_input(key,is_attached,process)
     case key
     when :up,:down
-      self.settings[:input_buffer_index] += key == :up ? +1 : -1
-      self.settings[:input_buffer_index] = -1 if self.settings[:input_buffer_index] <= -1
-      self.settings[:input_buffer_index] = self.settings[:input_buffer].size - 1 if self.settings[:input_buffer_index] >= self.settings[:input_buffer].size
+      incr_input_buffer_index(key == :up ? +1 : -1)
       if self.settings[:input_buffer_index] == -1
+        self.settings[:input] = ""
+      elsif self.settings[:input_buffer_index] == self.settings[:input_buffer].size
         self.settings[:input] = ""
       else
         line = self.settings[:input_buffer][ -(self.settings[:input_buffer_index]+1) ]
         self.settings[:input] = line.dup
       end
-      self.settings[:input_index] = self.settings[:input].size
+      set_input_index_to_input_size
     when :left,:right
       self.settings[:input_index] += key == :right ? +1 : -1
     when :backspace, :ctrl_h
       self.settings[:input].slice!( self.settings[:input_index] - 1 )
-      if cursor_at_end
-        self.settings[:input_index] = self.settings[:input].size
+      if cursor_at_end?
+        set_input_index_to_input_size
       else
         self.settings[:input_index] -= 1
       end
@@ -153,17 +189,21 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         self.settings[:tab_word] = self.word_at_or_before_cursor(self.settings[:input],self.settings[:input_index])
       end
     when :enter
-      self.settings[:input_buffer] << self.settings[:input].dup
-      self.settings[:buffer] << [self.settings[:input].dup,[:input]]
-      self.settings[:input] = ""
-      self.settings[:input_index] = 0
-      self.settings[:input_buffer_index] = -1
+      submit_input!
+      clear_for_next_input
+    when :ctrl_c
+      if self.settings[:input] == ""
+        $exit = true
+      else
+        clear_for_next_input
+      end
     when Symbol
 
     else
-      if cursor_at_end
+      if cursor_at_end?
         self.settings[:input] += key
-        self.settings[:input_index] = self.settings[:input].size
+        # self.settings[:input_index] = self.settings[:input].size
+        set_input_index_to_input_size
       else
         self.settings[:input][ self.settings[:input_index] ] = "#{key}#{self.settings[:input][ self.settings[:input_index] ]}"
         self.settings[:input_index] += 1
@@ -172,8 +212,9 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       self.settings[:tab_word] = nil
     end
 
-    self.settings[:input_index] = 0 if self.settings[:input_index] < 0
-    self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
+    # self.settings[:input_index] = 0 if self.settings[:input_index] < 0
+    # self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
+    clamp_input_index
   end
 
   def add_opcode_annotation!(input,input_index,colors)

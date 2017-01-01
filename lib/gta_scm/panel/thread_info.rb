@@ -12,7 +12,7 @@ class GtaScm::Panel::ThreadInfo < GtaScm::Panel::Base
     )
     ty += 12
 
-    self.elements[:table] = RuTui::Table.new({
+    self.elements[:stack_table] = RuTui::Table.new({
       x: self.dx(0),
       y: self.dy(ty - 1),
       table: [["",""]]*9,
@@ -85,88 +85,24 @@ class GtaScm::Panel::ThreadInfo < GtaScm::Panel::Base
       self.elements[:flag_0_3].set_text("Un1:  #{thread.unknown1}")
       self.elements[:flag_1_3].set_text("Un2:  #{thread.unknown2}")
 
-
-
-
-      data1 = [
-        ["#{thread.thread_id.to_s.rjust(2,"0")} #{(thread.name || "").ljust(7," ")}","#{thread.status}"],
-        ["",""],
+      self.elements[:stack_table].clear_highlight!
+      self.elements[:stack_table].set_table([
         ["PC","#{thread.scm_pc}"],
-        ["Base PC","#{thread.base_pc_scm}"],
-        ["",""],
-        ["Wake Time","#{thread.wake_time}"],
-        ["Timer A","#{thread.timer_a}"],
-        ["Timer B","#{thread.timer_b}"],
-        ["",""],
-        ["",""],
-        ["",""],
-        ["Stack",""],
-      ]
-      # data2 = [
-      #   ["BranchRes","#{thread.branch_result}"],
-      #   ["Mission","#{thread.is_mission}"],
-      #   ["External","#{thread.is_external}"],
-      #   ["BranchRes2","#{thread.branch_result2}"],
-      #   ["NotFlag","#{thread.not_flag}"],
-      #   ["DaState","#{thread.death_arrest_state}"],
-      #   ["DaExecd","#{thread.death_arrest_executed}"],
-      #   ["SkipPC","#{thread.scene_skip_pc}"],
-      #   ["MissionFlg","#{thread.mission_flag}"],
-      #   ["Unknown1","#{thread.unknown1}"],
-      #   ["Unknown2","#{thread.unknown2}"],
-      # ]
-      # data2 = [[
-      #   "#{thread.branch_result}",
-      #   "#{thread.is_mission}",
-      #   "#{thread.is_external}",
-      #   "#{thread.branch_result2}",
-      #   "#{thread.not_flag}",
-      #   "#{thread.death_arrest_state}",
-      #   "#{thread.death_arrest_executed}",
-      #   "#{thread.scene_skip_pc}",
-      #   "#{thread.mission_flag}",
-      #   "#{thread.unknown1}",
-      #   "#{thread.unknown2}",
-      # ]]
-      data3 = [
-        ["#{thread.scm_return_stack[0]}"],
-        ["#{thread.scm_return_stack[1]}"],
-        ["#{thread.scm_return_stack[2]}"],
-        ["#{thread.scm_return_stack[3]}"],
-        ["#{thread.scm_return_stack[4]}"],
-        ["#{thread.scm_return_stack[5]}"],
-        ["#{thread.scm_return_stack[6]}"],
-        ["#{thread.scm_return_stack[7]}"]
-      ]
+        ["Stack 0","#{thread.stack_0}"],
+        ["Stack 1","#{thread.stack_1}"],
+        ["Stack 2","#{thread.stack_2}"],
+        ["Stack 3","#{thread.stack_3}"],
+        ["Stack 4","#{thread.stack_4}"],
+        ["Stack 5","#{thread.stack_5}"],
+        ["Stack 6","#{thread.stack_6}"],
+        ["Stack 7","#{thread.stack_7}"],
+      ])
 
-      data4 = []
-
-      # opcode_prev = process.read(process.scm_offset + thread.scm_pc - 7,8).bytes
-      # data4 << [opcode_prev.reverse[0..7].map{|g| g.to_s(16)}.join(" ")]
-      # if opcode_prev.reverse[2..4].reverse == [0x01,0x00,0x04]
-      #   data4 << ["int8 wait found"]
-      # elsif opcode_prev.reverse[3..5].reverse == [0x01,0x00,0x05]
-      #   data4 << ["int16 wait found"]
-      # elsif opcode_prev.reverse[3..5].reverse == [0x01,0x00,0x02]
-      #   data4 << ["var wait found"]
-      # elsif opcode_prev.reverse[3..5].reverse == [0x01,0x00,0x03]
-      #   data4 << ["lvar wait found"]
-      # elsif opcode_prev.reverse[5..7].reverse == [0x01,0x00,0x01]
-      #   data4 << ["int32 wait found"]
-      # end
-      # # data4 << [ opcode_prev.map{|b| b.to_s(16)}.join(" ") ]
-
-      # opcode_at = process.read(process.scm_offset + thread.scm_pc,16)
-      # data4 << [ opcode_at.bytes.map{|b| b.to_s(16)}.join(" ") ]
-
-      # self.elements[:table1].clear_highlight!
-      # self.elements[:table1].set_table(data1)
-      # # self.elements[:table2].clear_highlight!
-      # # self.elements[:table2].set_table(data2)
-      # self.elements[:table3].clear_highlight!
-      # self.elements[:table3].set_table(data3)
-      # self.elements[:table4].clear_highlight!
-      # self.elements[:table4].set_table(data4)
     end
   end
+
+  def focused_input(key,is_attached,process)
+    self.controller.focused_input(key,is_attached,process)
+  end
+  
 end

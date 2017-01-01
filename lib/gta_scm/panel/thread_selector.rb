@@ -23,16 +23,17 @@ class GtaScm::Panel::ThreadSelector < GtaScm::Panel::Base
     self.set_text(process)
   end
 
-  def input(key,is_attached,process)
+  def focused_input(key,is_attached,process)
     case key
-    when "w"
+    when :up
       self.settings[:thread_id] += 1
-      self.settings[:key] = "w"
-    when "s"
+    when :down
       self.settings[:thread_id] -= 1
-      self.settings[:key] = "s"
     end
+    cap_thread_id
+  end
 
+  def cap_thread_id
     self.settings[:thread_id] = 95 if self.settings[:thread_id] >= 96
     self.settings[:thread_id] = 0  if self.settings[:thread_id] <= 0
   end
