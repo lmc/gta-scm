@@ -68,7 +68,7 @@ class GtaScm::Panel::Gvars < GtaScm::Panel::Base
   end
 
   def set_text(process = nil)
-    str = "Global Variables - r/f: prev/next"
+    str = "Global Variables - ctrl+y: type"
     str = str.center(self.width)
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
@@ -101,12 +101,56 @@ class GtaScm::Panel::Gvars < GtaScm::Panel::Base
 
     data = self.settings[:gvars].map.each_with_index do |gvar,idx|
       label = self.settings[:names][idx] || "gvar #{gvar}"
-      value = process.read_scm_var(gvar,self.settings[:types][idx]).to_s
+      # value = process.read_scm_var(gvar,self.settings[:types][idx]).to_s
+      size = self.settings[:types][idx] == :str ? 8 : 4
+      value = process.read_scm_var(gvar,nil,size)
+      value = self.var_value(self.settings[:types][idx],value)
       ["#{gvar}",label,value]
     end.compact
 
     data = self.panel_list(data,self.height - 3,[["","",""]])
 
+    self.elements[:table].clear_highlight!
+    self.elements[:table].highlight(self.settings[:selected_gvar])
     self.elements[:table].set_table(data)
+  end
+
+  def input(key,is_attached,process)
+    case key
+    when :ctrl_y
+      type = self.settings[:types][ self.settings[:selected_gvar] ]
+      new_type = case type
+      when :int
+        :float
+      when :float
+        :str
+      when :str
+        :bin
+      when :bin
+        :int
+      end
+      self.settings[:types][ self.settings[:selected_gvar] ] = new_type
+    end
+  end
+
+  def focused_input(key,is_attached,process)
+    case key
+    when :up
+      self.settings[:selected_gvar] -= 1
+    when :down
+      self.settings[:selected_gvar] += 1
+    end
+    cap_lvar_selected
+  end
+
+  def mouse_click(x,y,is_attached,process)
+    if y >= 2 && y < self.height - 1
+      self.settings[:selected_gvar] = y - 2
+    end
+  end
+
+  def cap_lvar_selected
+    self.settings[:selected_gvar] = self.settings[:gvars].size - 1 if self.settings[:selected_gvar] >= self.settings[:gvars].size - 1
+    self.settings[:selected_gvar] = 0  if self.settings[:selected_gvar] <= 0
   end
 end

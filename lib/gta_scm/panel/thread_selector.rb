@@ -8,9 +8,10 @@ class GtaScm::Panel::ThreadSelector < GtaScm::Panel::Base
 
   def set_text(process = nil)
     if process
-      str = "Threads (#{process.threads.select(&:active?).size}) - w/s: prev/next"
+      # str = "Threads (#{process.threads.select(&:active?).size}) - w/s: prev/next"
+      str = "Threads (#{process.cached_threads.select(&:active?).size})"
     else
-      str = "Threads - w/s: prev/next"
+      str = "Threads"
     end
     str = str.center(self.width)
     self.elements[:text].bg = 7

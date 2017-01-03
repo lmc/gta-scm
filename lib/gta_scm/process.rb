@@ -16,6 +16,8 @@ class GtaScm::Process
 
   attr_accessor :regions
 
+  attr_accessor :cached_threads
+
   def initialize()
      self.regions = {}
      self.thread_symbols = {}
@@ -218,6 +220,8 @@ class GtaScm::Process
 
     type = :float32 if type == :float
     type = :int32 if type == :int
+    type = :string8 if type == :str
+    type = :int32 if type == :bin
 
     size ||= GtaScm::Types.bytes4type(type)
 

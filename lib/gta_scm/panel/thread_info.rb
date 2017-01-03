@@ -63,7 +63,8 @@ class GtaScm::Panel::ThreadInfo < GtaScm::Panel::Base
 
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
-    if thread = process.threads[self.settings[:thread_id]]
+    # if thread = process.threads[self.settings[:thread_id]]
+    if thread = process.cached_threads[self.settings[:thread_id]]
 
       self.elements[:left_text_0].set_text("#{thread.thread_id}")
       self.elements[:left_text_1].set_text("#{thread.name}")

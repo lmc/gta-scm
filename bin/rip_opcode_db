@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/read_img
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'mechanize'
+
+agent = Mechanize.new
+
+scm = GtaScm::Scm.load_string("san-andreas","")
+scm.load_opcode_definitions!
+
+scm.opcodes.names2opcodes.each_pair do |name,opcode|
+  puts "#{name}"
+  puts "#{opcode}"
+  puts ""
+end

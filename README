@@ -22,17 +22,25 @@ intro mission launch site: 59976
 
 NEXT:
 
+* debugger repl: easy-to-use (don't require injection/attachment)
+* debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
+* debugger: enable auto-reload, toggle settings, choose files
+* debugger: control debugger features from console (add gvars, read/write memory, etc.)
+* debugger: hotkeys, convert all to ctrl+key, ensure no weird focus stuff
+* compiler: handle more errors
+* DONE: debugger: cache process.threads calls on each update call
+
 * DONE: generate call graph
   detect all opcodes that use labels (start_mission/switch/headers/etc.)
 
 * stack for function call args?
   is it safe to use if each script leaves the stack empty before yielding?
 
-* debugger: more mouse click events
+* DONE: debugger: more mouse click events
 * debugger: finalise script viewer
 * debugger: persist panels settings
-* debugger: hook up code reloader
-* debugger: hook up repl
+* DONE: debugger: hook up code reloader
+* DONE: debugger: hook up repl
 
 
 * docs: generate list of used/supported opcodes in SA

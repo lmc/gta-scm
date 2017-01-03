@@ -10,8 +10,12 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(ty), text: "")
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
-    self.elements[:header].set_text("Code Injector - u: inject, j: kill".center(self.width))
+    self.elements[:header].set_text("Code Injector - ctrl+i: inject".center(self.width))
     ty += 1
+
+    self.elements[:subheader] = RuTui::Text.new(x: dx(0), y: dy(ty), text: "")
+    ty += 1
+
 
     self.elements[:status_box] = RuTui::Box.new(
       x: dx(0),
@@ -38,9 +42,10 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
     ty += TABLE_LINE_COUNT + 4
 
 
+    self.settings[:auto_reload] = false
     self.settings[:injectors_base_dir] = "./scm-src/sa-experiments"
     self.settings[:injectors] = [
-      ["inject/test"]
+      ["inject/map-menu",:kill]
     ]
 
     self.settings[:output_buffer_lines] = STATUS_LINE_COUNT
@@ -58,14 +63,15 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
 
   end
 
-  # BASE_ALLOC_OFFSET = (2**30)# + (2**29)
-  BASE_ALLOC_OFFSET = 197_000
+  BASE_ALLOC_OFFSET = (2**30)# + (2**29)
+  # BASE_ALLOC_OFFSET = 197_000
   def update(process,is_attached,focused = false)
     if !is_attached
       return
     end
 
     read_persist_from_game!(process)
+    set_text
 
     blocks = block_data(process)
 
@@ -83,6 +89,10 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
       text = self.settings[:output_buffer][ (self.settings[:output_buffer].size - STATUS_LINE_COUNT + line_idx).abs ]
       self.elements[:"status_line_#{line_idx}"].set_text(text || "")
     end
+  end
+
+  def set_text
+    self.elements[:subheader].set_text("ctrl+o: Reload Mode #{self.settings[:injectors][0][1]}, ctrl+p: Auto-Reload #{self.settings[:auto_reload]}".center(self.width))
   end
 
   def add_output_line(text)
@@ -103,49 +113,20 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
   def input(key,is_attached,process)
     self.allocation_count ||= 0
 
-    if key == "i"
-      self.inject(process,"inject/test",:reload)
+    case key
+    when :ctrl_i
+      self.inject(process,self.settings[:injectors][0][0],self.settings[:injectors][0][1])
+    when :ctrl_o
+      self.settings[:injectors][0][1] = case self.settings[:injectors][0][1]
+      when :reload
+        :kill
+      when :kill
+        :reload
+      end
+    when :ctrl_p
+      self.settings[:auto_reload] = !self.settings[:auto_reload]
     end
 
-    # if key == "u"
-    #   print RuTui::Ansi.clear_color + RuTui::Ansi.clear
-    #   dir = "scm-src/sa-experiments"
-    #   filename = self.settings[:injectors][0][0]
-    #   thread_name = self.settings[:injectors][0][2]
-
-    #   # HORRIBLE HACK:
-    #   # vm_allocate gives us back 64-bit pointers so we can't use it for VM memory allocation...
-    #   # code_offset = Ragweed::Wraposx::vm_allocate(process.process.task,base_offset,VM_ALLOCATE_SIZE,true)
-      
-    #   # ...so lets just write into the top 1gb of user-process memory space
-    #   code_offset = (2**30) + (VM_ALLOCATE_SIZE * self.allocation_count += 1)
-
-    #   code_offset -= process.scm_offset
-
-    #   scm = GtaScm::Scm.load_string("san-andreas","")
-    #   scm.load_opcode_definitions!
-    #   asm = GtaScm::Assembler::Sexp.new(dir)
-    #   asm.code_offset = code_offset
-    #   def asm.install_features!
-    #     class << self
-    #       include GtaScm::Assembler::Feature::VariableAllocator
-    #       include GtaScm::Assembler::Feature::VariableHeaderAllocator
-    #     end
-    #     self.on_feature_init()
-    #   end
-    #   output = StringIO.new
-    #   asm.assemble(scm,filename,output)
-    #   output.rewind
-    #   code = output.read
-
-    #   process.write(process.scm_offset + code_offset, code)
-    #   process.rpc(1,code_offset,thread_name || "xinject")
-    # end
-
-    # if key == "j"
-    #   thread_name = self.settings[:injectors][0][2]
-    #   process.rpc(2,"#{thread_name}")
-    # end
   end
 
 
@@ -176,20 +157,6 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
     end
     blocks
   end
-
-  # def input(key,is_attached,process)
-  #   return if !is_attached
-
-  #   if key == "m"
-  #     self.settings[:auto_reload] = !self.settings[:auto_reload]
-  #   end
-
-  #   if key == "p"
-  #     # self.inject(process,"inject/test",:kill)
-  #     self.inject(process,"inject/test",:reload)
-  #   end
-  # end
-
 
   def read_persist_from_game!(process)
 

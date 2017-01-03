@@ -652,6 +652,11 @@ describe GtaScm::RubyToScmCompiler do
     end
   end
 
+  context "strings " do
+    let(:ruby){"load_texture_dictionary(\"radar101\")"}
+    it { is_expected.to eql "(set_lvar_int ((lvar 0 test) (int8 0)))" }
+  end
+
   # ===
 
   def compile(ruby)

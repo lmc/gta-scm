@@ -678,9 +678,11 @@ class GtaScm::RubyToScmCompiler
       variable_node.children.each_with_index do |arg,i|
         arg_def = opcode_def.arguments[i]
         if arg.type == :lvasgn
-          args << lvar( arg.children[0] , arg_def[:type] )
+          # args << lvar( arg.children[0] , arg_def[:type] )
+          args << lvar( arg.children[0] , nil )
         elsif arg.type == :gvasgn
-          args << gvar( arg.children[0] , arg_def[:type] )
+          # args << gvar( arg.children[0] , arg_def[:type] )
+          args << gvar( arg.children[0] , nil )
         else
           raise "can only handle lvar assigns #{variable_node.inspect}"
         end
@@ -886,6 +888,7 @@ class GtaScm::RubyToScmCompiler
       end
     when :str
       [:string8,node.children[0]]
+      # [:vlstring,node.children[0]]
     when :lvar
       lvar(node.children[0])
     when :gvar
@@ -997,6 +1000,9 @@ class GtaScm::RubyToScmCompiler
       if type == :string
         # skip one extra var for string8 (2 vars worth)
         self.generate_lvar_counter += 1
+      end
+      if self.generate_lvar_counter >= 32
+        raise "Out of local vars (tried to allocate `#{name}` to lvar #{self.generate_lvar_counter})"
       end
       self.lvar_names_to_ids[name] = self.generate_lvar_counter
       if type

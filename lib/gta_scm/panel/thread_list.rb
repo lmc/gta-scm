@@ -62,6 +62,7 @@ class GtaScm::Panel::ThreadList < GtaScm::Panel::Base
   end
 
   def threads(process)
-    process.threads.reverse
+    # process.threads.reverse
+    process.cached_threads.reverse
   end
 end

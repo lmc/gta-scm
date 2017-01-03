@@ -32,7 +32,7 @@ class GtaScm::Panel::Breakpoint < GtaScm::Panel::Base
     if self.settings[:breakpoint_waiting] == 1
       breakpoint_handler = process.scm_label_offset_for("debug_breakpoint")
 
-      breakpoint_thread = process.threads.detect{|t|
+      breakpoint_thread = process.cached_threads.detect{|t|
         (breakpoint_handler..(breakpoint_handler+64)).include?(t.scm_pc)
       }
 

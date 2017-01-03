@@ -24,7 +24,7 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
   end
 
   def set_text(process = nil)
-    str = "Local Variables - e/d: prev/next"
+    str = "Local Variables - ctrl+t: type"
     str = str.center(self.width)
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
@@ -39,7 +39,7 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
 
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
-    if thread = process.threads[self.settings[:thread_id]]
+    if thread = process.cached_threads[self.settings[:thread_id]]
 
       if thread_symbols = process.thread_symbols[thread.name]
         self.settings[:names] = [nil] * 32
@@ -62,19 +62,8 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
 
       data = self.settings[:lvars_count].times.map do |ii|
         label = self.settings[:names][ii] || "#{self.settings[:types][ii]} lvar #{ii}"
-        case self.settings[:types][ii]
-        when :int
-          # [ii.to_s,"int",lvars_int[ii].to_s,self.settings[:names][ii].to_s]
-          [label,lvars_int[ii].to_s]
-        when :float
-          # [ii.to_s,"flt",lvars_float[ii].round(3).to_s,self.settings[:names][ii].to_s]
-          [label,lvars_float[ii].round(3).to_s]
-        when :bin
-          # [ii.to_s,"bin",lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
-          [label,lvars_int[ii].to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")]
-        else
-          nil
-        end
+        value = self.var_value(self.settings[:types][ii],GtaScm::Types.value2bin(lvars_int[ii],:int32))
+        [label,value]
       end.compact
       data += [
         ["Timer A","#{thread.timer_a}"],
@@ -92,13 +81,7 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
 
   def input(key,is_attached,process)
     case key
-    when "d"
-      self.settings[:lvar_selected] += 1
-      self.settings[:key] = "d"
-    when "e"
-      self.settings[:lvar_selected] -= 1
-      self.settings[:key] = "e"
-    when "c"
+    when :ctrl_t
       type = self.settings[:types][ self.settings[:lvar_selected] ]
       new_type = case type
       when :int
@@ -111,9 +94,7 @@ class GtaScm::Panel::Lvars < GtaScm::Panel::Base
         :int
       end
       self.settings[:types][ self.settings[:lvar_selected] ] = new_type
-      self.settings[:key] = "c"
     end
-    cap_lvar_selected
   end
 
   def mouse_click(x,y,is_attached,process)

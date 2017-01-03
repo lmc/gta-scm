@@ -58,7 +58,7 @@ else
   $panels[:repl] = GtaScm::Panel::Repl.new(0,61,125,console_lines+6)
 end
 
-$panels[:process] = GtaScm::Panel::Process.new(63,ty+0,62,1)
+$panels[:process] = GtaScm::Panel::Process.new(63,ty+0,62,5)
 $panels[:thread_selector] = GtaScm::Panel::ThreadSelector.new(0,ty+0,62,1)
 $panels[:thread_info] = GtaScm::Panel::ThreadInfo.new(10+4,ty+1,48,10 + 8 + 2 + 2)
 $panels[:thread_info].controller = $panels[:thread_selector]
@@ -68,7 +68,7 @@ $panels[:lvars] = GtaScm::Panel::Lvars.new(10+4,ty+23,48,37)
 $panels[:lvars].controller = $panels[:thread_selector]
 $panels[:gvars] = GtaScm::Panel::Gvars.new(63,ty+23,62,37)
 # $panels[:breakpoint] = GtaScm::Panel::Breakpoint.new(63,ty+2,62,4)
-$panels[:code_injector] = GtaScm::Panel::CodeInjector.new(63,ty+12,62,11)
+$panels[:code_injector] = GtaScm::Panel::CodeInjector.new(63,ty+11,62,12)
 # $panels[:mission_skipper] = GtaScm::Panel::MissionSkipper.new(63,ty+15,28,32)
 
 
@@ -118,6 +118,7 @@ thr = ::Thread.new do
       is_attached = false
       if process.attached?
         is_attached = true
+        process.cached_threads = process.threads.dup
       else
         # not attached
       end
@@ -186,10 +187,10 @@ thr2 = ::Thread.new do
         end
 
       end
-    elsif $panels[$focused_panel].has_textfield
+    elsif key.is_a?(String) && $panels[$focused_panel].has_textfield
       $panels[$focused_panel].textfield_input(key,true,process)
-    elsif key == :ctrl_p
-      dump_persist_json
+    # elsif key == :ctrl_p
+    #   dump_persist_json
     elsif key == :ctrl_c || key == :ctrl_q
       $exit = true
     else

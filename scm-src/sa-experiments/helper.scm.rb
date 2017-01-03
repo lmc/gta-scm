@@ -1,6 +1,7 @@
 script_name "xhelper"
 
-emit(false) do
+if emit(false)
+  city = 3
   playing = 0
   p_x = 0.0
   p_y = 0.0
@@ -26,7 +27,7 @@ end
 
 do_fade(100,1)
 
-city = 1
+city = 3
 
 # task_jetpack(-1)
 # goto(1)
@@ -40,7 +41,7 @@ elsif city == 3
   t_y = 1390.0
   t_z = 11.0
 end
-# set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 # task_jetpack(PLAYER_CHAR)
 # give_weapon_to_char(PLAYER_CHAR,41,1000)
 

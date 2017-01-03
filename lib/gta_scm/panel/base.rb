@@ -95,4 +95,20 @@ class GtaScm::Panel::Base
       end
     end
   end
+
+  def var_value(type,binary)
+    # case self.settings[:types][ii]
+    case type
+    when :int
+      GtaScm::Types.bin2value(binary,:int32).to_s
+    when :float
+      GtaScm::Types.bin2value(binary,:float32).to_f.round(3).to_s
+    when :bin
+      GtaScm::Types.bin2value(binary,:int32).to_s(2).rjust(32,"0").chars.in_groups_of(8).map{|g| g.join}.join("-")
+    when :str
+      binary.to_s.inspect
+    else
+      nil
+    end
+  end
 end

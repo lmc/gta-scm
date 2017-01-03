@@ -9,6 +9,17 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
     self.elements[:command_kill] = RuTui::Text.new(x: dx(0), y: dy(ty), text: "")
     ty += 1
 
+    ty = 1
+    tx = 20
+
+    self.elements[:resource_debugger] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Debugger:")
+    ty += 1
+    self.elements[:resource_game] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Game:")
+    ty += 1
+    self.elements[:resource_terminal] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Terminal:")
+    ty += 1
+
+    self.settings[:resources_last_updated_at] = Time.at(0)
     set_text
 
     self.settings[:pid] = nil
@@ -28,6 +39,17 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
     self.elements[:header].set_text(str)
+
+    if self.settings[:resources_last_updated_at].to_i < Time.now.to_i
+      data = self.resource_usage
+      debugger_line = data.detect{|l| l.to_s.match(/debugger/)} || []
+      game_line = data.detect{|l| l.to_s.match(/San Andreas.app/)} || []
+      terminal_line = data.detect{|l| l.to_s.match(/iTerm/)} || []
+      self.elements[:resource_debugger].set_text("Debugger: pid #{debugger_line[1]}, cpu: #{debugger_line[2]}, mem: #{debugger_line[3]}")
+      self.elements[:resource_game].set_text("Game: pid #{game_line[1]}, cpu: #{game_line[2]}, mem: #{game_line[3]}")
+      self.elements[:resource_terminal].set_text("Terminal: pid #{terminal_line[1]}, cpu: #{terminal_line[2]}, mem: #{terminal_line[3]}")
+      self.settings[:resources_last_updated_at] = Time.now
+    end
   end
 
   def update(process,is_attached,focused = false)
@@ -59,5 +81,21 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
 
   def abs_mouse_click(x,y,is_attached,process)
     self.elements[:header].set_text("mouse: (#{x},#{y})")
+  end
+
+  def resource_usage
+    raw = `ps aux`
+    data = []
+    raw.lines.each do |line|
+      next unless line.match(/^\w+\s*\d+\s*/)
+      user,pid,cpu,mem,vsz,rss,tt,stat,started,time,command = *line.split(/\s+/,11)
+      case command
+      when /Grand Theft Auto - San Andreas.app/, /iTerm2/, /bin\/debugger/
+        data << [user,pid,cpu,mem,vsz,rss,tt,stat,started,time,command]
+        # data << [pid,cpu,mem]
+      end
+      # data << [command]
+    end
+    data
   end
 end
