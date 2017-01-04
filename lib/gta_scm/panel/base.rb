@@ -1,4 +1,5 @@
 class GtaScm::Panel::Base
+  attr_accessor :manager
   attr_accessor :x
   attr_accessor :y
   attr_accessor :width
@@ -7,7 +8,8 @@ class GtaScm::Panel::Base
   attr_accessor :settings
   attr_accessor :controller
 
-  def initialize(x,y,width,height)
+  def initialize(manager,x,y,width,height)
+    self.manager = manager
     self.x = x
     self.y = y
     self.width = width

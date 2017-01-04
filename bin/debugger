@@ -42,8 +42,10 @@ RuTui::Theme.use :scm
 
 
 require 'gta_scm/panel'
+require 'gta_scm/panel_manager'
 
-$panels = {}
+$panel_manager = GtaScm::PanelManager.new
+# $panels = {}
 
 $exit = false
 
@@ -53,44 +55,45 @@ console_lines = 16
 console_at_top = true
 if console_at_top
   ty = 23
-  $panels[:repl] = GtaScm::Panel::Repl.new(0,0,125,ty)
+  $panel_manager.add_panel :repl, GtaScm::Panel::Repl.new($panel_manager,0,0,125,ty)
 else
-  $panels[:repl] = GtaScm::Panel::Repl.new(0,61,125,console_lines+6)
+  $panel_manager.add_panel :repl, GtaScm::Panel::Repl.new($panel_manager,0,61,125,console_lines+6)
 end
 
-$panels[:process] = GtaScm::Panel::Process.new(63,ty+0,62,5)
-$panels[:thread_selector] = GtaScm::Panel::ThreadSelector.new(0,ty+0,62,1)
-$panels[:thread_info] = GtaScm::Panel::ThreadInfo.new(10+4,ty+1,48,10 + 8 + 2 + 2)
-$panels[:thread_info].controller = $panels[:thread_selector]
-$panels[:thread_list] = GtaScm::Panel::ThreadList.new(0,ty+1,14,60-1)
-$panels[:thread_list].controller = $panels[:thread_selector]
-$panels[:lvars] = GtaScm::Panel::Lvars.new(10+4,ty+23,48,37)
-$panels[:lvars].controller = $panels[:thread_selector]
-$panels[:gvars] = GtaScm::Panel::Gvars.new(63,ty+23,62,37)
-# $panels[:breakpoint] = GtaScm::Panel::Breakpoint.new(63,ty+2,62,4)
-$panels[:code_injector] = GtaScm::Panel::CodeInjector.new(63,ty+11,62,12)
-# $panels[:mission_skipper] = GtaScm::Panel::MissionSkipper.new(63,ty+15,28,32)
+$panel_manager.add_panel :process, GtaScm::Panel::Process.new($panel_manager,63,ty+0,62,5)
+$panel_manager.add_panel :thread_selector, GtaScm::Panel::ThreadSelector.new($panel_manager,0,ty+0,62,1)
+$panel_manager.add_panel :thread_info, GtaScm::Panel::ThreadInfo.new($panel_manager,10+4,ty+1,48,10 + 8 + 2 + 2)
+$panel_manager.panels[:thread_info].controller = $panel_manager.panels[:thread_selector]
+$panel_manager.add_panel :thread_list, GtaScm::Panel::ThreadList.new($panel_manager,0,ty+1,14,60-1)
+$panel_manager.panels[:thread_list].controller = $panel_manager.panels[:thread_selector]
+$panel_manager.add_panel :lvars, GtaScm::Panel::Lvars.new($panel_manager,10+4,ty+23,48,37)
+$panel_manager.panels[:lvars].controller = $panel_manager.panels[:thread_selector]
+$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars.new($panel_manager,63,ty+23,62,37)
+# $panel_manager.add_panel :breakpoint, GtaScm::Panel::Breakpoint.new($panel_manager,63,ty+2,62,4)
+$panel_manager.add_panel :code_injector, GtaScm::Panel::CodeInjector.new($panel_manager,63,ty+11,62,12)
+# $panel_manager.add_panel :mission_skipper, GtaScm::Panel::MissionSkipper.new($panel_manager,63,ty+15,28,32)
 
 
 screen = RuTui::Screen.new
 
-$panels.each_pair do |_,panel|
+$panel_manager.panels.each_pair do |_,panel|
   panel.add_elements_to_screen(screen)
 end
 
 RuTui::ScreenManager.add :default, screen
 RuTui::ScreenManager.set_current :default
 
-$panels.values.each(&:on_blur)
-$focused_panel = :repl
+$panel_manager.panels.values.each(&:on_blur)
+$panel_manager.focused_panel = :repl
+$panel_manager.on_init
 
 def dump_persist_json
   File.open("debugger-persist.json","w") do |f|
     json = {}
     json[:version] = 1
-    json[:focused_panel] = $focused_panel
+    json[:focused_panel] = $panel_manager.focused_panel
     json[:panels] = {}
-    $panels.each_pair do |name,panel|
+    $panel_manager.panels.each_pair do |name,panel|
       json[:panels][name] = {}
       json[:panels][name][:x] = panel.x
       json[:panels][name][:y] = panel.y
@@ -123,8 +126,8 @@ thr = ::Thread.new do
         # not attached
       end
 
-      $panels.each_pair do |name,panel|
-        panel.update(process,is_attached,$focused_panel == name)
+      $panel_manager.panels.each_pair do |name,panel|
+        panel.update(process,is_attached,$panel_manager.focused_panel == name)
       end
 
       RuTui::ScreenManager.draw
@@ -159,7 +162,7 @@ thr2 = ::Thread.new do
       x = key.bytes[4] - 32 - 1
       y = key.bytes[5] - 32 - 1
       # mouse event
-      $panels.each_pair do |panel_name,panel|
+      $panel_manager.panels.each_pair do |panel_name,panel|
         panel.abs_mouse_click(key.bytes[0],key.bytes[3],true,process)
         panel.abs_mouse_move(x,y,true,process)
 
@@ -168,10 +171,10 @@ thr2 = ::Thread.new do
 
             if key.bytes[3] == 32 # 32 = mouse down, 35 = mouse up
 
-              if $focused_panel != panel_name
-                $panels[$focused_panel].on_blur()
-                $focused_panel = panel_name
-                $panels[$focused_panel].on_focus()
+              if $panel_manager.focused_panel != panel_name
+                $panel_manager.panels[$panel_manager.focused_panel].on_blur()
+                $panel_manager.focused_panel = panel_name
+                $panel_manager.panels[$panel_manager.focused_panel].on_focus()
               end
 
               panel.mouse_click(x-panel.x,y-panel.y,true,process)
@@ -187,15 +190,15 @@ thr2 = ::Thread.new do
         end
 
       end
-    elsif $panels[$focused_panel].has_textfield
-      $panels[$focused_panel].textfield_input(key,true,process)
+    elsif $panel_manager.panels[$panel_manager.focused_panel].has_textfield
+      $panel_manager.panels[$panel_manager.focused_panel].textfield_input(key,true,process)
     # elsif key == :ctrl_p
     #   dump_persist_json
     elsif key == :ctrl_c || key == :ctrl_q
       $exit = true
     else
-      $panels[$focused_panel].focused_input(key,true,process)
-      $panels.each_pair do |_,panel|
+      $panel_manager.panels[$panel_manager.focused_panel].focused_input(key,true,process)
+      $panel_manager.panels.each_pair do |_,panel|
         panel.input(key,true,process)
       end
     end

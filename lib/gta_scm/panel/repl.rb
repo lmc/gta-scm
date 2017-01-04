@@ -23,10 +23,10 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
 
     self.settings[:buffer_offset] = 0
     self.settings[:buffer] = []
-    (self.settings[:buffer_lines]).times do |i|
-      self.settings[:buffer] << ["input #{i}",[:input]]
-      self.settings[:buffer] << ["output #{i}",[:output]]
-    end
+    # (self.settings[:buffer_lines]).times do |i|
+    #   self.settings[:buffer] << ["input #{i}",[:input]]
+    #   self.settings[:buffer] << ["output #{i}",[:output]]
+    # end
 
     ty = 2
 
@@ -167,9 +167,13 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:input_buffer] << input.dup
     self.settings[:buffer] << [input.dup,[:input]]
     results = handle_input(input,process)
-    results.each do |result|
-      self.settings[:buffer] << [result,[:output]]
+    results.each do |(line,tags)|
+      add_console_output(line,tags)
     end
+  end
+
+  def add_console_output(line,tags = [])
+    self.settings[:buffer] << [line,tags]
   end
 
   def handle_input(input,process)
@@ -180,10 +184,10 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       $exit = true
     when "c"
       process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
-      return ["breakpoint_resumed = 1"]
+      return [["breakpoint_resumed = 1",[:console]]]
     when "d"
       process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
-      return ["breakpoint_enabled = 0"]
+      return [["breakpoint_enabled = 0",[:console]]]
     when /^\$(\w+)(\.\w+)?$/ # global var
       gvar = $1.dup rescue nil
       cast = $2.dup rescue nil
@@ -194,7 +198,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       return [return_value.inspect]
     when /^(\w+)(\.\w+)?$/ # local var
       if !self.settings[:thread_id]
-        return ["not attached to script"]
+        return [["not attached to script",[:error]]]
       end
       lvar = $1.dup rescue nil
       cast = $2.dup rescue nil
@@ -210,10 +214,14 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       type ||= lvar_def[1][1] || :int
       lvars_cast = type == :float ? thread.local_variables_floats : thread.local_variables_ints
       return_value = lvars_cast[lvar_idx]
-      return [return_value.inspect]
+      return [[return_value.inspect,[:output]]]
     else # eval code
+      if results = self.manager.andand.handle_console_input(input)
+        return results
+      end
+
       if !self.settings[:thread_id]
-        return ["not attached to script"]
+        return [["not attached to script",[:error]]]
       end
       bytecode,return_vars_types = nil,nil
       begin
@@ -223,7 +231,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       end
       write_and_execute_bytecode(bytecode,process)
       return_values = get_return_values(return_vars_types,process)
-      return [return_values.inspect]
+      return [[return_values.inspect],[:output]]
     end
   end
 
