@@ -12,12 +12,28 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
     ty = 1
     tx = 20
 
-    self.elements[:resource_debugger] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Debugger:")
-    ty += 1
-    self.elements[:resource_game] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Game:")
-    ty += 1
-    self.elements[:resource_terminal] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Terminal:")
-    ty += 1
+    # self.elements[:resource_debugger] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Debugger:")
+    # ty += 1
+    # self.elements[:resource_game] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Game:")
+    # ty += 1
+    # self.elements[:resource_terminal] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "Terminal:")
+    # ty += 1
+
+    self.elements[:table] = RuTui::Table.new({
+      x: self.dx(0),
+      y: self.dy(ty),
+      table: [["","","","",""]],
+      cols: [
+        { title: "Process", length: 8 },
+        { title: "PID", length: 5 },
+        { title: "CPU%", length: 4 },
+        { title: "Memory", length: 6 },
+        { title: "", length: 14 },
+      ],
+      header: false,
+      hover: RuTui::Theme.get(:highlight),
+      hover_fg: RuTui::Theme.get(:highlight_fg),
+    })
 
     self.settings[:resources_last_updated_at] = Time.at(0)
     set_text
@@ -45,9 +61,14 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
       debugger_line = data.detect{|l| l.to_s.match(/debugger/)} || []
       game_line = data.detect{|l| l.to_s.match(/San Andreas.app/)} || []
       terminal_line = data.detect{|l| l.to_s.match(/iTerm/)} || []
-      self.elements[:resource_debugger].set_text("Debugger: pid #{debugger_line[1]}, cpu: #{debugger_line[2]}, mem: #{debugger_line[3]}")
-      self.elements[:resource_game].set_text("Game: pid #{game_line[1]}, cpu: #{game_line[2]}, mem: #{game_line[3]}")
-      self.elements[:resource_terminal].set_text("Terminal: pid #{terminal_line[1]}, cpu: #{terminal_line[2]}, mem: #{terminal_line[3]}")
+      game_hotkey = game_line[1] ? "ctrl+k: kill" : "ctrl+l: launch"
+      # self.elements[:resource_debugger].set_text("Debugger: pid #{debugger_line[1]}, cpu: #{debugger_line[2]}, mem: #{debugger_line[3]}")
+      # self.elements[:resource_game].set_text("Game: pid #{game_line[1]}, cpu: #{game_line[2]}, mem: #{game_line[3]}")
+      # self.elements[:resource_terminal].set_text("Terminal: pid #{terminal_line[1]}, cpu: #{terminal_line[2]}, mem: #{terminal_line[3]}")
+      self.elements[:table].set_table([
+        ["Debugger","#{debugger_line[1]}","#{debugger_line[2]}","#{debugger_line[3]}","ctrl+q: quit"],
+        ["Game","#{game_line[1]}","#{game_line[2]}","#{game_line[3]}",game_hotkey],
+      ])
       self.settings[:resources_last_updated_at] = Time.now
     end
   end

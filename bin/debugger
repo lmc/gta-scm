@@ -187,7 +187,7 @@ thr2 = ::Thread.new do
         end
 
       end
-    elsif key.is_a?(String) && $panels[$focused_panel].has_textfield
+    elsif $panels[$focused_panel].has_textfield
       $panels[$focused_panel].textfield_input(key,true,process)
     # elsif key == :ctrl_p
     #   dump_persist_json
