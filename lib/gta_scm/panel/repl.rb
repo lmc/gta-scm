@@ -63,6 +63,9 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.scm = GtaScm::Scm.load_string("san-andreas","")
     self.scm.load_opcode_definitions!
     self.opcode_definitions = scm.opcodes
+
+    # self.opcode_proxy = GtaScm::Panel::Repl::OpcodeProxy.new
+    self.opcode_proxy.install_opcode_names!(scm)
   end
 
   def update(process,is_attached,focused = false)
@@ -98,9 +101,9 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         element = self.elements[:"buffer_line_#{self.settings[:buffer_lines] - i - 1}"]
         if line
           text = line[0]
-          if line[1].include?(:input)
+          if line[1].andand.include?(:input)
             element.fg = 6
-          elsif line[1].include?(:output)
+          elsif line[1].andand.include?(:output)
             element.fg = 5
           end
           element.set_text(text)
@@ -113,9 +116,13 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     input = self.settings[:input].dup
     input_index = self.settings[:input_index]
 
-    colors = self.get_colors_for_input(input,input_index)
-    input[input_index] ||= " "
-    self.add_opcode_annotation!(input,input_index,colors)
+    begin
+      colors = self.get_colors_for_input(input,input_index)
+      input[input_index] ||= " "
+      self.add_opcode_annotation!(input,input_index,colors)
+    rescue
+      # who cares
+    end
     self.elements[:input].set_text_and_colors(input,colors)
 
   end
@@ -188,50 +195,65 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     when "d"
       process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
       return [["breakpoint_enabled = 0",[:console]]]
-    when /^\$(\w+)(\.\w+)?$/ # global var
-      gvar = $1.dup rescue nil
-      cast = $2.dup rescue nil
-      type = extract_cast!(cast)
-      offset = process.scm_var_offset_for(gvar)
-      raise "No global var '#{gvar}'" if !offset
-      return_value = process.read_scm_var(offset, type || process.symbols_var_types[offset] || :int)
-      return [return_value.inspect]
-    when /^(\w+)(\.\w+)?$/ # local var
-      if !self.settings[:thread_id]
-        return [["not attached to script",[:error]]]
-      end
-      lvar = $1.dup rescue nil
-      cast = $2.dup rescue nil
-      type = extract_cast!(cast)
-      # thread = active_thread(process)
-      thread = process.threads[ self.settings[:thread_id] ]
-      symbols = process.thread_symbols[thread.name]
-      return_value = nil
-      lvar_def = symbols.detect{|k,v| v[0] == lvar}
-      # raise "No local var '#{lvar}' for script #{thread.name}" if !lvar_def
-      return ["no local var `#{lvar}` for script `#{thread.name}` (#{thread.thread_id})"]
-      lvar_idx = lvar_def[0].to_i
-      type ||= lvar_def[1][1] || :int
-      lvars_cast = type == :float ? thread.local_variables_floats : thread.local_variables_ints
-      return_value = lvars_cast[lvar_idx]
-      return [[return_value.inspect,[:output]]]
+    # when /^\$(\w+)(\.\w+)?$/ # global var
+    #   gvar = $1.dup rescue nil
+    #   cast = $2.dup rescue nil
+    #   type = extract_cast!(cast)
+    #   offset = process.scm_var_offset_for(gvar)
+    #   raise "No global var '#{gvar}'" if !offset
+    #   return_value = process.read_scm_var(offset, type || process.symbols_var_types[offset] || :int)
+    #   return [return_value.inspect]
+    # when /^(\w+)(\.\w+)?$/ # local var
+    #   if !self.settings[:thread_id]
+    #     return [["not attached to script",[:error]]]
+    #   end
+    #   lvar = $1.dup rescue nil
+    #   cast = $2.dup rescue nil
+    #   type = extract_cast!(cast)
+    #   # thread = active_thread(process)
+    #   thread = process.threads[ self.settings[:thread_id] ]
+    #   symbols = process.thread_symbols[thread.name]
+    #   return_value = nil
+    #   lvar_def = symbols.detect{|k,v| v[0] == lvar}
+    #   # raise "No local var '#{lvar}' for script #{thread.name}" if !lvar_def
+    #   return ["no local var `#{lvar}` for script `#{thread.name}` (#{thread.thread_id})"]
+    #   lvar_idx = lvar_def[0].to_i
+    #   type ||= lvar_def[1][1] || :int
+    #   lvars_cast = type == :float ? thread.local_variables_floats : thread.local_variables_ints
+    #   return_value = lvars_cast[lvar_idx]
+    #   return [[return_value.inspect,[:output]]]
     else # eval code
-      if results = self.manager.andand.handle_console_input(input)
-        return results
+
+      self.opcode_proxy.process = process
+      self.opcode_proxy.repl = self
+      begin
+
+        # return_values = self.opcode_proxy.instance_eval(input,binding)
+        return_values = self.workspace.evaluate(self.opcode_proxy,input)
+        return [[return_values.inspect,[:output]]]
+      rescue Exception => exception
+        text = exception.message + "\n" + exception.backtrace.join("\n")
+        return text.lines.map do |line|
+          [line.chomp,[:error]]
+        end
       end
 
-      if !self.settings[:thread_id]
-        return [["not attached to script",[:error]]]
-      end
-      bytecode,return_vars_types = nil,nil
-      begin
-        bytecode,return_vars_types = compile_input(input,process,self.scm)
-      rescue GtaScm::RubyToScmCompiler::InputError => exception
-        return exception.blame_lines
-      end
-      write_and_execute_bytecode(bytecode,process)
-      return_values = get_return_values(return_vars_types,process)
-      return [[return_values.inspect],[:output]]
+      # if results = self.manager.andand.handle_console_input(input)
+      #   return results
+      # end
+
+      # if !self.settings[:thread_id]
+      #   return [["not attached to script",[:error]]]
+      # end
+      # bytecode,return_vars_types = nil,nil
+      # begin
+      #   bytecode,return_vars_types = compile_input(input,process,self.scm)
+      # rescue GtaScm::RubyToScmCompiler::InputError => exception
+      #   return exception.blame_lines
+      # end
+      # write_and_execute_bytecode(bytecode,process)
+      # return_values = get_return_values(return_vars_types,process)
+      # return [[return_values.inspect,[:output]]]
     end
   end
 
@@ -473,5 +495,40 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       return :float
     end
     return nil
+  end
+
+  def opcode_proxy
+    @opcode_proxy ||= begin
+      # @scope ||= eval("def irb_binding; binding; end; irb_binding",TOPLEVEL_BINDING)
+      OpcodeProxy.new
+    end
+  end
+
+  def workspace
+    @workspace ||= IRB::WorkSpace.new(self.opcode_proxy.workspace_binding)
+  end
+
+  require 'irb'
+  class OpcodeProxy < OpenStruct
+    attr_accessor :process
+    attr_accessor :repl
+    attr_accessor :opcode_names
+
+    def install_opcode_names!(scm)
+      self.opcode_names = scm.opcodes.names2opcodes.keys.map(&:downcase).map(&:to_sym)
+    end
+
+    def workspace_binding
+      # eval("def irb_binding; binding; end; irb_binding",binding)
+      binding
+    end
+
+    def respond_to?(method)
+      self.opcode_names.include?(method)
+    end
+
+    def method_missing(method,*args)
+      return [method,args]
+    end
   end
 end
