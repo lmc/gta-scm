@@ -105,6 +105,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
             element.fg = 6
           elsif line[1].andand.include?(:output)
             element.fg = 5
+          elsif line[1].andand.include?(:error)
+            element.fg = 198
           end
           element.set_text(text)
         else
@@ -116,13 +118,13 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     input = self.settings[:input].dup
     input_index = self.settings[:input_index]
 
-    begin
+    # begin
       colors = self.get_colors_for_input(input,input_index)
       input[input_index] ||= " "
       self.add_opcode_annotation!(input,input_index,colors)
-    rescue
+    # rescue
       # who cares
-    end
+    # end
     self.elements[:input].set_text_and_colors(input,colors)
 
   end
@@ -232,7 +234,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         return_values = self.workspace.evaluate(self.opcode_proxy,input)
         return [[return_values.inspect,[:output]]]
       rescue Exception => exception
-        text = exception.message + "\n" + exception.backtrace.join("\n")
+        text = exception.message# + "\n" + exception.backtrace.join("\n")
         return text.lines.map do |line|
           [line.chomp,[:error]]
         end
@@ -527,8 +529,26 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       self.opcode_names.include?(method)
     end
 
+    PLAYER = 0
+    PLAYER_CHAR = 1
+
     def method_missing(method,*args)
-      return [method,args]
+      if respond_to?(method)
+        input = "#{method}(#{args.map(&:inspect).join(",")})"
+        bytecode,return_vars_types = self.repl.compile_input(input,self.process,self.repl.scm)
+        self.repl.write_and_execute_bytecode(bytecode,process)
+        return_values = self.repl.get_return_values(return_vars_types,process)
+        case return_values.size
+        when 0
+          return nil
+        when 1
+          return return_values[0]
+        else
+          return *return_values
+        end
+      else
+        super
+      end
     end
   end
 end
