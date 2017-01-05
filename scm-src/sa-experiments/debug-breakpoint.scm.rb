@@ -45,7 +45,6 @@ routines do
     $breakpoint_halt_vm = 0
     $breakpoint_enabled = 1
     loop do
-      wait(0)
       debug_breakpoint()
     end
   end

@@ -52,7 +52,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:prompt_input] = " > "
     self.settings[:prompt_output] = "=> "
 
-    self.settings[:input] = "char = create_char( 24 , "
+    self.settings[:input] = ""
     self.settings[:input_buffer] = []
     self.settings[:input_index] = self.settings[:input].size
     self.settings[:input_buffer_index] = -1
@@ -226,11 +226,17 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     #   return [[return_value.inspect,[:output]]]
     else # eval code
 
-      self.opcode_proxy.process = process
-      self.opcode_proxy.repl = self
-      begin
+      if !self.settings[:thread_id]
+        attach_or_spawn_host_script!(process)
+      end
 
-        # return_values = self.opcode_proxy.instance_eval(input,binding)
+      if results = self.manager.andand.handle_console_input(input,process)
+        return results
+      end
+
+      self.prepare_proxy!(process)
+
+      begin
         return_values = self.workspace.evaluate(self.opcode_proxy,input)
         return [[return_values.inspect,[:output]]]
       rescue Exception => exception
@@ -240,22 +246,14 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         end
       end
 
-      # if results = self.manager.andand.handle_console_input(input)
-      #   return results
-      # end
+    end
+  end
 
-      # if !self.settings[:thread_id]
-      #   return [["not attached to script",[:error]]]
-      # end
-      # bytecode,return_vars_types = nil,nil
-      # begin
-      #   bytecode,return_vars_types = compile_input(input,process,self.scm)
-      # rescue GtaScm::RubyToScmCompiler::InputError => exception
-      #   return exception.blame_lines
-      # end
-      # write_and_execute_bytecode(bytecode,process)
-      # return_values = get_return_values(return_vars_types,process)
-      # return [[return_values.inspect,[:output]]]
+  def input(key,is_attached,process)
+    return if !is_attached
+    case key
+    when :ctrl_r
+      attach_or_spawn_host_script!(process)
     end
   end
 
@@ -295,15 +293,6 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       else
         clear_for_next_input
       end
-    when :ctrl_r
-      if thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
-        self.settings[:thread_id] = thread.thread_id
-      else
-        offset = process.scm_label_offset_for(:debug_repl)
-        process.rpc(1,offset)
-        thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
-        self.settings[:thread_id] = thread.thread_id
-      end
     when Symbol
 
     else
@@ -322,6 +311,17 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     # self.settings[:input_index] = 0 if self.settings[:input_index] < 0
     # self.settings[:input_index] = self.settings[:input].size if self.settings[:input_index] > self.settings[:input].size
     clamp_input_index
+  end
+
+  def attach_or_spawn_host_script!(process)
+    if thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
+      self.settings[:thread_id] = thread.thread_id
+    else
+      offset = process.scm_label_offset_for(:debug_repl)
+      process.rpc(1,offset)
+      thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
+      self.settings[:thread_id] = thread.thread_id
+    end
   end
 
   def add_opcode_annotation!(input,input_index,colors)
@@ -351,13 +351,15 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       remaining_args = remaining_args[0..-(args_before_opcode+1)]
       remaining_args = remaining_args[args_after_opcode..-1]
 
-      return_added = false
-      remaining_args.each do |arg|
-        if arg[:var] && !return_added
-          input << " returns"
-          return_added = true
+      if remaining_args
+        return_added = false
+        remaining_args.each do |arg|
+          if arg[:var] && !return_added
+            input << " returns"
+            return_added = true
+          end
+          input << " " << arg[:type].to_s
         end
-        input << " " << arg[:type].to_s
       end
     end
   end
@@ -423,8 +425,25 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     colors
   end
 
+  def prepare_proxy!(process)
+    self.opcode_proxy.process = process
+    self.opcode_proxy.repl = self
+  end
+
   BREAKPOINT_VARS = [:breakpoint_enabled,:breakpoint_resumed,:breakpoint_halt_vm,:breakpoint_do_exec]
   BREAKPOINT_RETURN_VARS = [:breakpoint_repl_ret0,:breakpoint_repl_ret1,:breakpoint_repl_ret2,:breakpoint_repl_ret3]
+
+  def compile_input_with_cache(input,process,scm)
+    @_compile_input_with_cache ||= {}
+    key = input.hash
+    if cached = @_compile_input_with_cache[key]
+      return [cached[0],cached[1]]
+    else
+      cached = compile_input(input,process,scm)
+      @_compile_input_with_cache[key] = cached
+      return cached
+    end
+  end
 
   def compile_input(input,process,scm)
     offset = 0
@@ -483,7 +502,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     process.write(process.scm_offset + patchsite_offset, bytecode)
     process.write_scm_var( :breakpoint_do_exec , 1 , :int32 )
     until process.read_scm_var( :breakpoint_do_exec , :int32) == 0
-      sleep 0.1
+      sleep 0.001
     end
   end
 
@@ -510,11 +529,35 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     @workspace ||= IRB::WorkSpace.new(self.opcode_proxy.workspace_binding)
   end
 
+  module ConsoleMethods
+    def script(thread_id_or_name)
+      self.process.cached_threads.detect{|t| t.thread_id == thread_id_or_name || t.name == thread_id_or_name}
+    end
+    def read_mem(address,type_or_size)
+      size = type_or_size
+      if type_or_size.is_a?(Symbol)
+        size = GtaScm::Types.bytes4type(type_or_size)
+      end
+      data = self.process.read(address,size)
+      if type_or_size.is_a?(Symbol)
+        data = GtaScm::Types.bin2value(data,type_or_size)
+      end
+      data
+    end
+    def write_mem(address,value,type = nil)
+      value = GtaScm::Types.value2bin(value,type) if type
+      self.process.write(address,value)
+    end
+  end
+
   require 'irb'
   class OpcodeProxy < OpenStruct
     attr_accessor :process
     attr_accessor :repl
     attr_accessor :opcode_names
+
+    include GtaScm::Types
+    include ConsoleMethods
 
     def install_opcode_names!(scm)
       self.opcode_names = scm.opcodes.names2opcodes.keys.map(&:downcase).map(&:to_sym)

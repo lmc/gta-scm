@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+# sudo bundle exec ./bin/rpc_bridge
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+
+require 'gta_scm/panel'
+require 'gta_scm/panel_manager'
+
+process = GtaScm::Process.new
+process.load_symbols!
+process.detect_pid_and_attach!
+
+repl = GtaScm::Panel::Repl.new
+repl.prepare_proxy!(process)
+
+start_time = Time.now
+benchmark_until = Time.now.to_f + 1.0
+PLAYER_CHAR = 1
+
+calls = 0
+until Time.now.to_f >= benchmark_until
+  value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
+  calls += 1
+end
+
+puts "Performed #{calls} calls in #{Time.now.to_f - start_time.to_f} seconds"
+
+
+
+# puts "value: #{value.inspect}"

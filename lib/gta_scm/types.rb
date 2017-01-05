@@ -1,4 +1,5 @@
 module GtaScm::Types
+  extend self
 
   # TODO: refactor into instance methods, make other classes include this module
 
@@ -80,7 +81,7 @@ module GtaScm::Types
     :lvar_string16 => "S<",
   }
 
-  def self.value2bin(value,o_type)
+  def value2bin(value,o_type)
     return nil if value.nil?
     if o_type == :istring8
       # return nil #FIXME? why nil??
@@ -105,7 +106,7 @@ module GtaScm::Types
     end
   end
 
-  def self.bin2value(bin,o_type)
+  def bin2value(bin,o_type)
     bin = case bin
       when GtaScm::ByteArray
         bin.to_a.map(&:chr).join('')
@@ -138,7 +139,7 @@ module GtaScm::Types
     end
   end
 
-  def self.type2bin(type_sym)
+  def type2bin(type_sym)
     type_sym = self.normalize_type( type_sym.to_sym )
     if type_sym == :istring8
       nil
@@ -147,7 +148,7 @@ module GtaScm::Types
     end
   end
 
-  def self.bytes4type(o_type)
+  def bytes4type(o_type)
     type = self.normalize_type(o_type)
     if bytes = TYPE_BYTESIZE[type]
       bytes
@@ -159,7 +160,7 @@ module GtaScm::Types
     end
   end
 
-  def self.symbol4type(type)
+  def symbol4type(type)
     if type > MAX_TYPE
       :istring8
     else
@@ -167,7 +168,7 @@ module GtaScm::Types
     end
   end
 
-  def self.normalize_type(type)
+  def normalize_type(type)
     case type
       when Symbol
         return type

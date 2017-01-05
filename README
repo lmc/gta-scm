@@ -22,11 +22,28 @@ intro mission launch site: 59976
 
 NEXT:
 
+* debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)
+* debugger: bulk instruction calls + return values
+* debugger: try to speed up (2nd-level proxy for executing in multiple repl scripts?)
 * debugger repl: easy-to-use (don't require injection/attachment)
 * debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
 * debugger: enable auto-reload, toggle settings, choose files
 * debugger: control debugger features from console (add gvars, read/write memory, etc.)
-* debugger: hotkeys, convert all to ctrl+key, ensure no weird focus stuff
+  - launch/kill game
+  - inject any script
+  - set script
+  - use hex for input/output where appropriate
+  - read/write local vars
+  - read/write global vars
+  - read/write scm memory
+  - read/write game memory
+  - disassemble instruction at offset
+  - patch instruction at offset
+  - insert breakpoint at offset
+  - handle breakpoint in repl
+* debugger/compiler: generate symbols that can be used for injected code/strange base offsets
+* debugger: DONE: hotkeys, convert all to ctrl+key, ensure no weird focus stuff
+* debugger: allow copying text properly
 * compiler: handle more errors
 * DONE: debugger: cache process.threads calls on each update call
 

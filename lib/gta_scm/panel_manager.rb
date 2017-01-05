@@ -27,10 +27,18 @@ class GtaScm::PanelManager
     end
   end
 
-  def handle_console_input(input)
+  def handle_console_input(input,process)
     case input
     when /^echo (.*)$/
       return [["#{$1}",[:console]]]
+    when /^(script|thread) (.+)$/
+      thread_id_or_name = $2
+      thread_id_or_name = thread_id_or_name.match(/^\d+$/) ? thread_id_or_name.to_i : thread_id_or_name
+      thread = process.cached_threads.detect{|t| t.thread_id == thread_id_or_name || t.name == thread_id_or_name}
+      if self.panels[:thread_selector]
+        self.panels[:thread_selector].settings[:thread_id] = thread.thread_id
+      end
+      return [["Set active script to ID #{thread.thread_id}",[]]]
     else
       nil
     end

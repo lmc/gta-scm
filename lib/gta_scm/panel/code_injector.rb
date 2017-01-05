@@ -10,7 +10,7 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(ty), text: "")
     self.elements[:header].bg = 7
     self.elements[:header].fg = 0
-    self.elements[:header].set_text("Code Injector - ctrl+i: inject".center(self.width))
+    self.elements[:header].set_text("Code Injector - ctrl+u: inject".center(self.width))
     ty += 1
 
     self.elements[:subheader] = RuTui::Text.new(x: dx(0), y: dy(ty), text: "")
@@ -114,7 +114,7 @@ class GtaScm::Panel::CodeInjector < GtaScm::Panel::Base
     self.allocation_count ||= 0
 
     case key
-    when :ctrl_i
+    when :ctrl_u
       self.inject(process,self.settings[:injectors][0][0],self.settings[:injectors][0][1])
     when :ctrl_o
       self.settings[:injectors][0][1] = case self.settings[:injectors][0][1]

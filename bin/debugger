@@ -190,7 +190,7 @@ thr2 = ::Thread.new do
         end
 
       end
-    elsif $panel_manager.panels[$panel_manager.focused_panel].has_textfield
+    elsif $panel_manager.panels[$panel_manager.focused_panel].has_textfield && !key.to_s.match(/ctrl_/)
       $panel_manager.panels[$panel_manager.focused_panel].textfield_input(key,true,process)
     # elsif key == :ctrl_p
     #   dump_persist_json
