@@ -22,9 +22,11 @@ intro mission launch site: 59976
 
 NEXT:
 
-* debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)
-* debugger: bulk instruction calls + return values
-* debugger: try to speed up (2nd-level proxy for executing in multiple repl scripts?)
+* debugger: ensure breakpoints work with new repl
+
+* RESOLVED: debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)
+* RESOLVED: debugger: bulk instruction calls + return values
+* RESOLVED: debugger: try to speed up (2nd-level proxy for executing in multiple repl scripts?)
 * debugger repl: easy-to-use (don't require injection/attachment)
 * debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
 * debugger: enable auto-reload, toggle settings, choose files
@@ -41,6 +43,11 @@ NEXT:
   - patch instruction at offset
   - insert breakpoint at offset
   - handle breakpoint in repl
+* debugger: scrollable lists/tables everywhere
+* debugger: regions list - maybe replaces code injector
+  - detect MAIN + external script's memspaces + block allocator spaces
+* debugger: flag on whether to alias script local vars to ruby local vars
+* debugger: flag on whether to alias global local vars to ruby global vars
 * debugger/compiler: generate symbols that can be used for injected code/strange base offsets
 * debugger: DONE: hotkeys, convert all to ctrl+key, ensure no weird focus stuff
 * debugger: allow copying text properly

@@ -58,6 +58,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:input_buffer_index] = -1
 
     self.settings[:thread_id] = nil
+    self.settings[:breakpoint_thread_id] = nil
 
 
     self.scm = GtaScm::Scm.load_string("san-andreas","")
@@ -68,13 +69,44 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.opcode_proxy.install_opcode_names!(scm)
   end
 
+  def breakpoint_code_range(process)
+    @breakpoint_code_range ||= (process.scm_label_offset_for(:debug_breakpoint_entry))..(process.scm_label_offset_for(:debug_repl))
+  end
+
   def update(process,is_attached,focused = false)
+
+    breakpoint_script = is_attached && process.cached_threads.detect{|s| !s.name.andand.match(/xrepl/) && self.breakpoint_code_range(process).include?(s.scm_pc) }
+
+    if is_attached
+      if !self.settings[:breakpoint_thread_id] && breakpoint_script
+        self.settings[:breakpoint_thread_id] = breakpoint_script.thread_id
+        self.settings[:thread_id] = breakpoint_script.thread_id
+        add_console_output("Script #{breakpoint_script.thread_id} (#{breakpoint_script.name}) hit breakpoint!",[])
+        caller_offset = breakpoint_script.scm_return_stack[0] - 7 # stack address is the next instruction after the gosub, so back 7 bytes 
+        add_console_output("Caller offset: #{caller_offset}",[])
+        if metadata = process.symbols_metadata["#{caller_offset}"]
+          add_console_output("Symbols are available, source code context:",[])
+          source_line_idx = (metadata["source_context"].size - 1) / 2
+          start_line_number = metadata["start_line"]
+          metadata["source_context"].each_with_index do |line,idx|
+            prefix = "    "
+            tags = idx == source_line_idx ? [:input] : []
+            add_console_output("#{metadata["filename"]}:#{start_line_number+idx}:#{prefix}#{line.chomp}",tags)
+          end
+        end
+        add_console_output("c: resume, d: disable breakpoints",[])
+      elsif self.settings[:breakpoint_thread_id] && !breakpoint_script
+        self.settings[:breakpoint_thread_id] = nil
+      end
+    end
+
     
     buffer_offset = self.settings[:buffer_offset]
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
+
     if self.settings[:thread_id]
-      self.elements[:status].set_text("Attached to script id: #{self.settings[:thread_id]}")
+      self.elements[:status].set_text("Evaluating code in script id: #{self.settings[:thread_id]}")
     else
       self.elements[:status].set_text("Not attached")
     end
@@ -192,9 +224,11 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     when "exit"
       $exit = true
     when "c"
+      # self.settings[:breakpoint_thread_id] = nil
       process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
       return [["breakpoint_resumed = 1",[:console]]]
     when "d"
+      # self.settings[:breakpoint_thread_id] = nil
       process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
       return [["breakpoint_enabled = 0",[:console]]]
     # when /^\$(\w+)(\.\w+)?$/ # global var
@@ -225,10 +259,6 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     #   return_value = lvars_cast[lvar_idx]
     #   return [[return_value.inspect,[:output]]]
     else # eval code
-
-      if !self.settings[:thread_id]
-        attach_or_spawn_host_script!(process)
-      end
 
       if results = self.manager.andand.handle_console_input(input,process)
         return results
@@ -488,6 +518,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)
     bytecode << asm.assemble_instruction(scm,offset, [:goto,[[:int32,breakpoint_offset]]]).to_binary
 
+    bytecode = bytecode.ljust(130,"\0")
+
     [bytecode,return_vars_types]
   end
 
@@ -498,6 +530,11 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   end
 
   def write_and_execute_bytecode(bytecode,process)
+
+    if !self.settings[:thread_id]
+      attach_or_spawn_host_script!(process)
+    end
+
     patchsite_offset = process.scm_label_offset_for(:debug_exec)
     process.write(process.scm_offset + patchsite_offset, bytecode)
     process.write_scm_var( :breakpoint_do_exec , 1 , :int32 )
@@ -531,6 +568,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
 
   module ConsoleMethods
     def script(thread_id_or_name)
+      thread_id_or_name = thread_id_or_name.to_s if thread_id_or_name.is_a?(Symbol)
       self.process.cached_threads.detect{|t| t.thread_id == thread_id_or_name || t.name == thread_id_or_name}
     end
     def read_mem(address,type_or_size)
@@ -547,6 +585,10 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     def write_mem(address,value,type = nil)
       value = GtaScm::Types.value2bin(value,type) if type
       self.process.write(address,value)
+    end
+
+    def instruction_at(address)
+      
     end
   end
 

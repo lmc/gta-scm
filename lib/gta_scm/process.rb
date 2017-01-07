@@ -12,6 +12,7 @@ class GtaScm::Process
   attr_accessor :symbols_var_offsets
   attr_accessor :symbols_var_types
   attr_accessor :symbols_label_offsets
+  attr_accessor :symbols_metadata
   attr_accessor :max_var_offset
 
   attr_accessor :regions
@@ -77,6 +78,7 @@ class GtaScm::Process
     end
 
     self.thread_symbols = symbols["threads_lvars"]
+    self.symbols_metadata = symbols["symbols_metadata"]
 
     # self.load_rpc_region!
   end

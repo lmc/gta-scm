@@ -12,6 +12,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
       attr_accessor :external_label_map
       attr_accessor :external_threads
       attr_accessor :symbols_data
+      attr_accessor :symbols_metadata
     end
     self.var_types = Hash.new
     self.label_map = Hash.new
@@ -21,7 +22,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
     self.gvars_names = Hash.new
     self.external_label_map = Hash.new{|h,k| h[k] = {}}
     self.external_threads = Hash.new{|h,k| h[k] = {}}
-
+    self.symbols_metadata = Hash.new{|h,k| h[k] = {}}
   end
 
   def on_complete
@@ -29,10 +30,10 @@ module GtaScm::Assembler::Feature::ExportSymbols
     export_symbols!
   end
 
-  def on_metadata(file,line_idx,tokens,addr)
+  def on_metadata(file,line_idx,tokens,offset)
     super
-    # metadata = Hash[tokens[1..-1]]
-    
+    metadata = Hash[tokens[1..-1]]
+    self.symbols_metadata[offset].merge!(metadata)
   end
 
   def on_labeldef(label,offset)
@@ -122,6 +123,10 @@ module GtaScm::Assembler::Feature::ExportSymbols
         end
       end
 
+      self.symbols_metadata.each_pair do |offset,hash|
+        self.parent.symbols_metadata[offset].merge!(hash)
+      end
+
       self.threads.each_pair do |thread_name,offset|
         value = if offset
           offset + self.code_offset
@@ -185,6 +190,7 @@ module GtaScm::Assembler::Feature::ExportSymbols
         end
 
         data[:external_threads] = self.external_threads
+        data[:symbols_metadata] = self.symbols_metadata
 
         self.symbols_data = data
         f << JSON.pretty_generate(data)

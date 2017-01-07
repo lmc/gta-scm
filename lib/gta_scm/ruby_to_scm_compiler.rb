@@ -111,7 +111,7 @@ class GtaScm::RubyToScmCompiler
     when :send
 
       if node.children[1] == :debugger
-        emit_breakpoint()
+        emit_breakpoint(node)
       elsif node.children[1] == :emit
         emit_raw(node)
       elsif node.children[1] == :[]= && node.children[0].type == :gvar
@@ -813,12 +813,19 @@ class GtaScm::RubyToScmCompiler
 
   end
 
-  BREAKPOINT_PC = 56531
-  def emit_breakpoint
+  # BREAKPOINT_PC = 56531
+  def emit_breakpoint(node)
     label = generate_label!
+    
+    context_lines = 5
+    start_line = node.loc.line - context_lines
+    end_line = node.loc.line + context_lines
+    source_context = node.loc.expression.source_buffer.source.lines[ (start_line)...(end_line) ]
+
     [
-      [:set_var_int,[[:dmavar,4492],[:label,label]]],
-      [:gosub,[[:int32, BREAKPOINT_PC]]],
+      # [:set_var_int,[[:dmavar,4492],[:label,label]]],
+      [:Metadata,[ :source_context, source_context], [:start_line, start_line+1], [:filename, self.metadata[:filename] ]],
+      [:gosub,[[:label, :debug_breakpoint_entry]]],
       [:labeldef,label]
     ]
   end

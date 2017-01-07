@@ -45,12 +45,11 @@ set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 # task_jetpack(PLAYER_CHAR)
 # give_weapon_to_char(PLAYER_CHAR,41,1000)
 
-LABEL_BREAKPOINT = [:label,:debug_breakpoint]
-gosub(LABEL_BREAKPOINT)
+# LABEL_BREAKPOINT = [:label,:debug_breakpoint]
+# gosub(LABEL_BREAKPOINT)
 
 loop do
-  wait 100
-  set_lvar_int(TIMER_A,0)
+  wait 0
 
   if is_player_playing(PLAYER)
     playing = 1
@@ -70,10 +69,11 @@ loop do
       in_vehicle = 0
     end
     p_weapon = get_current_char_weapon(PLAYER_CHAR)
+
+    if TIMER_A > 5000 && TIMER_A < 6000
+      debugger
+    end
   else
     playing = 0
   end
-
-  wait(0)
-  set_lvar_int(TIMER_B,0)
 end

@@ -13,6 +13,13 @@ DEBUG_EXEC = [:label, :debug_exec]
 
 routines do
 
+  debug_breakpoint_entry = routine(export: :debug_breakpoint_entry) do
+    terminate_all_scripts_with_this_name("xrepl")
+    $breakpoint_enabled = 1
+    $breakpoint_halt_vm = 1
+    goto(DEBUG_BREAKPOINT)
+  end
+
   debug_breakpoint = routine(export: :debug_breakpoint) do
     $breakpoint_resumed = 0
     $breakpoint_do_exec = 0

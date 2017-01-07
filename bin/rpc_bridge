@@ -16,19 +16,21 @@ require 'gta_scm/rutui_ext'
 require 'gta_scm/panel'
 require 'gta_scm/panel_manager'
 
+PLAYER_CHAR = 1
+
 process = GtaScm::Process.new
 process.load_symbols!
 process.detect_pid_and_attach!
 
 repl = GtaScm::Panel::Repl.new
 repl.prepare_proxy!(process)
+value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
 
 start_time = Time.now
 benchmark_until = Time.now.to_f + 1.0
-PLAYER_CHAR = 1
 
 calls = 0
-until Time.now.to_f >= benchmark_until
+while Time.now.to_f < benchmark_until
   value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
   calls += 1
 end
