@@ -100,7 +100,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       end
     end
 
-    
+
     buffer_offset = self.settings[:buffer_offset]
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
@@ -461,7 +461,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   end
 
   BREAKPOINT_VARS = [:breakpoint_enabled,:breakpoint_resumed,:breakpoint_halt_vm,:breakpoint_do_exec]
-  BREAKPOINT_RETURN_VARS = [:breakpoint_repl_ret0,:breakpoint_repl_ret1,:breakpoint_repl_ret2,:breakpoint_repl_ret3]
+  BREAKPOINT_RETURN_VARS = [:breakpoint_repl_ret0,:breakpoint_repl_ret1,:breakpoint_repl_ret2,:breakpoint_repl_ret3,:breakpoint_repl_ret4,:breakpoint_repl_ret5,:breakpoint_repl_ret6,:breakpoint_repl_ret7]
 
   def compile_input_with_cache(input,process,scm)
     @_compile_input_with_cache ||= {}
@@ -476,11 +476,12 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   end
 
   def compile_input(input,process,scm)
-    offset = 0
+    offset = process.scm_label_offset_for(:debug_exec)
     # parsed = Parser::CurrentRuby.parse(input)
 
     # hackily tell assembler to assign code/variables at alternate offsets
     asm = GtaScm::Assembler::Sexp.new(nil)
+    asm.logger.level = :none
     asm.code_offset = offset
     def asm.install_features!
       class << self
@@ -511,12 +512,28 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     end
     instructions = compiler.transform_node(parsed)
     
-    bytecode = ""
-
-    bytecode << asm.assemble_instruction(scm,offset, instructions[0]).to_binary
-
+    if_result_var = process.scm_var_offset_for(:breakpoint_repl_if_result)
     breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)
-    bytecode << asm.assemble_instruction(scm,offset, [:goto,[[:int32,breakpoint_offset]]]).to_binary
+
+    asm.read_line(scm,instructions[0],"eval",0,true)
+
+    asm.read_line(scm,[:goto_if_false,[[:label,:breakpoint_exec_false]]],"eval",0,true)
+    asm.read_line(scm,[:set_var_int,[[:dmavar,if_result_var],[:int8,1]]],"eval",0,true)
+    asm.read_line(scm,[:goto,[[:int32,breakpoint_offset]]],"eval",0,true)
+
+    asm.read_line(scm,[:labeldef,:breakpoint_exec_false],"eval",0,true)
+    asm.read_line(scm,[:set_var_int,[[:dmavar,if_result_var],[:int8,0]]],"eval",0,true)
+    asm.read_line(scm,[:goto,[[:int32,breakpoint_offset]]],"eval",0,true)
+
+    asm.on_before_touchups()
+    asm.install_touchup_values!
+    asm.on_after_touchups()
+    asm.on_complete()
+    output = StringIO.new
+    asm.emit_assembly!(scm,"",output)
+    output.rewind
+    bytecode = output.read.force_encoding("ASCII-8BIT")
+
 
     bytecode = bytecode.ljust(130,"\0")
 

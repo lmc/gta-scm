@@ -242,12 +242,16 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   attr_accessor :emit_nodes
   # TODO: make symbol recogniser recursive, so you can use ie. Rawhex for arguments
-  def read_line(scm,line,file_name,line_idx)
+  def read_line(scm,line,file_name,line_idx,raw_symbols = false)
     self.emit_nodes = true if self.emit_nodes.nil?
     self.parser ||= Elparser::Parser.new
-    if line.present? and line.strip[0] == "("# and idx < 30
+    if line.present? and ( raw_symbols or line.strip[0] == "(" )# and idx < 30)
       offset = nodes.next_offset
-      tokens = self.parser.parse1(line).to_ruby
+      if raw_symbols
+        tokens = line
+      else
+        tokens = self.parser.parse1(line).to_ruby
+      end
       self.on_read_line(tokens,file_name,line_idx)
       logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
       # TODO: we can calculate offset + lengths here as we go

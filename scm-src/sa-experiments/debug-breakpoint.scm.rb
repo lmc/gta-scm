@@ -3,12 +3,18 @@ $breakpoint_resumed = 0
 $breakpoint_halt_vm = 1
 $breakpoint_do_exec = 0
 
+$breakpoint_repl_if_result = 0
 $breakpoint_repl_ret0 = 0
 $breakpoint_repl_ret1 = 0
 $breakpoint_repl_ret2 = 0
 $breakpoint_repl_ret3 = 0
+$breakpoint_repl_ret4 = 0
+$breakpoint_repl_ret5 = 0
+$breakpoint_repl_ret6 = 0
+$breakpoint_repl_ret7 = 0
 
-DEBUG_BREAKPOINT = [:label, :debug_breakpoint]
+DEBUG_BREAKPOINT = [:label, :debug_breakpoint_entry]
+DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint]
 DEBUG_EXEC = [:label, :debug_exec]
 
 routines do
@@ -17,7 +23,7 @@ routines do
     terminate_all_scripts_with_this_name("xrepl")
     $breakpoint_enabled = 1
     $breakpoint_halt_vm = 1
-    goto(DEBUG_BREAKPOINT)
+    goto(DEBUG_BREAKPOINT_INNER)
   end
 
   debug_breakpoint = routine(export: :debug_breakpoint) do
