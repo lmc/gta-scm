@@ -22,7 +22,8 @@ intro mission launch site: 59976
 
 NEXT:
 
-* debugger: ensure breakpoints work with new repl
+* DONE: debugger: ensure breakpoints work with new repl
+* compiler: dump all instruction offsets to symbols
 
 * RESOLVED: debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)
 * RESOLVED: debugger: bulk instruction calls + return values

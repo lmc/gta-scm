@@ -631,12 +631,21 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       self.opcode_names.include?(method)
     end
 
-    PLAYER = 0
-    PLAYER_CHAR = 1
+    CONSTS = {
+      PLAYER: :PLAYER,
+      PLAYER_CHAR: :PLAYER_CHAR
+    }
+    CONSTS_VALUES = {
+      PLAYER: "$_8",
+      PLAYER_CHAR: "$_12",
+    }
+    def self.const_missing(name)
+      CONSTS[name] || super
+    end
 
     def method_missing(method,*args)
       if respond_to?(method)
-        input = "#{method}(#{args.map(&:inspect).join(",")})"
+        input = "#{method}(#{args.map{|a| self.arg_value(a)}.join(",")})"
         bytecode,return_vars_types = self.repl.compile_input(input,self.process,self.repl.scm)
         self.repl.write_and_execute_bytecode(bytecode,process)
         return_values = self.repl.get_return_values(return_vars_types,process)
@@ -650,6 +659,14 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         end
       else
         super
+      end
+    end
+
+    def arg_value(arg)
+      if const_value = CONSTS_VALUES[arg]
+        return const_value
+      else
+        arg.inspect
       end
     end
   end
