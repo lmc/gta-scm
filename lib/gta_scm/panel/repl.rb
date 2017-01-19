@@ -7,8 +7,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   def initialize(*)
     super
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
-    self.elements[:header].bg = 7
-    self.elements[:header].fg = 0
+    self.elements[:header].bg = self.theme_get(:header_bg)
+    self.elements[:header].fg = self.theme_get(:header_fg)
     self.elements[:header].set_text("REPL - ctrl+r: attach".center(self.width))
 
     self.elements[:status] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
@@ -124,7 +124,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         end.join(" ")
 
         element = self.elements[:"buffer_line_#{self.settings[:buffer_lines] - i - 1}"]
-        element.fg = RuTui::Theme.get(:textcolor)
+        element.fg = self.theme_get(:repl_fg)
         element.set_text(text)
       end
     else
@@ -134,11 +134,13 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         if line
           text = line[0]
           if line[1].andand.include?(:input)
-            element.fg = 6
+            element.fg = self.theme_get(:repl_input)
           elsif line[1].andand.include?(:output)
-            element.fg = 5
+            element.fg = self.theme_get(:repl_output)
           elsif line[1].andand.include?(:error)
-            element.fg = 198
+            element.fg = self.theme_get(:repl_error)
+          else
+            element.fg = self.theme_get(:repl_fg)
           end
           element.set_text(text)
         else
@@ -665,6 +667,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     def arg_value(arg)
       if const_value = CONSTS_VALUES[arg]
         return const_value
+      elsif arg.is_a?(Symbol)
+        arg.to_s
       else
         arg.inspect
       end

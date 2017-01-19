@@ -36,7 +36,17 @@ RuTui::Theme.create :scm, {
   # :highlight_fg  => 134,
   :highlight  => 244,
   :highlight_fg  => 234,
-  :rainbow    => [1,3,11,2,4,5]
+  :rainbow    => [1,3,11,2,4,5],
+
+  # :header_bg => 7,
+  :header_bg => 3,
+  # :header_fg => 0,
+  :header_fg => 5,
+
+  :repl_fg => 7,
+  :repl_error => 198,
+  :repl_output => 5,
+  :repl_input => 6,
 }
 RuTui::Theme.use :scm
 
@@ -48,6 +58,8 @@ $panel_manager = GtaScm::PanelManager.new
 # $panels = {}
 
 $exit = false
+# $desired_frame_time = 0.25
+$desired_frame_time = 0.2
 
 begin
 ty = 0
@@ -133,7 +145,7 @@ thr = ::Thread.new do
       RuTui::ScreenManager.draw
       GC.start
     ensure
-      sleep_time = (start + 0.25) - Time.now
+      sleep_time = (start + $desired_frame_time) - Time.now
       sleep(sleep_time) if sleep_time > 0.0
     end
 
@@ -141,12 +153,13 @@ thr = ::Thread.new do
 end
 
 thr2 = ::Thread.new do
+    `stty -echo`
   print "\e[?1000h" # get mouse coords as keypress
   print "\e[?25l" # hide cursor
   loop do
     break if $exit
 
-    print "\e[?25l" # hide cursor
+    # print "\e[?25l" # hide cursor
     key = RuTui::Input.getc
 
     if key == :ctrl_q

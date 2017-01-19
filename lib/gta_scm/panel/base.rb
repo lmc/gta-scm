@@ -113,4 +113,8 @@ class GtaScm::Panel::Base
       nil
     end
   end
+
+  def theme_get(symbol)
+    RuTui::Theme.get(symbol)
+  end
 end

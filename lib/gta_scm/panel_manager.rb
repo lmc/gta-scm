@@ -16,6 +16,7 @@ class GtaScm::PanelManager
   end
 
   def on_init
+    20.times { add_console_output("") }
     add_console_output "GTA SCM Debugger started at #{Time.now}"
   end
 

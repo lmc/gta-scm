@@ -1,7 +1,7 @@
 class GtaScm::Panel::ThreadSelector < GtaScm::Panel::Base
   def initialize(*)
     super
-    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     set_text
     self.settings[:thread_id] = 95
   end
@@ -14,9 +14,9 @@ class GtaScm::Panel::ThreadSelector < GtaScm::Panel::Base
       str = "Threads"
     end
     str = str.center(self.width)
-    self.elements[:text].bg = 7
-    self.elements[:text].fg = 0
-    self.elements[:text].set_text(str)
+    self.elements[:header].bg = self.theme_get(:header_bg)
+    self.elements[:header].fg = self.theme_get(:header_fg)
+    self.elements[:header].set_text(str)
   end
 
   def update(process,is_attached,focused = false)

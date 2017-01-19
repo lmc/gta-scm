@@ -28,7 +28,7 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
         { title: "PID", length: 5 },
         { title: "CPU%", length: 4 },
         { title: "Memory", length: 6 },
-        { title: "", length: 14 },
+        { title: "", length: 14+9 },
       ],
       header: true,
       hover: RuTui::Theme.get(:highlight),
@@ -53,8 +53,8 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
       self.elements[:command_kill].set_text("")
     end
     str = str.center(self.width)
-    self.elements[:header].bg = 7
-    self.elements[:header].fg = 0
+    self.elements[:header].bg = self.theme_get(:header_bg)
+    self.elements[:header].fg = self.theme_get(:header_fg)
     self.elements[:header].set_text(str)
 
     if self.settings[:resources_last_updated_at].to_i < Time.now.to_i
@@ -67,8 +67,8 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
       # self.elements[:resource_game].set_text("Game: pid #{game_line[1]}, cpu: #{game_line[2]}, mem: #{game_line[3]}")
       # self.elements[:resource_terminal].set_text("Terminal: pid #{terminal_line[1]}, cpu: #{terminal_line[2]}, mem: #{terminal_line[3]}")
       self.elements[:table].set_table([
-        ["Debugger","#{debugger_line[1]}","#{debugger_line[2]}","#{debugger_line[3]}","ctrl+q: quit"],
-        ["Game","#{game_line[1]}","#{game_line[2]}","#{game_line[3]}",game_hotkey],
+        ["Debugger","#{debugger_line[1]}","#{debugger_line[2]}","#{debugger_line[5].to_i/1024} MB","ctrl+q: quit"],
+        ["Game","#{game_line[1]}","#{game_line[2]}","#{game_line[5].to_i/1024} MB",game_hotkey],
       ])
       self.settings[:resources_last_updated_at] = Time.now
     end
