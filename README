@@ -22,15 +22,6 @@ intro mission launch site: 59976
 
 NEXT:
 
-* DONE: debugger: ensure breakpoints work with new repl
-* compiler: dump all instruction offsets to symbols
-
-* RESOLVED: debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)
-* RESOLVED: debugger: bulk instruction calls + return values
-* RESOLVED: debugger: try to speed up (2nd-level proxy for executing in multiple repl scripts?)
-* debugger repl: easy-to-use (don't require injection/attachment)
-* debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
-* debugger: enable auto-reload, toggle settings, choose files
 * debugger: control debugger features from console (add gvars, read/write memory, etc.)
   - launch/kill game
   - inject any script
@@ -47,12 +38,25 @@ NEXT:
 * debugger: scrollable lists/tables everywhere
 * debugger: regions list - maybe replaces code injector
   - detect MAIN + external script's memspaces + block allocator spaces
+
+* compiler: dump all instruction offsets to symbols
+* debugger repl: easy-to-use (don't require injection/attachment)
+* debugger repl: use local vars instead of global?
+* debugger: enable auto-reload, toggle settings, choose files
+
 * debugger: flag on whether to alias script local vars to ruby local vars
 * debugger: flag on whether to alias global local vars to ruby global vars
 * debugger/compiler: generate symbols that can be used for injected code/strange base offsets
 * debugger: DONE: hotkeys, convert all to ctrl+key, ensure no weird focus stuff
 * debugger: allow copying text properly
 * compiler: handle more errors
+* debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
+
+
+* RESOLVED: debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)
+* RESOLVED: debugger: bulk instruction calls + return values
+* RESOLVED: debugger: try to speed up (2nd-level proxy for executing in multiple repl scripts?)
+* DONE: debugger: ensure breakpoints work with new repl
 * DONE: debugger: cache process.threads calls on each update call
 
 * DONE: generate call graph

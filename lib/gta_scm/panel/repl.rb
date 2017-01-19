@@ -670,4 +670,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       end
     end
   end
+
+  class ProbablyBytesString < String
+
+  end
 end

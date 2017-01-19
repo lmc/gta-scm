@@ -60,7 +60,7 @@ else
   $panel_manager.add_panel :repl, GtaScm::Panel::Repl.new($panel_manager,0,61,125,console_lines+6)
 end
 
-$panel_manager.add_panel :process, GtaScm::Panel::Process.new($panel_manager,63,ty+0,62,5)
+$panel_manager.add_panel :process, GtaScm::Panel::Process.new($panel_manager,63,ty+0,62,7)
 $panel_manager.add_panel :thread_selector, GtaScm::Panel::ThreadSelector.new($panel_manager,0,ty+0,62,1)
 $panel_manager.add_panel :thread_info, GtaScm::Panel::ThreadInfo.new($panel_manager,10+4,ty+1,48,10 + 8 + 2 + 2)
 $panel_manager.panels[:thread_info].controller = $panel_manager.panels[:thread_selector]

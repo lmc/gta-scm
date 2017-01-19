@@ -30,10 +30,11 @@ class GtaScm::Panel::Process < GtaScm::Panel::Base
         { title: "Memory", length: 6 },
         { title: "", length: 14 },
       ],
-      header: false,
+      header: true,
       hover: RuTui::Theme.get(:highlight),
       hover_fg: RuTui::Theme.get(:highlight_fg),
     })
+    self.elements[:table].clear_highlight!
 
     self.settings[:resources_last_updated_at] = Time.at(0)
     set_text
