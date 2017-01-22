@@ -38,10 +38,10 @@ RuTui::Theme.create :scm, {
   :highlight_fg  => 234,
   :rainbow    => [1,3,11,2,4,5],
 
-  # :header_bg => 7,
-  :header_bg => 3,
-  # :header_fg => 0,
-  :header_fg => 5,
+  :header_bg => 7,
+  # :header_bg => 3,
+  :header_fg => 0,
+  # :header_fg => 5,
 
   :repl_fg => 7,
   :repl_error => 198,

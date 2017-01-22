@@ -40,6 +40,16 @@ class GtaScm::NodeSet
     end
   end
 
+  def before(offset,count = 1)
+    if idx = @keys.binary_index(offset)
+      @values[idx - count]
+    end
+  end
+
+  def after(offset,count = 1)
+    before(offset,count * -1)
+  end
+
   protected
 
   # gross abuse of a binary search to find the first key where: key < offset < next_key

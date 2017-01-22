@@ -38,6 +38,7 @@ NEXT:
 * debugger: scrollable lists/tables everywhere
 * debugger: regions list - maybe replaces code injector
   - detect MAIN + external script's memspaces + block allocator spaces
+* debugger: disassemble bytecode in background thread
 
 * compiler: dump all instruction offsets to symbols
 * debugger repl: easy-to-use (don't require injection/attachment)

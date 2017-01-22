@@ -60,13 +60,16 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.settings[:thread_id] = nil
     self.settings[:breakpoint_thread_id] = nil
 
-
-    self.scm = GtaScm::Scm.load_string("san-andreas","")
-    self.scm.load_opcode_definitions!
-    self.opcode_definitions = scm.opcodes
+    load_scm("")
 
     # self.opcode_proxy = GtaScm::Panel::Repl::OpcodeProxy.new
     self.opcode_proxy.install_opcode_names!(scm)
+  end
+
+  def load_scm(str)
+    self.scm = GtaScm::Scm.load_string("san-andreas",str)
+    self.scm.load_opcode_definitions!
+    self.opcode_definitions = scm.opcodes
   end
 
   def breakpoint_code_range(process)
@@ -272,7 +275,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         return_values = self.workspace.evaluate(self.opcode_proxy,input)
         return [[return_values.inspect,[:output]]]
       rescue Exception => exception
-        text = exception.message# + "\n" + exception.backtrace.join("\n")
+        text = exception.message + "\n" + exception.backtrace.join("\n")
         return text.lines.map do |line|
           [line.chomp,[:error]]
         end
@@ -606,8 +609,48 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
       self.process.write(address,value)
     end
 
-    def instruction_at(address)
+    def _context(scm_offset,size = 1)
+      if scm_offset < 0 || scm_offset > 200_000
+        raise ArgumentError, "can only disassemble in MAIN"
+      end
+      if !@disassembled_main
+        bytecode = self.process.read(self.process.scm_offset,200_000)
+        repl.load_scm(bytecode)
+        parser = GtaScm::Parser.new(repl.scm, 0 , 199_999 )
+        parser.load_opcode_definitions( repl.scm.opcodes )
+        parser.parse!
+        repl.scm.load_from_parser(parser)
+      end
+      return (-size..size).map do |i|
+        case i <=> 0
+        when -1
+          repl.scm.nodes.before(scm_offset,i * -1)
+        when 0
+          repl.scm.nodes[scm_offset]
+        when 1
+          repl.scm.nodes.after(scm_offset,i)
+        end
+      end
+    end
+    def context(*args)
+      nodes = _context(*args)
+      nodes.each do |node|
+        dis = GtaScm::Disassembler::Sexp.new(repl.scm)
+        dis.output = StringIO.new
+        dis.emit_node(node.offset,node)
+        dis.output.rewind
+        out = dis.output.read
+
+        repl.add_console_output( out.lines[1].strip, [:output] )
+      end
       
+    end
+
+    def instruction_at(scm_offset)
+      # if scm_offset < 0 || scm_offset > 200_000
+      #   raise ArgumentError, "can only disassemble"
+      # end
+      # if !@disassembled_main
     end
   end
 
