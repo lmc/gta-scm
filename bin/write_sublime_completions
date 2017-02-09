@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+# LOG_LEVEL = :none
+LOG_LEVEL = :info
+
+scm = GtaScm::Scm.load_string("san-andreas","")
+scm.logger.level = LOG_LEVEL
+scm.load_opcode_definitions!
+
+File.open("ScmRb.sublime-completions","w") do |f|
+  json = {
+    scope: "source.scmrb",
+    completions: []
+  }
+  scm.opcodes.names2opcodes.keys.sort.each do |opcode_name|
+    next if opcode_name.match(/[a-z_]+/)
+    opcode_name = opcode_name.downcase
+    json[:completions] << { trigger: "#{opcode_name}" , contents: "#{opcode_name}" }
+  end
+  f << json.to_json
+end

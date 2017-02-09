@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+require 'csv'
+
+LOG_LEVEL = :none
+SRC_DIR = "./scm-src/gtasa-main2"
+
+scm = GtaScm::Scm.load_string("san-andreas","")
+scm.logger.level = LOG_LEVEL
+scm.load_opcode_definitions!
+
+files = {}
+files[:opcodes] = CSV.open("db_opcodes.csv","w")
+
+def opcode_usage_count(name)
+  `cd #{SRC_DIR}; ack "#{name}" -hc`.strip.to_i
+end
+
+scm.opcodes.names2opcodes.each_pair do |opcode_name,opcode_bytes|
+  hex_opcode = hex(opcode_bytes.reverse).gsub(/\s/,'')
+  opcode_name = opcode_name.downcase
+
+  puts "Inserting row for #{hex_opcode} #{opcode_name}"
+
+  row = []
+
+  row << hex_opcode
+  row << opcode_name
+  row << opcode_usage_count(opcode_name)
+
+  files[:opcodes] << row
+end
+
+
+files.each_pair do |_,f|
+  f.close
+end

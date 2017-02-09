@@ -15,7 +15,6 @@ routines do
     end
     loop do
       wait(0)
-      # (draw_corona ((dmavar 7136) (dmavar 7132) (dmavar 7128) (lvar 0) (int8 9) (int8 0) (lvar 1) (lvar 2) (lvar 3)))
       draw_corona(x,y,z,size,style,0,colour_r,colour_g,colour_b)
     end
   end

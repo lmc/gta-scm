@@ -9,13 +9,13 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     self.elements[:header].bg = self.theme_get(:header_bg)
     self.elements[:header].fg = self.theme_get(:header_fg)
-    self.elements[:header].set_text("REPL - ctrl+r: attach".center(self.width))
+    self.elements[:header].set_text("REPL".center(self.width))
 
-    self.elements[:status] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
+    # self.elements[:status] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
 
-    self.settings[:buffer_lines] = self.height - 1 - 3
+    self.settings[:buffer_lines] = self.height - 3
 
-    ty = 2
+    ty = 1
     self.settings[:buffer_lines].times do |i|
       self.elements[:"buffer_line_#{i}"] = RuTui::Text.new(x: dx(2), y: dy(ty), text: "")
       ty += 1
@@ -28,7 +28,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     #   self.settings[:buffer] << ["output #{i}",[:output]]
     # end
 
-    ty = 2
+    ty = 1
 
     self.elements[:history_box] = RuTui::Box.new(
       x: dx(0),
@@ -108,11 +108,11 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     buffer = self.settings[:buffer][-(buffer_offset+self.settings[:buffer_lines]-1)..-1]
 
 
-    if self.settings[:thread_id]
-      self.elements[:status].set_text("Evaluating code in script id: #{self.settings[:thread_id]}")
-    else
-      self.elements[:status].set_text("Not attached")
-    end
+    # if self.settings[:thread_id]
+    #   self.elements[:status].set_text("Evaluating code in script id: #{self.settings[:thread_id]}")
+    # else
+    #   self.elements[:status].set_text("Not attached")
+    # end
 
     if self.settings[:tab_word]
       columns = 2

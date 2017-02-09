@@ -13,6 +13,9 @@ gem "progress_bar", github: "paul/progress_bar"
 gem "ragweed"
 gem "iconv"
 
+gem "mechanize"
+gem "nokogiri"
+
 gem "rutui"
 
 gem 'rack'

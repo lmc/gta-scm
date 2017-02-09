@@ -195,7 +195,7 @@ routines do
     display_text_with_number(320.0,40.0,"NUMBER",tmp_i)
     tmp_i = world_target_z.to_i
     display_text_with_number(320.0,60.0,"NUMBER",tmp_i)
-
+    
   end
 end
 

@@ -20,7 +20,28 @@ Unused/debug code:
 intro mission launch site: 59976
 
 
+
+Things needed for release:
+
+Trim binaries down to just the important useful ones (assember/disassembler/debugger, shove the rest in a `tools` dir)
+No-BS fast way to set up code reloader and open editor with scaffold code
+Bootstrapper (don't need custom SCM for RPC/breakpoints/repl)
+Better first-boot intro (offer a few simple options: Decompile main.scm, compile source code, init code reloader)
+
+
+
+
 NEXT:
+
+GTAV memdump notes:
+1130934 (main)
+14921914 main
+
+* debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
+
+* filter opcodes to only ones used in-game (are there other supported ones that are unused?)
+* debugger: add/remove gvars from console
+* use `subl` app to show disassembly, new script template
 
 * debugger: control debugger features from console (add gvars, read/write memory, etc.)
   - launch/kill game
@@ -51,7 +72,6 @@ NEXT:
 * debugger: DONE: hotkeys, convert all to ctrl+key, ensure no weird focus stuff
 * debugger: allow copying text properly
 * compiler: handle more errors
-* debugger: run without bootstrap script (inject rpc/repl code, find+patch main loop to run them)
 
 
 * RESOLVED: debugger+code: make breakpoint handler larger, dynamic? (need multiple code sites for multiple dynamic executions)

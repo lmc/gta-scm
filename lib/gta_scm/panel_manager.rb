@@ -19,7 +19,7 @@ class GtaScm::PanelManager
     20.times { add_console_output("") }
     add_console_output "GTA SCM Debugger started at #{Time.now}"
     self.all_commands.each do |command|
-      add_console_output("#{command[0]} #{command[1].map{|a| "[#{a[:name]}]" }.join(',')}".ljust(40," ")+"#{command[3]}")
+      add_console_output("#{command[0]} #{command[1].map{|a| "[#{a[:name]}]" }.join(', ')}".ljust(40," ")+"#{command[3]}")
     end
   end
 
@@ -69,6 +69,8 @@ class GtaScm::PanelManager
 
       [:breakpoint,[{name:"true or false"}],{},"Enable/disable breakpoints"],
       [:breakpoint_resume,[],{},"Resume execution from a paused breakpoint"],
+
+      [:context,[{name:"SCM offset"},{name:"lines"}],{},"Disassemble instructions at/around a script offset"]
     ].sort_by{|r| r[0].to_s }
   end
 end
