@@ -4,5 +4,5 @@ if emit(false)
   $player_y = 0.0
   $player_z = 0.0
   $gametime = 0
-  $car_feature_script_car_id_1 = 0
+  $car_feature_script_car_id_443 = 0
 end

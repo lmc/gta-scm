@@ -1,5 +1,6 @@
-script_name("xcarfea")
+script_name("xcar443")
 
+# TODO: attach invisible item on script start, ensure we're the only script running for this car by checking for item on start?
 SCRIPT_CORONA = [:label,:thread_corona_crf]
 MAX_CARS = 16
 FEATURE_CAR_ID = 443
@@ -35,7 +36,7 @@ end
 cleanup_and_exit = routine do
   reset_vehicle_camera_tweak()
   add_one_off_sound(0.0,0.0,0.0,1057)
-  $car_feature_script_car_id_1 = 0
+  $car_feature_script_car_id_443 = 0
   terminate_this_script()
 end
 

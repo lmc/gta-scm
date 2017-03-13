@@ -1,16 +1,9 @@
 script_name("xgrgman")
 
-BREAKPOINT_OFFSET = 56531
-# BREAKPOINT = [:int32,57355]
-BREAKPOINT = [:label, :debug_breakpoint]
-CARID2GXT = [:label, :carid2gxt_addr]
-
+CARID2GXT = [:label, :carid2gxt]
 BITPACK_INIT = [:label,:lib_bitpack_init]
-# BITPACK_INIT = [:int32,194132]
 BITPACK_PACK = [:label,:lib_bitpack_pack]
-# BITPACK_PACK = [:int32,194162]
 BITPACK_UNPACK = [:label,:lib_bitpack_unpack]
-# BITPACK_UNPACK = [:int32,194270]
 
 tmp_car_id = 0
 # potentially 8 bits spare if we pack car id into int8
@@ -297,11 +290,11 @@ show_garage_menu = routine do
     $_7112 = 0
     $_7116 = 0
     $_7104 = tmp_car_id
-    # gosub(CARID2GXT)
+    gosub(CARID2GXT)
 
     if $_7112 == 0
-      # set_var_text_label($str_7112,"GSCM004")
-      set_var_text_label($str_7112,"NUMBER")
+      set_var_text_label($str_7112,"GSCM004")
+      # set_var_text_label($str_7112,"NUMBER")
     end
 
     # set menu item string to car name
@@ -366,10 +359,11 @@ show_car_creator_menu = routine do
   $_7112 = 0
   $_7116 = 0
   $_7104 = tmp_car_id
-  # gosub(CARID2GXT)
+  gosub(CARID2GXT)
 
   if $_7112 == 0
     set_var_text_label($str_7112,"GSCM004")
+    # set_var_text_label($str_7112,"NUMBER")
   end
 
   set_menu_item_with_number(menu,0,tmp_i,$str_7112,tmp_car_id)
@@ -488,7 +482,6 @@ input_garage_menu = routine do
       spawn_x, spawn_y, spawn_z = get_offset_from_char_in_world_coords( $_12 , 0.0 , 6.0, 0.0 )
       spawn_heading = get_char_heading($_12)
       spawn_heading += 90.0
-      gosub(BREAKPOINT)
       unpack_int()
       spawn_car()
       hide_menu()

@@ -1,7 +1,7 @@
 script_name("xdetcar")
 
-FEATURE_CAR_ID_1 = 443
-SCRIPT_CAR_FEATURE_1 = [:label,:car_feature]
+FEATURE_CAR_ID_443 = 443
+SCRIPT_CAR_FEATURE_433 = [:label,:car_feature]
 MAX_CARS = 16
 if emit(false)
   tmp_i = 0               # lvar 0 used for ext script id
@@ -34,7 +34,7 @@ if emit(false)
   # cars_13 = 0
   # cars_14 = 0
   # cars_15 = 0
-  $car_feature_script_car_id_1 = 0
+  # $car_feature_script_car_id_443 = 0
 end
 
 is_current_car_in_set = routine do
@@ -90,21 +90,26 @@ loop do
         if current_car_in_set == 1
           wait(30)
         else
-          set_var_int(cars[tmp_i],current_car)
+          # set_var_int(cars[tmp_i],current_car)
 
           current_car_model = get_car_model(current_car)
 
-          if current_car_model == FEATURE_CAR_ID_1
-            if $car_feature_script_car_id_1 == 0
-              $car_feature_script_car_id_1 = current_car
+          if current_car_model == FEATURE_CAR_ID_443
+            # if $car_feature_script_car_id_443 == 0
+              # $car_feature_script_car_id_443 = current_car
               # start_new_script(SCRIPT_CAR_FEATURE_1,-1,current_car)
               # is this safe to do without loading? since we're always in the same external script
               # (start_new_streamed_script ((int8 78) (int8 1) (end_var_args)))
-              start_new_streamed_script(78,2,current_car)
-            end
+              start_new_streamed_script(78,443,current_car)
+            # end
+
+            # only set/increment if it's a special car
+            set_var_int(cars[tmp_i],current_car)
+            tmp_i += 1
+
           end
 
-          tmp_i += 1
+          # tmp_i += 1
           if tmp_i >= MAX_CARS
             break
           end

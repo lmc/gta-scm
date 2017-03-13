@@ -172,7 +172,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
 
     # if self.new_gxt_entries.present?
-    if out_path.is_a?(String) && false
+    if out_path.is_a?(String) && self.new_gxt_entries.present?
       puts "patching new GXT entries"
       gxt_file = GtaScm::GxtFile.new(File.open("./games/san-andreas/Text/american.gxt","r"))
       gxt_file.read_tabl_sa!
@@ -184,7 +184,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         gxt_file.add_entry(key1,key2,value)
       end
       data = gxt_file.rebuild!
-      File.open("#{out_path}/american.gxt","w"){|f| f << data}
+      path = "#{out_path}../../Text/american.gxt"
+      puts "outputting to: #{path}"
+      File.open("#{path}","w"){|f| f << data}
     end
 
     self.emit_assembly!(scm,main_name,out_path)

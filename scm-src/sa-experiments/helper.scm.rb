@@ -27,7 +27,7 @@ end
 
 do_fade(100,1)
 
-city = 3
+city = 1
 
 # task_jetpack(-1)
 # goto(1)
@@ -76,4 +76,14 @@ loop do
   else
     playing = 0
   end
+
+  use_text_commands(1)
+  set_text_right_justify(1)
+  set_text_colour(255,255,255,255)
+  set_text_scale(0.48,2.2)
+  set_text_edge(2,0,0,0,255)
+  set_text_font(3)
+  set_text_proportional(1)
+  display_text_with_number(600.0,420.0,"GSCM101",0)
+
 end

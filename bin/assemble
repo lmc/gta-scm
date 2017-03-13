@@ -49,11 +49,14 @@ begin
   asm.external = external
   asm.assemble(scm,ARGV[2],path)
 
-# gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))
-# gxt.read_tabl!
-# gxt.read_tkey!
-# gxt.read_tdat!
-# gxt.rebuild!
+  $gxt = true
+  if $gxt
+    # gxt = GtaScm::GxtFile.new(File.open("games/#{scm.game_id}/text/american.gxt"))
+    # gxt.read_tabl!
+    # gxt.read_tkey!
+    # gxt.read_tdat!
+    # gxt.rebuild!
+  end
 
   rescue GtaScm::RubyToScmCompiler::InputError => exception
 
