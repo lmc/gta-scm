@@ -607,7 +607,7 @@ class GtaScm::RubyToScmCompiler
         raise UnknownOpcodeError.new(node,name: opcode_name)
       end
 
-      if opcode_name == :start_new_script
+      if opcode_name == :start_new_script || opcode_name == :start_new_streamed_script
         args << [:end_var_args]
       else
 

@@ -6,7 +6,15 @@
 
 (andor ((int8 0)))
 (not_is_int_lvar_equal_to_number ((lvar 0) (int8 1)))
-(goto_if_false ((mission_label test)))
+(goto_if_false ((mission_label detect_cars)))
+
+(andor ((int8 0)))
+(not_is_int_lvar_equal_to_number ((lvar 0) (int8 2)))
+(goto_if_false ((mission_label car_feature)))
+
+(andor ((int8 0)))
+(not_is_int_lvar_equal_to_number ((lvar 0) (int8 3)))
+(goto_if_false ((mission_label interior_teleporter)))
 
 (labeldef failsafe)
 (wait ((int8 0)))
@@ -16,7 +24,11 @@
 (labeldef menu)
 (IncludeRuby "menu" (external true))
 
-(labeldef test)
-(script_name ((string8 "xext78")))
-(wait ((int16 1000)))
-(terminate_this_script)
+(labeldef detect_cars)
+(IncludeRuby "detect-cars" (external true))
+
+(labeldef car_feature)
+(IncludeRuby "car-feature" (external true))
+
+(labeldef interior_teleporter)
+(IncludeRuby "interior-teleporter" (external true))

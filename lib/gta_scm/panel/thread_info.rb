@@ -29,8 +29,8 @@ class GtaScm::Panel::ThreadInfo < GtaScm::Panel::Base
     txx = 12
     ty = 1
     7.times do |i|
-      self.elements[:"left_label_#{i}"] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "label #{i}")
-      self.elements[:"left_text_#{i}"] = RuTui::Text.new(x: dx(tx+txx), y: dy(ty), text: "left #{i}")
+      self.elements[:"left_label_#{i}"] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "")
+      self.elements[:"left_text_#{i}"] = RuTui::Text.new(x: dx(tx+txx), y: dy(ty), text: "")
       ty += 1
     end
     self.elements[:left_label_0].set_text("ID:")
@@ -47,7 +47,7 @@ class GtaScm::Panel::ThreadInfo < GtaScm::Panel::Base
       tx = 2
       txx = 11
       4.times do |j|
-        self.elements[:"flag_#{i}_#{j}"] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "flag:  12")
+        self.elements[:"flag_#{i}_#{j}"] = RuTui::Text.new(x: dx(tx), y: dy(ty), text: "")
         tx += txx
       end
       ty += 1

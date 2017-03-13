@@ -70,9 +70,9 @@ loop do
     end
     p_weapon = get_current_char_weapon(PLAYER_CHAR)
 
-    if TIMER_A > 5000 && TIMER_A < 6000
-      debugger
-    end
+    # if TIMER_A > 5000 && TIMER_A < 6000
+    #   debugger
+    # end
   else
     playing = 0
   end

@@ -130,6 +130,10 @@
 (Include "external-loader")
 % =====================================
 
+% == Car ID to GXT routine ==================
+(Include "carid2gxt")
+% =====================================
+
 % == Free Space =======================
 (IncludeRuby "global-variable-declares")
 (IncludeRuby "bitpacker")
@@ -139,7 +143,7 @@
 (set_var_int ((var test) (int8 0)))
 % (start_new_script ((label collectables_finder) (int8 -1) (int8 1) (end_var_args)))
 % (start_new_script ((label collectables_finder_manager) (int8 -1) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
-(start_new_script ((label detect_cars) (int8 -1) (end_var_args)))
+% (start_new_script ((label detect_cars) (int8 -1) (end_var_args)))
 % (start_new_script ((label interior_teleporter) (int8 -1) (end_var_args)))
 % (start_new_script ((label test) (int8 -1) (end_var_args)))
 % (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
@@ -150,10 +154,10 @@
 % (labeldef collectables_finder_manager)
 % (IncludeRuby "collectables-finder-manager")
 
-(labeldef detect_cars)
-(IncludeRuby "detect-cars")
-(labeldef car_feature)
-(IncludeRuby "car-feature")
+% (labeldef detect_cars)
+% (IncludeRuby "detect-cars")
+% (labeldef car_feature)
+% (IncludeRuby "car-feature")
 
 % (labeldef interior_teleporter)
 % (IncludeRuby "interior-teleporter")
@@ -176,5 +180,6 @@
 % =====================================
 
 % (DefineGxt "MAIN" "GSCM100" "Lol lol lol")
+(Include "gxt-entries")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")

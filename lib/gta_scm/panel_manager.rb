@@ -15,12 +15,37 @@ class GtaScm::PanelManager
     
   end
 
+  BANNER = <<-BANNER
+
+         __                                            
+   _____/  |______                ______ ____   _____  
+  / __ \\   __\\__  \\     ______   /  ___// ___\\ /     \\ 
+ / /_/  \\  |  / __ \\_  /_____/   \\___ \\\\  \\___|  | |  \\ 
+ \\___  /|__| (____  /           /____  \\\\___  \\__|_|  /
+/_____/           \\/                 \\/     \\/      \\/ 
+
+
+BANNER
+
   def on_init
     20.times { add_console_output("") }
     add_console_output "GTA SCM Debugger started at #{Time.now}"
-    self.all_commands.each do |command|
-      add_console_output("#{command[0]} #{command[1].map{|a| "[#{a[:name]}]" }.join(', ')}".ljust(40," ")+"#{command[3]}")
+    # self.all_commands.each do |command|
+    #   add_console_output("#{command[0]} #{command[1].map{|a| "[#{a[:name]}]" }.join(', ')}".ljust(40," ")+"#{command[3]}")
+    # end
+
+    BANNER.lines.each do |line|
+      add_console_output line.chomp.center(120)
     end
+
+    add_console_output "assemble 'sa-experiments'  - Compile code from scm-src/sa-experiments"
+    add_console_output "disassemble 'gtasa-source' - Decompile code into scm-src/gtasa-source"
+    add_console_output "sketchpad 'test'           - Open auto-reloading script 'test' in editor"
+    add_console_output "launch                     - Start game"
+
+    add_console_output ""
+    add_console_output "Interactive Ruby (irb) workspace started, SCM opcodes available as instance methods"
+    add_console_output "(ex. `x,y,z = get_char_coordinates(PLAYER_CHAR)`)"
   end
 
   def add_console_output(line,tags = [])

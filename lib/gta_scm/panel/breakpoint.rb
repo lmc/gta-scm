@@ -1,8 +1,8 @@
 class GtaScm::Panel::Breakpoint < GtaScm::Panel::Base
   def initialize(*)
     super
-    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
-    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
+    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "fdgdfgdfg")
+    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "dfgdfgdfg")
     self.settings[:breakpoint_enabled] = false
     set_text
   end
@@ -23,10 +23,10 @@ class GtaScm::Panel::Breakpoint < GtaScm::Panel::Base
       return
     end
 
-    return
+    # return
 
-    self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , :int32 )
-    self.settings[:breakpoint_waiting] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_enabled") , :int32 )
+    # self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , :int32 )
+    # self.settings[:breakpoint_waiting] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_enabled") , :int32 )
     str_enable = self.settings[:breakpoint_enabled] == 1 ? "o: disable" : "o: enable"
 
     if self.settings[:breakpoint_waiting] == 1
@@ -54,6 +54,7 @@ class GtaScm::Panel::Breakpoint < GtaScm::Panel::Base
   end
 
   def input(key,is_attached,process)
+    return
     if key == "i"
       process.write_scm_var( process.scm_var_offset_for("debug_breakpoint_enabled") , 0 , :int32 )
     end

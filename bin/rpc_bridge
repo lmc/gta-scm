@@ -26,6 +26,10 @@ repl = GtaScm::Panel::Repl.new
 repl.prepare_proxy!(process)
 value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
 
+puts value.inspect
+
+exit
+
 start_time = Time.now
 benchmark_until = Time.now.to_f + 1.0
 

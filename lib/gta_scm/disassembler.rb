@@ -26,7 +26,7 @@ class GtaScm::Disassembler::Base
         next if line.strip.blank?
         offset,name = line.strip.split("=")
         [offset.to_i,name]
-      end ]
+      end.compact ]
     end
 
     self.variable_names = {}
@@ -61,7 +61,7 @@ class GtaScm::Disassembler::Base
         if header_entry
           header_idx = self.scm.externals_header[1][3].index(header_entry)
         end
-        scm_img_name = "external_#{header_idx.to_s.rjust(2,"0")}_#{name}"
+        scm_img_name = "externals/#{header_idx.to_s.rjust(2,"0")}_#{name}"
         # debugger
         # puts "disassembling #{scm_img_name}"
         # TODO: note these as externals so mission_labels get detected properly
@@ -145,7 +145,7 @@ class GtaScm::Disassembler::Base
         self.next_mission_offset = self.scm.missions_header.mission_offsets[self.current_mission_id + 1] || self.scm.size
       end
       if self.current_mission_id >= 0
-        self.files["mission_#{current_mission_id.to_s.rjust(3,"0")}"]
+        self.files["missions/#{current_mission_id.to_s.rjust(3,"0")}_#{mission_name(self.current_mission_id)}"]
       else
         self.files["main"]
       end
@@ -156,6 +156,11 @@ class GtaScm::Disassembler::Base
     end
   end
 
+  def mission_name(id)
+    "mission"
+  end
+
+  require 'fileutils'
   class OutputDir
     attr_accessor :dir
     attr_accessor :hash
@@ -169,7 +174,10 @@ class GtaScm::Disassembler::Base
 
     def [](key)
       self.hash.fetch(key) do
-        self.hash[key] = File.open(File.join(self.dir,"#{key}#{self.extension}"),"w")
+        filename = File.join(self.dir,"#{key}#{self.extension}")
+        dir = File.dirname(filename)
+        FileUtils.mkdir_p(dir)
+        self.hash[key] = File.open(filename,"w")
       end
     end
 

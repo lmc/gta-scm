@@ -191,13 +191,15 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
     self.on_complete()
 
-    # logger.info "Complete, final size: #{File.size(out_path)} bytes"
-    logger.info "Complete"
-    logger.info self.paddings.inspect
-    logger.info self.external_offsets.inspect
-    logger.info self.include_sizes.inspect
-    if out_path.is_a?(String)
-      logger.info "total size: #{File.size(out_path)}"
+    if !self.parent
+      # logger.info "Complete, final size: #{File.size(out_path)} bytes"
+      logger.info "Complete"
+      logger.info "Padding: #{self.paddings.inspect}"
+      logger.info "External offsets: #{self.external_offsets.inspect}"
+      logger.info "Compiled size breakdowns: #{self.include_sizes.inspect}"
+      # if out_path.is_a?(String)
+      #   logger.info "total size: #{File.size(out_path)}"
+      # end
     end
 
     file_vars = {}
@@ -240,6 +242,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     end
   end
 
+  LOG_LEFT_WIDTH = 16
+
   attr_accessor :emit_nodes
   # TODO: make symbol recogniser recursive, so you can use ie. Rawhex for arguments
   def read_line(scm,line,file_name,line_idx,raw_symbols = false)
@@ -253,7 +257,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         tokens = self.parser.parse1(line).to_ruby
       end
       self.on_read_line(tokens,file_name,line_idx)
-      logger.info "#{file_name}:#{line_idx} - #{tokens.inspect}"
+      logger.debug "#{file_name}:#{line_idx}".ljust(LOG_LEFT_WIDTH," ")+" - #{tokens.inspect}"
       # TODO: we can calculate offset + lengths here as we go
       node = case tokens[0]
         when :HeaderVariables
@@ -422,14 +426,14 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         when :PadUntil
           zeros = tokens[1][0] - self.nodes.next_offset
           end_offset = offset + zeros
-          logger.info "Inserting #{zeros} zeros #{self.nodes.next_offset} until #{end_offset}"
+          logger.debug "Inserting #{zeros} zeros #{self.nodes.next_offset} until #{end_offset}"
           self.paddings[end_offset] = zeros
           GtaScm::Node::Raw.new( [0] * zeros )
         when :IncludeBin
           bytes = File.read(tokens[1][0],(tokens[1][2] - tokens[1][1]),tokens[1][1])
           GtaScm::Node::Raw.new( bytes.bytes )
         when :Metadata
-          logger.info "Metadata node recognised, contents: #{tokens.inspect}"
+          logger.debug "Metadata node recognised, contents: #{tokens.inspect}"
           self.on_metadata(file_name,line_idx,tokens,offset)
           return
         when :labeldef
@@ -462,10 +466,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         if self.emit_nodes
           self.include_sizes[file_name]  += node.size
         end
-        logger.info "#{nodes.last.offset} #{nodes.last.size} - #{nodes.last.hex_inspect}"
+        logger.debug "#{nodes.last.offset},#{nodes.last.size}".ljust(LOG_LEFT_WIDTH," ")+" - #{nodes.last.flatten.hex_inspect}"
       end
-      logger.info "#{nodes.last.offset}"
-      # logger.info ""
+      # logger.info "#{nodes.last.offset}"
+      logger.debug ""
     end
   end
 
@@ -564,7 +568,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             end
 
             touchup_value = touchup_value[0...arr.size]
-            logger.info "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
+            logger.debug "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
 
             arr.replace(touchup_value)
         end

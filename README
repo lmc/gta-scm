@@ -23,15 +23,57 @@ intro mission launch site: 59976
 
 Things needed for release:
 
+Scroll all lists (threads, local vars, global vars, regions list, repl)
 Trim binaries down to just the important useful ones (assember/disassembler/debugger, shove the rest in a `tools` dir)
 No-BS fast way to set up code reloader and open editor with scaffold code
 Bootstrapper (don't need custom SCM for RPC/breakpoints/repl)
 Better first-boot intro (offer a few simple options: Decompile main.scm, compile source code, init code reloader)
+Show routine names in stack traces
+Data stack implementation
+better syntax for routines/functions
+sublime text integration (compile/build menu)
+
+
+bootstrap script code required:
+
+  $SCRIPTS_RUNNING - script ready to load vars (set bitmask once script is running)
+  $SCRIPTS_TERMINATE - script ready to exit vars (set bitmask to tell script to self-terminate, clear when done)
+
+  main script extension:
+    * spawn_scripts()
+
+  save script extension:
+    * safely shut down all scripts
+
+  rpc handler:
+
+  breakpoint and repl handlers:
+
+  spawn_scripts():
+    * spawn script if $SCRIPTS_RUNNING[script_id] == 0
+
+  shutdown_scripts():
+    * set all $SCRIPTS_TERMINATE bits
+
+  is_scripts_shutdown_complete():
+    * return true if all $SCRIPTS_TERMINATE bits are unset
+
+
 
 
 
 
 NEXT:
+
+classes
+
+SCM: holds raw bytes, lazy-loads or preloads instruction offsets/disassembled instructions
+Assembler: takes raw tokens and assembles bytecode at defined positions, and symbols
+Compiler: takes ruby code and emits raw tokens
+Instruction: convenient reader/writer methods
+Script: convenient reader/writer methods
+Process: convenience methods + read SCM/scripts from memory, can load symbols
+Analyser: loads bytecode, calculates jumps/blocks
 
 GTAV memdump notes:
 1130934 (main)
