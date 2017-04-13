@@ -26,11 +26,17 @@
   (is_int_var_equal_to_number ((dmavar 4492) (int8 0)))
 (goto_if_false ((label external_loader_idle_1)))
   % spawn scripts here
+
+  % menu
   (start_new_streamed_script ((int8 78) (int8 0) (end_var_args)))
+
+  % detect cars
   (start_new_streamed_script ((int8 78) (int8 1) (end_var_args)))
+
+  % interior teleport
   (start_new_streamed_script ((int8 78) (int8 3) (end_var_args)))
 
-  % (start_new_script ((label collectables_finder_manager) (int8 -1) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
+  % collectables finder manager
   (start_new_streamed_script ((int8 78) (int8 5) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
 
   (wait ((int16 1000)))

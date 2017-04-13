@@ -1,5 +1,16 @@
 script_name("xgrgman")
-
+ # Global vars used:
+ # 7120
+ # 7124
+ # 7128
+ # 7128
+ # 7132
+ # 7136
+ # 7140
+ # 7144
+ # 7148
+ # 7152
+ # 7156
 CARID2GXT = [:label, :carid2gxt]
 BITPACK_INIT = [:label,:lib_bitpack_init]
 BITPACK_PACK = [:label,:lib_bitpack_pack]

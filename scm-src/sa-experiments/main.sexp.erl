@@ -11,6 +11,7 @@
 
 (HeaderSegment5 ((padding (int8 3)) (mystery (int32 0))))
 
+% TODO: test if bumping allocated_external_count works for more externals???
 (HeaderSegment6 ((padding (int8 4)) (var_space_size (int32 43800)) (allocated_external_count (int8 57)) (unused_external_count (int8 2)) (padding2 (int16 0))))
 
 (Include "global-variables")
@@ -71,20 +72,6 @@
 (labeldef debug_breakpoint)
 (IncludeRuby "debug-breakpoint")
 % =====================================
-
-% Menu
-% Global vars used:
-% 7120
-% 7124
-% 7128
-% 7128
-% 7132
-% 7136
-% 7140
-% 7144
-% 7148
-% 7152
-% 7156
 
 % == Patches ==========================
 

@@ -1,6 +1,7 @@
 script_name("xcar443")
 
 # TODO: attach invisible item on script start, ensure we're the only script running for this car by checking for item on start?
+# OR: GET_PLANE_UNDERCARRIAGE_POSITION + 
 SCRIPT_CORONA = [:label,:thread_corona_crf]
 MAX_CARS = 16
 FEATURE_CAR_ID = 443
