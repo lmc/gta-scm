@@ -15,6 +15,8 @@ $breakpoint_repl_ret7 = 0
 
 DEBUG_BREAKPOINT = [:label, :debug_breakpoint_entry]
 DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint]
+DEBUG_EVAL_TRUE = [:label, :debug_eval_true]
+DEBUG_EVAL_FALSE = [:label, :debug_eval_false]
 DEBUG_EXEC = [:label, :debug_exec]
 
 routines do
@@ -47,7 +49,18 @@ routines do
     # REPL input code gets JIT'd into here:
     emit(:Rawhex,["B6","05"])
     emit(:Padding,[128])
-    goto(DEBUG_BREAKPOINT)
+    goto_if_false(DEBUG_EVAL_FALSE)
+    goto(DEBUG_EVAL_TRUE)
+  end
+
+  debug_eval_true = routine(export: :debug_eval_true) do
+    $breakpoint_repl_if_result = 1
+    goto(DEBUG_BREAKPOINT_INNER)
+  end
+
+  debug_eval_false = routine(export: :debug_eval_false) do
+    $breakpoint_repl_if_result = 0
+    goto(DEBUG_BREAKPOINT_INNER)
   end
 
   # thread for handling execution requests from the external REPL

@@ -349,14 +349,18 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   end
 
   def attach_or_spawn_host_script!(process)
-    if thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
+    if thread = host_script(process)
       self.settings[:thread_id] = thread.thread_id
     else
       offset = process.scm_label_offset_for(:debug_repl)
       process.rpc(1,offset)
-      thread = process.threads.detect{|t| t.active? && t.name == "xrepl"}
+      thread = host_script(process)
       self.settings[:thread_id] = thread.thread_id
     end
+  end
+
+  def host_script(process)
+    process.threads.detect{|t| t.active? && t.name == "xrepl"}
   end
 
   def add_opcode_annotation!(input,input_index,colors)
@@ -551,6 +555,11 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
     end
   end
 
+  def get_conditional_return(process)
+    # host_script(process).branch_result
+    process.read_scm_var(:breakpoint_repl_if_result,:int) == 1
+  end
+
   def write_and_execute_bytecode(bytecode,process)
 
     if !self.settings[:thread_id]
@@ -655,6 +664,7 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
   end
 
   require 'irb'
+  require 'irb/completion'
   class OpcodeProxy < OpenStruct
     attr_accessor :process
     attr_accessor :repl
@@ -674,6 +684,10 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
 
     def respond_to?(method)
       self.opcode_names.include?(method)
+    end
+
+    def methods
+      self.opcode_names
     end
 
     CONSTS = {
@@ -696,7 +710,8 @@ class GtaScm::Panel::Repl < GtaScm::Panel::Base
         return_values = self.repl.get_return_values(return_vars_types,process)
         case return_values.size
         when 0
-          return nil
+          return self.repl.get_conditional_return(process)
+          # return nil
         when 1
           return return_values[0]
         else

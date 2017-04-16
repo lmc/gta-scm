@@ -1,4 +1,9 @@
 
+% NEXT:
+%   rewrite watchdog
+%   auto-calculate missions/header
+%   patch missions
+
 % == Headers ==========================
 
 (HeaderVariables ((magic (int8 115)) (size (zero 43800))))
@@ -148,6 +153,6 @@
 
 % =====================================
 
-(Include "gxt-entries")
+% (Include "gxt-entries")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")

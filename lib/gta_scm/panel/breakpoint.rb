@@ -1,8 +1,8 @@
 class GtaScm::Panel::Breakpoint < GtaScm::Panel::Base
   def initialize(*)
     super
-    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "fdgdfgdfg")
-    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "dfgdfgdfg")
+    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "Breakpoint")
+    self.elements[:text] = RuTui::Text.new(x: dx(0), y: dy(1), text: "")
     self.settings[:breakpoint_enabled] = false
     set_text
   end

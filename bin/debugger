@@ -81,8 +81,8 @@ $panel_manager.panels[:thread_list].controller = $panel_manager.panels[:thread_s
 $panel_manager.add_panel :lvars, GtaScm::Panel::Lvars.new($panel_manager,10+4,ty+23,48,37)
 $panel_manager.panels[:lvars].controller = $panel_manager.panels[:thread_selector]
 $panel_manager.add_panel :breakpoint, GtaScm::Panel::Breakpoint.new($panel_manager,63,ty+7,62,4)
-$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars.new($panel_manager,63,ty+23,62,37)
 $panel_manager.add_panel :code_injector, GtaScm::Panel::CodeInjector.new($panel_manager,63,ty+11,62,12)
+$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars.new($panel_manager,63,ty+23,62,37)
 # $panel_manager.add_panel :mission_skipper, GtaScm::Panel::MissionSkipper.new($panel_manager,63,ty+15,28,32)
 
 

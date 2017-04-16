@@ -33,6 +33,9 @@ Data stack implementation
 better syntax for routines/functions
 sublime text integration (compile/build menu)
 
+* just show menu when r1 is pressed ??
+do array check for car features
+reverse syscall
 
 bootstrap script code required:
 

@@ -24,9 +24,19 @@ process.detect_pid_and_attach!
 
 repl = GtaScm::Panel::Repl.new
 repl.prepare_proxy!(process)
-value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
+# value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
 
-puts value.inspect
+# puts value.inspect
+
+IRB.setup(nil)
+irb = IRB::Irb.new(nil)
+IRB.conf[:MAIN_CONTEXT] = irb.context
+# irb.context.workspace = IRB::WorkSpace.new(binding)
+irb.context.workspace = IRB::WorkSpace.new(repl.opcode_proxy.workspace_binding)
+trap 'INT' do
+  irb.signal_handle
+end
+catch(:IRB_EXIT) { irb.eval_input }
 
 exit
 

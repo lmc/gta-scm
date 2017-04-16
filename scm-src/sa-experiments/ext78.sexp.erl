@@ -25,6 +25,10 @@
 (goto_if_false ((mission_label collectables_finder_manager)))
 
 (andor ((int8 0)))
+(not_is_int_lvar_equal_to_number ((lvar 0) (int16 420)))
+(goto_if_false ((mission_label car_feature_420_taxi)))
+
+(andor ((int8 0)))
 (not_is_int_lvar_equal_to_number ((lvar 0) (int16 443)))
 (goto_if_false ((mission_label car_feature_443_packer)))
 
@@ -38,6 +42,9 @@
 
 (labeldef detect_cars)
 (IncludeRuby "detect-cars" (external true))
+
+(labeldef car_feature_420_taxi)
+(IncludeRuby "car-feature-420-taxi" (external true))
 
 (labeldef car_feature_443_packer)
 (IncludeRuby "car-feature-443-packer" (external true))

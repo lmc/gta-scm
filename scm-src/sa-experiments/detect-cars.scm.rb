@@ -54,6 +54,19 @@ is_current_car_in_set = routine do
   end
 end
 
+cleanup_dead_cars = routine do
+  tmp_i2 = 0
+  loop do
+    if is_car_dead(cars[tmp_i2])
+      set_var_int(cars[tmp_i2],-1)
+    end
+    tmp_i2 += 1
+    if tmp_i2 > MAX_CARS
+      break
+    end
+  end
+end
+
 # wait(10000)
 # request_model(FEATURE_CAR_ID)
 # load_all_models_now()
@@ -68,6 +81,7 @@ loop do
   tmp_i = 0
   loop do
     wait(30)
+    cleanup_dead_cars()
     if is_player_playing(PLAYER)
 
       tmp_x2,tmp_y2,tmp_z2 = get_char_coordinates(PLAYER_CHAR)
@@ -90,23 +104,29 @@ loop do
         if current_car_in_set == 1
           wait(30)
         else
-          # set_var_int(cars[tmp_i],current_car)
-
           current_car_model = get_car_model(current_car)
+          tmp_i2 = 0
 
-          if current_car_model == FEATURE_CAR_ID_443
-            # if $car_feature_script_car_id_443 == 0
-              # $car_feature_script_car_id_443 = current_car
-              # start_new_script(SCRIPT_CAR_FEATURE_1,-1,current_car)
-              # is this safe to do without loading? since we're always in the same external script
-              # (start_new_streamed_script ((int8 78) (int8 1) (end_var_args)))
-              start_new_streamed_script(78,443,current_car)
-            # end
+          # packer
+          if current_car_model == 443
+            # is this safe to do without loading? since we're always in the same external script
+            start_new_streamed_script(78,443,current_car)
+            tmp_i2 = 1
+          end
 
+          # taxi
+          if current_car_model == 420
+            # is this safe to do without loading? since we're always in the same external script
+            start_new_streamed_script(78,420,current_car)
+            tmp_i2 = 1
+          end
+
+          # write it into next free slot, not tmp_i
+
+          if tmp_i2 == 1
             # only set/increment if it's a special car
             set_var_int(cars[tmp_i],current_car)
             tmp_i += 1
-
           end
 
           # tmp_i += 1
