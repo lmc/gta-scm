@@ -32,7 +32,11 @@ city = 1
 # task_jetpack(-1)
 # goto(1)
 
-if city == 2
+if city == 1
+  t_x = 1600.0
+  t_y = -1600.0
+  t_z = 14.3
+elsif city == 2
   t_x = -1600.0
   t_y = 715.0
   t_z = 14.3

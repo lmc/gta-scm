@@ -32,6 +32,10 @@
 (not_is_int_lvar_equal_to_number ((lvar 0) (int16 443)))
 (goto_if_false ((mission_label car_feature_443_packer)))
 
+(andor ((int8 0)))
+(not_is_int_lvar_equal_to_number ((lvar 0) (int16 596)))
+(goto_if_false ((mission_label car_feature_596_copcarla)))
+
 (labeldef failsafe)
 (wait ((int8 0)))
 (script_name ((string8 "zexterr")))
@@ -48,6 +52,9 @@
 
 (labeldef car_feature_443_packer)
 (IncludeRuby "car-feature-443-packer" (external true))
+
+(labeldef car_feature_596_copcarla)
+(IncludeRuby "car-feature-596-copcarla" (external true))
 
 (labeldef interior_teleporter)
 (IncludeRuby "interior-teleporter" (external true))

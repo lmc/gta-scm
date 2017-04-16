@@ -37,7 +37,6 @@ end
 cleanup_and_exit = routine do
   reset_vehicle_camera_tweak()
   add_one_off_sound(0.0,0.0,0.0,1057)
-  $car_feature_script_car_id_443 = 0
   terminate_this_script()
 end
 

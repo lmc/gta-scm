@@ -34,8 +34,9 @@ better syntax for routines/functions
 sublime text integration (compile/build menu)
 
 * just show menu when r1 is pressed ??
-do array check for car features
+do array check for car features (8 max?)
 reverse syscall
+export symbols for array vars
 
 bootstrap script code required:
 
