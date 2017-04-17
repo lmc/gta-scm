@@ -722,6 +722,7 @@ class GtaScm::RubyToScmCompiler
 
   COMPARISON_OPERATORS = {
     :"==" => [nil,"equal_to"],
+    :"!=" => ["not_","equal_to"],
     :>=  => [nil,"greater_or_equal_to"],
     :>  => [nil,"greater_than"],
     :<=  => ["not_","greater_than"],

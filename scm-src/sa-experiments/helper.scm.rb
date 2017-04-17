@@ -52,6 +52,8 @@ set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 # LABEL_BREAKPOINT = [:label,:debug_breakpoint]
 # gosub(LABEL_BREAKPOINT)
 
+do_spawn = 0
+
 loop do
   wait 0
 
@@ -79,6 +81,36 @@ loop do
     # end
   else
     playing = 0
+  end
+
+  # if do_spawn == 0
+  #   do_spawn = 1
+  #   request_model(263)
+  #   loop do
+  #     wait(0)
+  #     if has_model_loaded(263)
+  #       break
+  #     end
+  #   end
+  #   # t_y = p_y
+  #   # t_y += 3.0
+  #   # char = create_char(23,263,p_x,t_y,p_z)
+  #   set_player_model(PLAYER,263)
+  #   build_player_model(PLAYER)
+  # end
+
+  if do_spawn == 0
+    do_spawn = 1
+    request_model(420)
+    loop do
+      wait(0)
+      break if has_model_loaded(420)
+    end
+    t_y = p_y
+    t_y += 5.0
+    car = create_car(420,p_x,t_y,p_z)
+    mark_car_as_no_longer_needed(car)
+    mark_model_as_no_longer_needed(420)
   end
 
   use_text_commands(1)

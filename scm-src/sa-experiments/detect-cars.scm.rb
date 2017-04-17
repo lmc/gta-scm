@@ -117,6 +117,10 @@ loop do
             start_new_streamed_script(78,420,current_car)
             tmp_i = 1
           end
+          if current_car_model == 438
+            start_new_streamed_script(78,420,current_car)
+            tmp_i = 1
+          end
 
           # packer
           if current_car_model == 443
@@ -130,8 +134,8 @@ loop do
             tmp_i = 1
           end
 
+          # only set/increment if it's a special car
           if tmp_i == 1
-            # only set/increment if it's a special car
             set_var_int(cars[tmp_i2],current_car)
           end
 

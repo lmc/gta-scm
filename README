@@ -34,9 +34,28 @@ better syntax for routines/functions
 sublime text integration (compile/build menu)
 
 * just show menu when r1 is pressed ??
-do array check for car features (8 max?)
+do array check for car features (8 max?) (needs to be global through savegame? or not if detect script is external too?)
 reverse syscall
 export symbols for array vars
+show include sizes for externals
+
+dope wars style system
+8 drugs, 8 locations
+
+- vegas
+- desert
+- bayside
+- san fierro
+- mountains
+- countryside
+- los santos east
+- los santos west
+
+supply[area][drug] = 0-15 (bitpack as 4 bits = 8 ints in int32)
+demand[area][drug] = 0-15
+
+demand has constant base, variable +/- effects
+supply is
 
 bootstrap script code required:
 
