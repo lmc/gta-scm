@@ -278,12 +278,31 @@ describe GtaScm::RubyToScmCompiler do
 
 
     describe "arrays" do
-      context "with a single assignment" do
-        # let(:ruby){"$times = Array.new(1,0); $times_idx = 0; $times[$times_idx] = get_game_timer()"}
-        let(:ruby){"$_4004_timers = IntegerArray.new(1); $_4000_timers_idx = 0; get_game_timer($_4004_timers[$_4000_timers_idx])"}
+
+      context "with a single assignment from an opcode" do
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          $_4000_timers_idx = 0
+          $_4004_timers[$_4000_timers_idx] = get_game_timer()
+        RUBY
+        }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
           (get_game_timer ((var_array 4004 4000 1 (int32 var))))
+        LISP
+        }
+      end
+
+      context "with a single assignment with an immediate value" do
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          $_4000_timers_idx = 0
+          $_4004_timers[$_4000_timers_idx] = -1
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
+          (set_var_int ((var_array 4004 4000 1 (int32 var)) (int8 -1)))
         LISP
         }
       end
@@ -600,6 +619,7 @@ describe GtaScm::RubyToScmCompiler do
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
         (goto ((label label_2)))
         (labeldef label_1)
+        (labeldef routine_block)
         (terminate_this_script)
         (return)
         (labeldef label_2)
@@ -654,7 +674,7 @@ describe GtaScm::RubyToScmCompiler do
 
   context "strings " do
     let(:ruby){"load_texture_dictionary(\"radar101\")"}
-    it { is_expected.to eql "(set_lvar_int ((lvar 0 test) (int8 0)))" }
+    it { is_expected.to eql "(load_texture_dictionary ((string8 \"radar101\")))" }
   end
 
   # ===

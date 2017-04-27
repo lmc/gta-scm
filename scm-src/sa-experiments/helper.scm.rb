@@ -109,8 +109,11 @@ loop do
     t_y = p_y
     t_y += 5.0
     car = create_car(420,p_x,t_y,p_z)
+    set_car_mission(car,11)
     mark_car_as_no_longer_needed(car)
+    char = create_random_char_as_driver(car)
     mark_model_as_no_longer_needed(420)
+    mark_char_as_no_longer_needed(char)
   end
 
   use_text_commands(1)

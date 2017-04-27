@@ -27,3 +27,8 @@
 (DefineGxt "MAIN" "GSCM101" "~k~~PED_LOOKBEHIND~+~k~~PED_DUCK~: SCM Menu")
 (DefineGxt "MAIN" "GSCM102" "Breakpoint")
 (DefineGxt "MAIN" "GSCM103" "~k~~GO_FORWARD~+~k~~GO_BACK~+~k~~GO_LEFT~+~k~~GO_RIGHT~: Resume")
+
+(DefineGxt "MAIN" "GSCM200" "Taxi Destination")
+(DefineGxt "MAIN" "GSCM201" "Grove Street")
+(DefineGxt "MAIN" "GSCM202" "Union Station")
+(DefineGxt "MAIN" "GSCM203" "Police Plaza")
