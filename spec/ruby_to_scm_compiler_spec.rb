@@ -293,6 +293,22 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
 
+      context "with a single assignment from an opcode, where the array takes up global var slots" do
+        let(:ruby){ <<-RUBY
+          $tmp = 0
+          $timers = IntegerArray.new(2)
+          $timers_idx = 0
+          $timers[$timers_idx] = get_game_timer()
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((var tmp) (int8 0)))
+          (set_var_int ((var timers_idx) (int8 0)))
+          (get_game_timer ((var_array timers timers_idx 2 (int32 var))))
+        LISP
+        }
+      end
+
       context "with a single assignment from a variable" do
         let(:ruby){ <<-RUBY
           $_4004_timers = IntegerArray.new(1)
@@ -355,22 +371,21 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
 
-      # FIXME:
-      # context "with a single assignment from an opcode, where the array takes up local var slots" do
-      #   let(:ruby){ <<-RUBY
-      #     tmp = 0
-      #     timers = IntegerArray.new(2)
-      #     timers_idx = 0
-      #     timers[timers_idx] = get_game_timer()
-      #   RUBY
-      #   }
-      #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
-      #     (set_lvar_int ((lvar 0 tmp) (int8 0)))
-      #     (set_lvar_int ((lvar 3 timers_idx) (int8 0)))
-      #     (get_game_timer ((lvar_array 1 3 2 (int32 lvar))))
-      #   LISP
-      #   }
-      # end
+      context "with a single assignment from an opcode, where the array takes up local var slots" do
+        let(:ruby){ <<-RUBY
+          tmp = 0
+          timers = IntegerArray.new(2)
+          timers_idx = 0
+          timers[timers_idx] = get_game_timer()
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 tmp) (int8 0)))
+          (set_lvar_int ((lvar 3 timers_idx) (int8 0)))
+          (get_game_timer ((lvar_array 1 3 2 (int32 lvar))))
+        LISP
+        }
+      end
 
 
       context "with a single assignment from a variable" do
@@ -399,20 +414,6 @@ describe GtaScm::RubyToScmCompiler do
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_lvar_int ((lvar 0 timers_idx) (int8 0)))
           (set_lvar_int ((lvar_array 1 0 1 (int32 lvar)) (int8 -1)))
-        LISP
-        }
-      end
-
-      context "with global var and local index" do
-        let(:ruby){ <<-RUBY
-          $_4004_timers = IntegerArray.new(1)
-          index = 0
-          $_4004_timers[index] = get_game_timer()
-        RUBY
-        }
-        it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_lvar_int ((lvar 0 index) (int8 0)))
-          (get_game_timer ((var_array 4004 0 1 (int32 lvar))))
         LISP
         }
       end

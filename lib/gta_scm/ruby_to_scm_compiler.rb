@@ -452,6 +452,12 @@ class GtaScm::RubyToScmCompiler
     else
       self.lvar_arrays ||= {}
       self.lvar_arrays[variable_name] = [array_scope,variable_name,array_size,array_type]
+
+      # reserve lvar slots
+      array_size.times do |i|
+        i = i == 0 ? "" : "_#{i}"
+        lvar(:"#{variable_name}#{i}",array_type)
+      end
     end
 
     return []
@@ -1096,17 +1102,27 @@ class GtaScm::RubyToScmCompiler
       self.lvar_names_to_ids[name]
     else
       self.generate_lvar_counter += 1
+
       if type == :string
         # skip one extra var for string8 (2 vars worth)
         self.generate_lvar_counter += 1
       end
+
       if self.generate_lvar_counter >= 32
         raise "Out of local vars (tried to allocate `#{name}` to lvar #{self.generate_lvar_counter})"
       end
+
       self.lvar_names_to_ids[name] = self.generate_lvar_counter
+
+      # reserve space for array vars
+      # if array_def = self.lvar_arrays[name]
+      #   self.generate_lvar_counter += array_def[2] - 1
+      # end
+
       if type
         self.lvar_names_to_types[name] = type
       end
+
       self.lvar_names_to_ids[name]
     end
 
