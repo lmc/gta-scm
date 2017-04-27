@@ -277,7 +277,7 @@ describe GtaScm::RubyToScmCompiler do
     end
 
 
-    describe "arrays" do
+    describe "global arrays" do
 
       context "with a single assignment from an opcode" do
         let(:ruby){ <<-RUBY
@@ -289,6 +289,22 @@ describe GtaScm::RubyToScmCompiler do
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
           (get_game_timer ((var_array 4004 4000 1 (int32 var))))
+        LISP
+        }
+      end
+
+      context "with a single assignment from a variable" do
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          $_4000_timers_idx = 0
+          $_4004_timers[$_4000_timers_idx] = $_4000_timers_idx
+          $_4000_timers_idx = $_4004_timers[$_4000_timers_idx]
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
+          (set_var_int ((var_array 4004 4000 1 (int32 var)) (dmavar 4000 timers_idx)))
+          (set_var_int ((dmavar 4000 timers_idx) (var_array 4004 4000 1 (int32 var))))
         LISP
         }
       end
@@ -308,8 +324,12 @@ describe GtaScm::RubyToScmCompiler do
       end
 
       context "with global var and local index" do
-        # let(:ruby){"$times = Array.new(1,0); $times_idx = 0; $times[$times_idx] = get_game_timer()"}
-        let(:ruby){"$_4004_timers = IntegerArray.new(1); index = 0; get_game_timer($_4004_timers[index])"}
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          index = 0
+          $_4004_timers[index] = get_game_timer()
+        RUBY
+        }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_lvar_int ((lvar 0 index) (int8 0)))
           (get_game_timer ((var_array 4004 0 1 (int32 lvar))))
@@ -318,6 +338,69 @@ describe GtaScm::RubyToScmCompiler do
       end
 
     end
+
+    describe "local arrays" do
+
+      context "with a single assignment from an opcode" do
+        let(:ruby){ <<-RUBY
+          timers_idx = 0
+          timers = IntegerArray.new(1)
+          timers[timers_idx] = get_game_timer()
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 timers_idx) (int8 0)))
+          (get_game_timer ((lvar_array 1 0 1 (int32 lvar))))
+        LISP
+        }
+      end
+
+      context "with a single assignment from a variable" do
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          $_4000_timers_idx = 0
+          $_4004_timers[$_4000_timers_idx] = $_4000_timers_idx
+          $_4000_timers_idx = $_4004_timers[$_4000_timers_idx]
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
+          (set_var_int ((var_array 4004 4000 1 (int32 var)) (dmavar 4000 timers_idx)))
+          (set_var_int ((dmavar 4000 timers_idx) (var_array 4004 4000 1 (int32 var))))
+        LISP
+        }
+      end
+
+      context "with a single assignment with an immediate value" do
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          $_4000_timers_idx = 0
+          $_4004_timers[$_4000_timers_idx] = -1
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
+          (set_var_int ((var_array 4004 4000 1 (int32 var)) (int8 -1)))
+        LISP
+        }
+      end
+
+      context "with global var and local index" do
+        let(:ruby){ <<-RUBY
+          $_4004_timers = IntegerArray.new(1)
+          index = 0
+          $_4004_timers[index] = get_game_timer()
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 index) (int8 0)))
+          (get_game_timer ((var_array 4004 0 1 (int32 lvar))))
+        LISP
+        }
+      end
+      
+    end
+
 
   end
 

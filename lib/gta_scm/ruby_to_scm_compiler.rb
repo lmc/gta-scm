@@ -10,6 +10,7 @@ class GtaScm::RubyToScmCompiler
     self.local_method_names_to_labels = {}
     self.label_prefix = "label_"
     self.var_arrays = {}
+    self.lvar_arrays = {}
     self.routines_block = false
     install_constants!
   end
@@ -391,8 +392,20 @@ class GtaScm::RubyToScmCompiler
       nn = emit_method_def(node)
       # debugger
       return nn
-
     end
+    if is_array
+      array_name = node.children[0].children[0]
+      if array_def = self.lvar_arrays[array_name]
+        # lvar array
+      elsif array_def = self.var_arrays[array_name]
+        array_type = array_def[3] == :int32 ? :int : :float
+        left = emit_value(node)
+        right = emit_value(right)
+        return [[:"set_var_#{array_type}" , [left , right ]]]
+      end
+      # var_type = array_def[]
+    end
+
     debugger
     raise "unknown lvar assignment #{node.inspect}"
   end
@@ -608,8 +621,15 @@ class GtaScm::RubyToScmCompiler
 
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
-      args = node.children[2..-1]
-      args.map! {|a| emit_value(a)}
+      if node.children[1] == :[]=
+        # debugger
+        args = [ emit_value(node) ]
+        opcode_name = node.children[3].children[1]
+        opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
+      else
+        args = node.children[2..-1]
+        args.map! {|a| emit_value(a)}
+      end
 
       # if args.nil? || opcode_def.arguments.nil?
       #   debugger
@@ -714,14 +734,28 @@ class GtaScm::RubyToScmCompiler
         args = opcode_call_node.children[2..-1] || []
         args.map! {|a| emit_value(a)}
 
+        # debugger
+
         # array assign
         if variable_node.children[1] == :[]=
 
           if variable_node.children[0].type == :gvar
             args << emit_value(variable_node)
-            # args << gvar_array( variable_node.children[0] , variable_node.children[2] )
           else
-            # args << lvar_array( variable_node.children[0] , variable_node.children[2] )
+            args << emit_value(variable_node)
+          end
+
+        elsif variable_node.children[1].type == :send && variable_node.children[1].children[1] == :[]
+
+          array_name = variable_node.children[1].children[0].children[0]
+
+          if array_def = self.lvar_arrays[array_name]
+
+          elsif array_def = self.var_arrays[array_name]
+            array_type = array_def[3] == :int32 ? :int : :float32
+            opcode_name = :"set_var_#{array_type}"
+            opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
+            args << emit_value( variable_node.children[1] )
           end
 
         else
@@ -729,10 +763,10 @@ class GtaScm::RubyToScmCompiler
           if assign_type == :gvasgn
             args << gvar(variable_node.to_s.gsub('$',''))
           else
-            # if !variable_node.children or !opcode_def.andand.arguments.andand.last
-            #   debugger
-            #   "ff"
-            # end
+            if !variable_node.children or !opcode_def.andand.arguments.andand.last
+              debugger
+              "ff"
+            end
             args << lvar( variable_node.children[0] , opcode_def.arguments.last[:type] )
           end
 
@@ -954,6 +988,7 @@ class GtaScm::RubyToScmCompiler
         elsif array_var.type == :gvar && array_var.children[0] == :$_0
           [ :var_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
         elsif array_type == :lvar_array && (array_def = self.lvar_arrays[ node.children[0].children[0] ])
+          # debugger
           [ :lvar_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
         else
           raise "undefined array #{node.inspect}"
