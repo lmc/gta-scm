@@ -117,6 +117,8 @@ class GtaScm::RubyToScmCompiler
         emit_raw(node)
       elsif node.children[1] == :[]= && node.children[0].type == :gvar
         emit_global_var_assign(node)
+      elsif node.children[1] == :[]= && node.children[0].type == :lvar
+        emit_local_var_assign(node)
       else
         [ emit_opcode_call(node) ]
       end
@@ -396,7 +398,10 @@ class GtaScm::RubyToScmCompiler
     if is_array
       array_name = node.children[0].children[0]
       if array_def = self.lvar_arrays[array_name]
-        # lvar array
+        array_type = array_def[3] == :int32 ? :int : :float
+        left = emit_value(node)
+        right = emit_value(right)
+        return [[:"set_lvar_#{array_type}" , [left , right ]]]
       elsif array_def = self.var_arrays[array_name]
         array_type = array_def[3] == :int32 ? :int : :float
         left = emit_value(node)
@@ -486,7 +491,18 @@ class GtaScm::RubyToScmCompiler
         right = node.children[1]
         right_type = right.type
         operator = :"="
+      elsif node.children[1] == :[]=
+        array_name = node.children[0].children[0]
+        if array_def = self.lvar_arrays[array_name]
+          array_type = array_def[3] == :int32 ? :int : :float
+          left = emit_value(node)
+          right = emit_value(node.children[3])
+          return [ :"set_lvar_#{array_type}" , [ left , right ] ]
+        elsif array_def = self.var_arrays[array_name]
+          raise "?SDfsd?"
+        end
       else
+        debugger
         raise "dunno???"
       end
     end
@@ -585,6 +601,7 @@ class GtaScm::RubyToScmCompiler
       end
 
     else
+      debugger
       raise "can only handle lvasgn left hands8"
     end
 
@@ -622,7 +639,7 @@ class GtaScm::RubyToScmCompiler
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
       if node.children[1] == :[]=
-        # debugger
+        debugger
         args = [ emit_value(node) ]
         opcode_name = node.children[3].children[1]
         opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
@@ -750,7 +767,10 @@ class GtaScm::RubyToScmCompiler
           array_name = variable_node.children[1].children[0].children[0]
 
           if array_def = self.lvar_arrays[array_name]
-
+            array_type = array_def[3] == :int32 ? :int : :float32
+            opcode_name = :"set_lvar_#{array_type}"
+            opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
+            args << emit_value( variable_node.children[1] )
           elsif array_def = self.var_arrays[array_name]
             array_type = array_def[3] == :int32 ? :int : :float32
             opcode_name = :"set_var_#{array_type}"
@@ -772,6 +792,10 @@ class GtaScm::RubyToScmCompiler
 
         end
       end
+    end
+
+    if !opcode_def
+      debugger
     end
 
     if args.size != opcode_def.arguments.size
