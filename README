@@ -20,7 +20,7 @@ Unused/debug code:
 intro mission launch site: 59976
 
 
-support `array[i]` setter
+reserve global vars for temp compiler vars
 
 
 

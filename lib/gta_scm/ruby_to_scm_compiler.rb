@@ -57,6 +57,21 @@ class GtaScm::RubyToScmCompiler
         raise UnhandledNodeError.new(node)
       end
 
+    when :while
+      if node.children.size == 2
+        emit_loop(node,node.children[1],node.children[0])
+      else
+        debugger
+      end
+
+    when :for
+
+      if node.node.children[1].type == :irange
+        emit_for_range_loop(node.children[0],node.children[1],node.children[2])
+      else
+        raise "can only handle `for + range`"
+      end
+
     when :begin
 
       emit_block(node)
@@ -177,16 +192,36 @@ class GtaScm::RubyToScmCompiler
   end
 
   attr_accessor :loop_stack
-  def emit_loop(loop_node,block_node)
+  def emit_loop(loop_node,block_node,condition_node = nil,condition_at_start = nil)
     loop_start = generate_label!
     loop_exit = generate_label!
 
       self.loop_stack ||= []
     begin
+      if condition_node
+        condition_label = generate_label!
+        andor_id, conditions = emit_if_conditions(condition_node)
+        condition_block = [
+          *self.andor_instruction(andor_id),
+          *conditions,
+          [:goto_if_false, [:label,loop_exit]],
+        ]
+        condition_at_start = true if condition_at_start.nil?
+        if condition_at_start
+          condition_start_block = condition_block
+        else
+          condition_end_block = condition_block
+        end
+      end
+      condition_start_block ||= []
+      condition_end_block ||= []
+
       self.loop_stack << {start: loop_start, exit: loop_exit}
       [
         [:labeldef, loop_start],
+        *condition_start_block,
         *transform_node(block_node),
+        *condition_end_block,
         [:goto,[[self.label_type,loop_start]]],
         [:labeldef, loop_exit]
       ]
@@ -201,13 +236,19 @@ class GtaScm::RubyToScmCompiler
   end
 
   def emit_return_value(node)
-    condition = node.children[0].type == :true
-    opcode = condition ? :not_is_ps2_keyboard_key_pressed : :is_ps2_keyboard_key_pressed
-    value = condition ? 1 : 0
-    [
-      [opcode,[[:int8,value]]],
-      [:return]
-    ]
+    if node.children.size == 0
+      [
+        [:return]
+      ]
+    else
+      condition = node.children[0].type == :true
+      opcode = condition ? :not_is_ps2_keyboard_key_pressed : :is_ps2_keyboard_key_pressed
+      value = condition ? 1 : 0
+      [
+        [opcode,[[:int8,value]]],
+        [:return]
+      ]
+    end
   end
 
   def handle_multiple_assigns(node)
@@ -937,12 +978,7 @@ class GtaScm::RubyToScmCompiler
 
     andor_id, conditions = *emit_if_conditions( node.children[0] )
 
-    andor = [ [:andor,[[:int8, andor_id]]] ]
-
-    # if id == 0, we can omit the andor opcode
-    if andor_id == 0
-      andor = []
-    end
+    andor = self.andor_instruction(andor_id)
 
     # TODO: handle bool check of variable `if var` (node.children[0].type == :lvar)
 
@@ -1189,6 +1225,15 @@ class GtaScm::RubyToScmCompiler
 
     # if self.var_arrays[array_name]
 
+  end
+
+  def andor_instruction(andor_id)
+    # if id == 0, we can omit the andor opcode
+    if andor_id == 0
+      []
+    else
+      [ [:andor,[[:int8, andor_id]]] ]
+    end
   end
 
 

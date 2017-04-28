@@ -16,6 +16,12 @@ BITPACK_INIT = [:label,:lib_bitpack_init]
 BITPACK_PACK = [:label,:lib_bitpack_pack]
 BITPACK_UNPACK = [:label,:lib_bitpack_unpack]
 
+# 8 - car id
+# 7 - colour 1 id
+# 7 - colour 2 id
+# 3 - variation 2 id
+# 2 - variation 2 id (+2 for real id)
+
 tmp_car_id = 0
 # potentially 8 bits spare if we pack car id into int8
 tmp_car_col_1 = 0

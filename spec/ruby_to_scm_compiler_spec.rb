@@ -709,6 +709,62 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+    context "while loops" do
+      let(:ruby){ <<-RUBY
+        a = 0
+        while a < 5
+          a += 1
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int8 0)))
+        (labeldef label_1)
+        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int8 5)))
+        (goto_if_false (label label_2))
+        (add_val_to_int_lvar ((lvar 0 a) (int8 1)))
+        (goto ((label label_1)))
+        (labeldef label_2)
+      LISP
+      }
+    end
+    context "complex while loops" do
+      let(:ruby){ <<-RUBY
+        a = 0
+        while a < 5 && a > 10 && is_player_playing(a)
+          a += 1
+          a = get_game_timer()
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (set_lvar_int ((lvar 0 a) (int8 0)))
+        (labeldef label_1)
+        (andor ((int8 2)))
+        (not_is_int_lvar_greater_or_equal_to_number ((lvar 0 a) (int8 5)))
+        (is_int_lvar_greater_than_number ((lvar 0 a) (int8 10)))
+        (is_player_playing ((lvar 0 a)))
+        (goto_if_false (label label_2))
+        (add_val_to_int_lvar ((lvar 0 a) (int8 1)))
+        (get_game_timer ((lvar 0 a)))
+        (goto ((label label_1)))
+        (labeldef label_2)
+      LISP
+      }
+    end
+  end
+  context "for loops" do
+    let(:ruby){ <<-RUBY
+      a = 0
+      for a in 0..2
+        a += 1
+      end
+    RUBY
+    }
+    it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+    LISP
+    }
   end
 
   describe "lambdas" do
@@ -726,6 +782,19 @@ describe GtaScm::RubyToScmCompiler do
         (return)
         (labeldef label_2)
         (gosub ((label label_1)))
+      LISP
+      }
+    end
+  end
+
+  describe "returns" do
+    context "explicit return call" do
+      let(:ruby){ <<-RUBY
+        return
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (return)
       LISP
       }
     end
