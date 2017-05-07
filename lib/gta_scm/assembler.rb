@@ -35,6 +35,8 @@ class GtaScm::Assembler::Base
   attr_accessor :new_gxt_entries
   attr_accessor :paddings
 
+  attr_accessor :constants_to_values
+
 
   def initialize(input_dir)
     self.input_dir = input_dir
@@ -51,6 +53,8 @@ class GtaScm::Assembler::Base
     self.vars_to_use = {}
     self.new_gxt_entries = {}
     self.paddings = {}
+
+    self.constants_to_values ||= {}
   end
 
   def assemble(scm,out_path)
@@ -326,6 +330,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           compiler = GtaScm::RubyToScmCompiler.new
           compiler.metadata = {filename: filename}
+          compiler.constants_to_values.merge!(self.constants_to_values)
 
           parsed = compiler.parse_ruby(ruby)
 
@@ -339,6 +344,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           lines.each_with_index do |line,line_idx|
             self.read_line(scm,line,file,line_idx)
           end
+
+          self.constants_to_values.merge!(compiler.constants_to_values)
 
           end_offset = self.nodes.last.offset + self.nodes.last.size
           self.on_include(start_offset,end_offset,tokens)
@@ -417,6 +424,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           n = GtaScm::Node::Raw.new( code.bytes )
           self.on_include(offset,n,tokens)
           self.external_offsets[external_id] = [file,self.nodes.size]
+          self.include_sizes.merge!(iasm.include_sizes)
           n
 
         when :Rawhex
@@ -710,6 +718,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.touchup_defines = self.parent.touchup_defines.dup
     # self.touchup_uses = self.parent.touchup_uses
     # self.touchup_types = self.parent.touchup_types
+    self.constants_to_values = self.parent.constants_to_values
   end
 
   def logger

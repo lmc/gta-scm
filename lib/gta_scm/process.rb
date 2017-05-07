@@ -154,6 +154,8 @@ class GtaScm::Process
       addr += self.thread_size
     end
     threads
+  rescue Ragweed::Wraposx::KernelCallError
+    []
   end
 
   def thread(thread_id)

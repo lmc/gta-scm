@@ -22,6 +22,8 @@ intro mission launch site: 59976
 
 reserve global vars for temp compiler vars
 
+verify img file actually generates valid img files (from-scratch ones do not seem to work, only appending to an existing img)
+
 
 
 Things needed for release:

@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+
+# sudo bundle exec ./bin/rpc_bridge
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+
+require 'gta_scm/panel'
+require 'gta_scm/panel_manager'
+
+PLAYER_CHAR = 1
+
+def formatted_coords(value)
+  value.map{|c| c.round(3) }.join(', ')
+end
+def copy_to_clipboard(str)
+  `echo #{str.inspect} | pbcopy`
+end
+
+process = GtaScm::Process.new
+process.load_symbols!
+process.detect_pid_and_attach!
+
+repl = GtaScm::Panel::Repl.new
+repl.prepare_proxy!(process)
+
+`stty -echo`
+`clear`
+
+threads = []
+
+threads << Thread.new do
+  loop do
+    sleep(0.1)
+    value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
+    print "Coordinates: #{formatted_coords(value)}\r"
+  end
+end
+
+threads << Thread.new do
+  loop do
+    if gets
+      value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
+      copy_to_clipboard( formatted_coords(value) )
+    end
+  end
+end
+
+threads.each(&:join)
+
+# value = repl.opcode_proxy.get_char_coordinates(PLAYER_CHAR)
+
+# puts value.inspect
+

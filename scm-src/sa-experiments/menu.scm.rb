@@ -263,7 +263,6 @@ show_menu = routine do
 
   menu = create_menu( "GSCM005" , MENU_X , MENU_Y , MENU_WIDTH , MENU_COLUMNS , MENU_INTERACTIVE , MENU_BACKGROUND , MENU_ALIGNMENT )
 
-
   tmp_i = 0
   set_menu_item_with_number(menu,0,tmp_i,"GSCM001",0)
 

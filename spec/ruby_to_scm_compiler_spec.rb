@@ -276,6 +276,54 @@ describe GtaScm::RubyToScmCompiler do
       end
     end
 
+    describe "true/false/nil" do
+      context "used as arguments" do
+        let(:ruby){ <<-RUBY
+          do_fade(100,true)
+          do_fade(100,false)
+          do_fade(100,nil)
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (do_fade ((int8 100) (int8 1)))
+          (do_fade ((int8 100) (int8 0)))
+          (do_fade ((int8 100) (int8 -1)))
+        LISP
+        }
+      end
+      context "used as immediate values" do
+        let(:ruby){ <<-RUBY
+          tmp = true
+          tmp = false
+          tmp = nil
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 tmp) (int8 1)))
+          (set_lvar_int ((lvar 0 tmp) (int8 0)))
+          (set_lvar_int ((lvar 0 tmp) (int8 -1)))
+        LISP
+        }
+      end
+      context "used for compares" do
+        let(:ruby){ <<-RUBY
+          tmp = true
+          if tmp == true
+            tmp = false
+          end
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 tmp) (int8 1)))
+          (is_int_lvar_equal_to_number ((lvar 0 tmp) (int8 1)))
+          (goto_if_false ((label label_1)))
+          (set_lvar_int ((lvar 0 tmp) (int8 0)))
+          (labeldef label_1)
+        LISP
+        }
+      end
+    end
+
 
     describe "global arrays" do
 

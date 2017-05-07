@@ -33,9 +33,9 @@ city = 1
 # goto(1)
 
 if city == 1
-  t_x = 1600.0
-  t_y = -1600.0
-  t_z = 14.3
+  t_x = 2482.0
+  t_y = -1750.0
+  t_z = 13.5
 elsif city == 2
   t_x = -1600.0
   t_y = 715.0
@@ -45,6 +45,7 @@ elsif city == 3
   t_y = 1390.0
   t_z = 11.0
 end
+set_time_of_day(23,30)
 set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
 # task_jetpack(PLAYER_CHAR)
 # give_weapon_to_char(PLAYER_CHAR,41,1000)
@@ -109,9 +110,11 @@ loop do
     t_y = p_y
     t_y += 5.0
     car = create_car(420,p_x,t_y,p_z)
-    set_car_mission(car,11)
-    mark_car_as_no_longer_needed(car)
     char = create_random_char_as_driver(car)
+    wait(100)
+    set_car_mission(car,11)
+    wait(3000)
+    mark_car_as_no_longer_needed(car)
     mark_model_as_no_longer_needed(420)
     mark_char_as_no_longer_needed(char)
   end

@@ -235,6 +235,10 @@ class GtaScm::RubyToScmCompiler
     return [:goto, [[self.label_type, loop_exit]]]
   end
 
+  def emit_for_range_loop(variable_node,range_node,block_node)
+    
+  end
+
   def emit_return_value(node)
     if node.children.size == 0
       [
@@ -367,6 +371,10 @@ class GtaScm::RubyToScmCompiler
     if type == :const
       right_val = self.constants_to_values[ right.children[1] ]
       type = self.constants_to_types[ right.children[1] ]
+    end
+
+    if type == :true || type == :false || type == :nil
+      type = :int
     end
 
     if node.type == :gvasgn && node.children[1].type == :gvar
@@ -881,6 +889,11 @@ class GtaScm::RubyToScmCompiler
           left_var_type = :int
           left_type = :lvar
           opcode_name << "#{left_var_type}_lvar"
+        elsif node.children[0].type == :const && node.children[0].children[1] == :TIMER_B
+          left_value = [:lvar, 33, :timer_b]
+          left_var_type = :int
+          left_type = :lvar
+          opcode_name << "#{left_var_type}_lvar"
         elsif left_type == :lvar
           left_value = lvar(node.children[0].children[0])
           left_var_type = self.lvar_names_to_types[ node.children[0].children[0] ]
@@ -902,6 +915,10 @@ class GtaScm::RubyToScmCompiler
         if node.children[1] == :> && node.children[0].children[0] == :angle
           # debugger
           node
+        end
+
+        if right_type == :true || right_type == :false || right_type == :nil
+          right_type = :int
         end
 
         if right_type == :int || right_type == :float
@@ -1063,6 +1080,12 @@ class GtaScm::RubyToScmCompiler
         debugger
         raise "emit_value ??? #{node.inspect}"
       end
+    when :true
+      [:int8, 1]
+    when :false
+      [:int8, 0]
+    when :nil
+      [:int8, -1]
     else
       debugger
       raise "emit_value ??? #{node.inspect}"
