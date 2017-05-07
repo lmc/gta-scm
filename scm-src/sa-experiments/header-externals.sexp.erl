@@ -2,7 +2,8 @@
   (padding (int8 2))                                                \
   % (largest_external_size (int32 35122))                             \
   (largest_external_size (int32 104632))                             \
-  (external_count (int32 79))                                       \
+  % (external_count (int32 79))                                       \
+  (external_count (int32 80))                                       \
   (externals (                                                      \
     ((int32  0) (string20 "PLAYER_PARACHUTE") (int32 3079744) (int32 5631 ))   \
     ((int32  1) (string20 "PARACHUTE")        (int32 3085375) (int32 7354 ))   \
@@ -83,5 +84,6 @@
     ((int32 76) (string20 "DEBT")             (int32 3573452) (int32 4054 ))   \
     ((int32 77) (string20 "HOTDOG")           (int32 3577506) (int32 725  ))   \
     ((int32 78) (string20 "")                 (int32       0) (int32 0    ))   \
+    ((int32 79) (string20 "")                 (int32       0) (int32 0    ))   \
   ))                                                                           \
 ))                                                                             

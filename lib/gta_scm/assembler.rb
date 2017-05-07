@@ -164,12 +164,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
       img_file_w = GtaScm::ImgFile.open("#{out_path}/script.img","w")
       entries.each_with_index do |entry,idx|
-        if self.external_offsets[idx]
-          ext_name = self.external_offsets[idx][0]
-          img_file_w.add_file("#{ext_name}.scm",externals_code[idx].to_binary)
-        else
-          img_file_w.add_file(entry[:name],data[idx])
-        end
+        img_file_w.add_file(entry[:name],data[idx])
+      end
+
+      self.external_offsets.each_pair do |idx,_|
+        ext_name = self.external_offsets[idx][0]
+        img_file_w.add_file("#{ext_name}.scm",externals_code[idx].to_binary)
       end
       img_file_w.rebuild!
     end

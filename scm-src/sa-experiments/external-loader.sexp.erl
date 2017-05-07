@@ -7,13 +7,16 @@
 
 % register + request load
 (register_streamed_script_internal ((int8 78)))
+(register_streamed_script_internal ((int8 79)))
 (stream_script ((int8 78)))
+(stream_script ((int8 79)))
 
 % wait for script to load
 (labeldef external_loader_load)
 (wait ((int8 10)))
-% (andor ((int8 0)))
+(andor ((int8 1)))
 (has_streamed_script_loaded ((int8 78)))
+(has_streamed_script_loaded ((int8 79)))
 (goto_if_false ((label external_loader_load)))
 
 % once loaded, loop
@@ -38,6 +41,9 @@
 
   % collectables finder manager
   (start_new_streamed_script ((int8 78) (int8 5) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
+
+  % collectables finder manager
+  (start_new_streamed_script ((int8 79) (end_var_args)))
 
   (wait ((int16 1000)))
 (labeldef external_loader_idle_1)
