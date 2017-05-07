@@ -21,7 +21,7 @@ DEBUG_EXEC = [:label, :debug_exec]
 
 routines do
 
-  debug_breakpoint_entry = routine(export: :debug_breakpoint_entry) do
+  debug_breakpoint_entry = routine(export: :debug_breakpoint_entry, end_with: nil) do
     terminate_all_scripts_with_this_name("xrepl")
     $breakpoint_enabled = 1
     $breakpoint_halt_vm = 1
@@ -45,7 +45,7 @@ routines do
     end
   end
 
-  debug_exec = routine(export: :debug_exec) do
+  debug_exec = routine(export: :debug_exec, end_with: nil) do
     # REPL input code gets JIT'd into here:
     emit(:Rawhex,["B6","05"])
     emit(:Padding,[128])
@@ -53,12 +53,12 @@ routines do
     goto(DEBUG_EVAL_TRUE)
   end
 
-  debug_eval_true = routine(export: :debug_eval_true) do
+  debug_eval_true = routine(export: :debug_eval_true, end_with: nil) do
     $breakpoint_repl_if_result = 1
     goto(DEBUG_BREAKPOINT_INNER)
   end
 
-  debug_eval_false = routine(export: :debug_eval_false) do
+  debug_eval_false = routine(export: :debug_eval_false, end_with: nil) do
     $breakpoint_repl_if_result = 0
     goto(DEBUG_BREAKPOINT_INNER)
   end

@@ -1,6 +1,6 @@
 routines do
-  script_name("xcrngen")
   corona_inner = routine(end_with: nil) do
+    script_name("xcrngen")
     if emit(false)
       x = 0.0
       y = 0.0
@@ -20,17 +20,17 @@ routines do
   end
 
   corona = routine(export: :thread_corona, end_with: nil) do
-    script_name("xcrngen")
+    # script_name("xcrngen")
     corona_inner()
   end
 
   corona_col = routine(export: :thread_corona_col, end_with: nil) do
-    script_name("xcrncol")
+    # script_name("xcrncol")
     corona_inner()
   end
 
   corona_col = routine(export: :thread_corona_crf, end_with: nil) do
-    script_name("xcrncrf")
+    # script_name("xcrncrf")
     corona_inner()
   end
 end

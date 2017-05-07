@@ -12,25 +12,25 @@
 (labeldef watchdog)
 (wait ((int8 0)))
 (script_name ((string8 "xwtchdg")))
-(set_var_int ((var code_persist_version) (int16 1)))
+(set_var_int ((var code_persist_version) (int8 1)))
 (get_game_timer ((var watchdog_timer)))
 
 % wait for intro/init missions to run to get free variables
-(andor ((int8 0)))
+% (andor ((int8 0)))
 (is_int_var_equal_to_number ((dmavar 21392) (int8 -1)))
 (goto_if_false ((label watchdog)))
-(andor ((int8 0)))
+% (andor ((int8 0)))
 (is_int_var_greater_than_number ((dmavar 13576) (int8 0)))
 (goto_if_false ((label watchdog)))
 
 % check to see if the code versions differ, re-init if so
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_greater_than_int_var ((var code_persist_version) (dmavar 3432 save_persist_version)))
 (goto_if_false ((label watchdog_end_init)))
   (gosub ((label watchdog_init)))
 (labeldef watchdog_end_init)
 
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_equal_to_number ((var code_state) (int8 0)))
 (goto_if_false ((label watchdog_end_respawn)))
   % re-spawn threads here

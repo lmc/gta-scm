@@ -92,7 +92,9 @@
 (IncludeBin ("games/san-andreas/data/script/main.scm" 59980 61294))
 
 % patch out load_and_launch_mission_internal(4) to load bad duality game (we use it's global vars) 
+% (set_var_int ((dmavar 1636) (int8 2)))
 (set_var_int ((dmavar 1636) (int8 1)))
+% (load_and_launch_mission_internal ((int8 4)))
 (load_and_launch_mission_internal ((int8 3)))
 (goto ((int32 61443)))
 (PadUntil (61312))
@@ -100,12 +102,14 @@
 (IncludeBin ("games/san-andreas/data/script/main.scm" 61312 61763))
 
 % replace goto at bottom of main loop with a goto to our extension
+% (goto ((int32 -1)))
 (goto ((label main_loop_ext)))
 (PadUntil (61770))
 
 (IncludeBin ("games/san-andreas/data/script/main.scm" 61770 88020))
 
 % replace gosub in save thread to our extension
+% (gosub ((int32 -1)))
 (gosub ((label save_thread_ext)))
 (PadUntil (88027))
 

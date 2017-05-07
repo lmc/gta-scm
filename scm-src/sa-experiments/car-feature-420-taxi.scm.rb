@@ -1,5 +1,10 @@
 script_name("xcar420")
 
+# NEXT:
+# handle payment
+# handle leaving taxi early
+# handle attitude/speed/camera while being driven properly
+
 if emit(false)
   tmp_i = 0               # lvar 0 used for ext script id
   this_car = 0            # lvar 1 used for soft-ref to this car
@@ -15,7 +20,6 @@ if emit(false)
 
   player_distance = 0.0
   driver = 0
-  driver_current_event = 0
   speed = 0.0
   passenger_count = 0
 
@@ -32,6 +36,7 @@ if emit(false)
   drive_mode = 0
 
   tmp_j = 0
+  tmp_k = 0
 end
 
 DOOR_1_X =  1.5
@@ -59,11 +64,13 @@ CHAR_EVENT_HIGH_ANGER_AT_PLAYER = 51
 CHAR_EVENT_VEHICLE_DAMAGE_COLLISION = 73
 CHAR_EVENT_VEHICLE_ON_FIRE = 79
 
-DESTINATIONS_MAX = 11
+DESTINATIONS_MAX = 15
 DESTINATIONS_MAX_PAGES = 2
 DESTINATIONS_MAX_PAGES_PADDED = 1
 DESTINATIONS_PER_PAGE = 8
 DESTINATIONS_PER_PAGE_PADDED = 9
+
+DISTANCE_PRICE_MULTIPLIER = 0.0177
 
 cleanup_and_exit = routine do
   if blip > 0
@@ -77,11 +84,17 @@ cleanup_and_exit = routine do
   terminate_this_script()
 end
 
-get_player_distance = routine do
+get_player_distance_from_taxi = routine do
   tmp_x, tmp_y, tmp_z  = get_char_coordinates(PLAYER_CHAR)
   tmp_x2,tmp_y2,tmp_z2 = get_car_coordinates(this_car)
   player_distance = get_distance_between_coords_3d(tmp_x2,tmp_y2,tmp_z2,tmp_x,tmp_y,tmp_z)
 end
+
+get_player_distance_from_destination = routine do
+  tmp_x2,tmp_y2,tmp_z2 = get_char_coordinates(PLAYER_CHAR)
+  player_distance = get_distance_between_coords_3d(tmp_x2,tmp_y2,tmp_z2,tmp_x,tmp_y,tmp_z)
+end
+
 
 get_car_speed = routine do
   tmp_x2,tmp_y2,tmp_z2 = get_car_speed_vector(this_car)
@@ -147,14 +160,26 @@ get_destination_vars = routine do
   elsif destination_idx == 12
     set_var_text_label($str_7112,"GSCM263") # montgomery
     tmp_x,tmp_y,tmp_z,tmp_h = 1349.875, 254.45, 19.2, 337.0
+  elsif destination_idx == 13
+    set_var_text_label($str_7112,"GSCM296") # 
+    tmp_x,tmp_y,tmp_z,tmp_h = -2800.0, 2800.0, 19.2, 337.0
+  elsif destination_idx == 14
+    set_var_text_label($str_7112,"GSCM297") # 
+    tmp_x,tmp_y,tmp_z,tmp_h = -2700.0, -2700.0, 19.2, 337.0
+  elsif destination_idx == 15
+    set_var_text_label($str_7112,"GSCM298") # 
+    tmp_x,tmp_y,tmp_z,tmp_h = -2000.0, 300.0, 19.2, 337.0
+  elsif destination_idx == 16
+    set_var_text_label($str_7112,"GSCM299") # 
+    tmp_x,tmp_y,tmp_z,tmp_h = 2000.0, 1500.0, 19.2, 337.0
   end
 end
 
 show_taxi_menu = routine do
   print_help_forever("GSCM201")
   menu = create_menu( "GSCM200" , 30.0 , 120.0 , 250.0 , 2 , 1 , 1 , 1 )
-  set_menu_column_width(menu,0,210)
-  set_menu_column_width(menu,1,40)
+  set_menu_column_width(menu,0,195)
+  set_menu_column_width(menu,1,55)
   # set_menu_column_width(menu,1,40)
 
   tmp_i = 0
@@ -170,8 +195,12 @@ show_taxi_menu = routine do
     destination_idx = tmp_j
     break if destination_idx >= DESTINATIONS_MAX || tmp_i >= DESTINATIONS_PER_PAGE_PADDED
     get_destination_vars()
+    get_player_distance_from_destination()
+    player_distance *= DISTANCE_PRICE_MULTIPLIER
+    tmp_k = player_distance.to_i
+
     set_menu_item_with_number(menu,0,tmp_i,$str_7112,0)
-    set_menu_item_with_number(menu,1,tmp_i,"DOLLAR",420)
+    set_menu_item_with_number(menu,1,tmp_i,"DOLLAR",tmp_k)
     # set_menu_item_with_number(menu,2,tmp_i,"NUMBER",1234)
     tmp_i += 1
     tmp_j += 1
@@ -278,16 +307,16 @@ end
 
 check_driver_shitty = routine do
   if driver > 0 && driver != PLAYER_CHAR
-    driver_current_event = get_char_highest_priority_event(driver)
+    tmp_i = get_char_highest_priority_event(driver)
     if
-      driver_current_event == CHAR_EVENT_GUN_AIMED_AT             ||
-      driver_current_event == CHAR_EVENT_LOW_ANGER_AT_PLAYER      ||
-      driver_current_event == CHAR_EVENT_HIGH_ANGER_AT_PLAYER     ||
-      driver_current_event == CHAR_EVENT_DRAGGED_OUT_CAR          ||
-      driver_current_event == CHAR_EVENT_VEHICLE_THREAT           ||
-      driver_current_event == CHAR_EVENT_VEHICLE_DAMAGE_WEAPON    ||
-      driver_current_event == CHAR_EVENT_VEHICLE_DAMAGE_COLLISION ||
-      driver_current_event == CHAR_EVENT_VEHICLE_ON_FIRE
+      tmp_i == CHAR_EVENT_GUN_AIMED_AT             ||
+      tmp_i == CHAR_EVENT_LOW_ANGER_AT_PLAYER      ||
+      tmp_i == CHAR_EVENT_HIGH_ANGER_AT_PLAYER     ||
+      tmp_i == CHAR_EVENT_DRAGGED_OUT_CAR          ||
+      tmp_i == CHAR_EVENT_VEHICLE_THREAT           ||
+      tmp_i == CHAR_EVENT_VEHICLE_DAMAGE_WEAPON    ||
+      tmp_i == CHAR_EVENT_VEHICLE_DAMAGE_COLLISION ||
+      tmp_i == CHAR_EVENT_VEHICLE_ON_FIRE
     then
       driver_shitty = 1
     end
@@ -317,7 +346,7 @@ loop do
     # player outside taxi, show markers on rear doors if taxi is valid and stopped
     if player_taxi_state == 0
 
-      get_player_distance()
+      get_player_distance_from_taxi()
       if player_distance < INTERACT_MAX_DISTANCE
 
         driver = get_driver_of_car(this_car)

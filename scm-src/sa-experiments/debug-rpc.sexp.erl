@@ -32,7 +32,7 @@
 
 % jumped to by start_new_script in syscall 1 (create thread)
 (labeldef debug_rpc_create_thread_init)
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_greater_than_number ((dmavar 7040 debug_rpc_int_arg_1) (int8 0)))
 (goto_if_false ((label debug_rpc_create_thread_init_after)))
 (script_name ((var_string8 7040 debug_rpc_int_arg_1)))
@@ -46,19 +46,19 @@
 (labeldef debug_rpc_worker_top)
 (wait ((int8 0)))
 
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_greater_than_number ((dmavar 7088 debug_rpc_enabled) (int8 0)))
 (goto_if_false ((label debug_rpc_worker_terminate)))
 
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_greater_than_number ((dmavar 7068 debug_rpc_syscall) (int8 0)))
 (goto_if_false ((label debug_rpc_worker_top)))
 
 % syscall 1 = create thread (0 = thread offset, 1-2 = thread name, 7 = thread created)
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_equal_to_number ((dmavar 7068 debug_rpc_syscall) (int8 1)))
 (goto_if_false ((label debug_rpc_worker_create_thread_after)))
-  (andor ((int8 0)))
+  % (andor ((int8 0)))
     (is_int_var_greater_than_number ((dmavar 7036 debug_rpc_int_arg_0) (int8 0)))
   (goto_if_false ((label debug_rpc_worker_syscall_exit_1)))
 
@@ -67,7 +67,7 @@
   
   (labeldef debug_rpc_worker_create_thread_complete_loop)
   (wait ((int8 0)))
-  (andor ((int8 0)))
+  % (andor ((int8 0)))
     (is_int_var_greater_than_number ((dmavar 7064 debug_rpc_int_arg_7) (int8 0)))
   (goto_if_false ((label debug_rpc_worker_create_thread_complete_loop)))
   
@@ -76,10 +76,10 @@
 
 
 % syscall 2 = terminate named scripts (0=1 = thread name)
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_equal_to_number ((dmavar 7068 debug_rpc_syscall) (int8 2)))
 (goto_if_false ((label debug_rpc_worker_terminate_thread_after)))
-  (andor ((int8 0)))
+  % (andor ((int8 0)))
     (is_int_var_greater_than_number ((dmavar 7036 debug_rpc_int_arg_0) (int8 0)))
   (goto_if_false ((label debug_rpc_worker_syscall_exit_1)))
 
@@ -90,7 +90,7 @@
 (labeldef debug_rpc_worker_terminate_thread_after)
 
 % syscall 3 = teleport player (0,1,2 = x/y/z, 3 = heading, 4 = interior ID)
-(andor ((int8 0)))
+% (andor ((int8 0)))
   (is_int_var_equal_to_number ((dmavar 7068 debug_rpc_syscall) (int8 3)))
 (goto_if_false ((label debug_rpc_worker_teleport_player_after)))
   

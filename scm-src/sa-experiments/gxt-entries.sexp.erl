@@ -44,3 +44,7 @@
 (DefineGxt "MAIN" "GSCM261" "Observatory")
 (DefineGxt "MAIN" "GSCM262" "Palomino Creek")
 (DefineGxt "MAIN" "GSCM263" "Montgomery")
+(DefineGxt "MAIN" "GSCM296" "NW Corner")
+(DefineGxt "MAIN" "GSCM297" "SW Corner")
+(DefineGxt "MAIN" "GSCM298" "San Fierro")
+(DefineGxt "MAIN" "GSCM299" "Los Venturas")
