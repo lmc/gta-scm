@@ -90,8 +90,10 @@ routines do
     load_sprite(10,"radar33")
     load_texture_dictionary("radar34")
     load_sprite(11,"radar34")
-    load_texture_dictionary("radar35")
-    load_sprite(12,"radar35")
+    # load_texture_dictionary("radar35")
+    # load_sprite(12,"radar35")
+    # load_texture_dictionary("rad100")
+    # load_sprite(12,"rad100")
 
     load_texture_dictionary("LD_BEAT")
     load_sprite(13,"upl")

@@ -1044,8 +1044,13 @@ class GtaScm::RubyToScmCompiler
         [:int32,int]
       end
     when :str
-      [:string8,node.children[0]]
-      # [:vlstring,node.children[0]]
+      if node.children[0].size <= 7
+        [:string8,node.children[0]]
+      # TEST: does this work? probs not??
+      elsif node.children[0].size <= 15
+        [:string16,node.children[0]]
+      end
+      # [:vlstring,node.children[0].size,node.children[0]]
     when :lvar
       lvar(node.children[0])
     when :gvar
@@ -1054,6 +1059,11 @@ class GtaScm::RubyToScmCompiler
         [:dmavar, matches[1].to_i, matches[2].present? ? matches[2].to_sym : nil ].compact
       elsif matches = name.match(%r(^str_(\d+)))
         [:var_string8, matches[1].to_i]
+      elsif matches = name.match(%r(^str8_(\d+)))
+        [:var_string8, matches[1].to_i]
+      # TEST: does this work?
+      elsif matches = name.match(%r(^str16_(\d+)))
+        [:var_string16, matches[1].to_i]
       else
         gvar(name)
       end

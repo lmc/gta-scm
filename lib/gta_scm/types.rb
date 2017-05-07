@@ -85,7 +85,10 @@ module GtaScm::Types
     return nil if value.nil?
     if o_type == :istring8
       # return nil #FIXME? why nil??
-      value[0...7]+"\x00"
+      value[0...7].ljust(8,"\x00")
+    elsif o_type == :string16
+      # return nil #FIXME? why nil??
+      value[0...15].ljust(16,"\x00")
     else
       if char = TYPE_PACK_CHARS[o_type]
         [value].pack(char)

@@ -64,3 +64,6 @@
 
 (labeldef collectables_finder_manager)
 (IncludeRuby "collectables-finder-manager" (external true))
+
+% (labeldef map_menu)
+% (IncludeRuby "inject/map-menu" (external true))
