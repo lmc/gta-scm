@@ -889,6 +889,35 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+
+
+    describe "tail call optimisation" do
+        let(:ruby){ <<-RUBY
+          foo = routine do
+            wait(0)
+          end
+          bar = routine do
+            wait(1)
+            foo()
+          end
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+            (goto ((label label_2)))
+            (labeldef label_1)
+            (labeldef routine_foo)
+            (wait ((int8 0)))
+            (return)
+            (labeldef label_2)
+            (goto ((label label_4)))
+            (labeldef label_3)
+            (labeldef routine_bar)
+            (wait ((int8 1)))
+            (goto ((label label_1)))
+            (labeldef label_4)
+          LISP
+        }
+      end
   end
 
   context "strings " do

@@ -19,12 +19,43 @@ Unused/debug code:
 
 intro mission launch site: 59976
 
+reserve space for external global vars
+whole external script shares the space
+lvar31 = thread ID
+lvar30 = (external address + external var offset) / 4
+access vars with: $_0[lvar30],$_4[lvar30],$_8[lvar30]
+
 
 reserve global vars for temp compiler vars
+spatial index script
+  - array of active points
+  - run init/loop/kill callbacks 
+  - how to do persistence/vars/execution? separate script instances?
+  - global array of event ID => timers (timers are packed int8 minutes until event can trigger)
+  - local array of active event IDs
+  - when near event location:
+    - if local array slot free
+      - add ID to local array
+      - set global timer to 255 (executing)
+      - spawn script with event details as args
+    - else
+      - do nothing (no free slots)
+  - each tick:
+    - for event ID in local array
+      - if global array [event ID] == 255
+        - do nothing (script executing)
+      - else
+        - remove event ID from local array
+  - each minute:
+    - subtract 1 from each timer in global array
+  - each script:
+    - receives arguments: event ID, xyzh coords, trigger distance
+    - expected to shut down when outside distance
+    - set global array [event ID] to next timeout in minutes 
+for loop syntax
+compile standard lib into externals, ease limit on main code
 
-verify img file actually generates valid img files (from-scratch ones do not seem to work, only appending to an existing img)
-
-
+global vars: 560 bytes @ 21700 = 140 int32s
 
 Things needed for release:
 

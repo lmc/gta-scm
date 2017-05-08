@@ -44,10 +44,6 @@ module GtaScm::Assembler::Feature::ExportSymbols
   def notice_dmavar(address, type = nil, tokens = nil)
     super
 
-    if address == 7120
-      # debugger
-    end
-
     if tokens && tokens[2]
       self.gvars_names[address] = tokens[2]
     end

@@ -677,7 +677,14 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         else
           arg.set( arg_tokens[0] , arg_tokens[1] )
         end
-      when :var_array, :lvar_array
+      when :var_array
+        if arg_tokens[1].is_a?(Symbol)
+          self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
+          arg.set_array(arg_tokens[0],0xEEEE,arg_tokens[2],arg_tokens[3],arg_tokens[4])
+        else
+          arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
+        end
+      when :lvar_array
         arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       when :dereference
         debugger

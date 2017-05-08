@@ -27,7 +27,7 @@ end
 
 do_fade(100,1)
 
-city = 1
+city = 0
 
 # task_jetpack(-1)
 # goto(1)
@@ -45,8 +45,10 @@ elsif city == 3
   t_y = 1390.0
   t_z = 11.0
 end
-set_time_of_day(23,30)
-set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+if city > 0
+  set_time_of_day(23,30)
+  set_char_coordinates(PLAYER_CHAR,t_x,t_y,t_z)
+end
 # task_jetpack(PLAYER_CHAR)
 # give_weapon_to_char(PLAYER_CHAR,41,1000)
 

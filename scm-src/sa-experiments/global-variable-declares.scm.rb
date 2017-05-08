@@ -12,5 +12,9 @@ if emit(false)
 
   SOUND_BING = 1057
   SOUND_BONG = 1058
+
+  SPATIAL_ENTRIES = 8
+  $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
+  $spatial_index = 0
   
 end

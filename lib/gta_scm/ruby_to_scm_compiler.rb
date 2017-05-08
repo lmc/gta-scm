@@ -492,12 +492,28 @@ class GtaScm::RubyToScmCompiler
   def record_array_assign(node)
     array_scope = node.type == :gvasgn ? :var_array : :lvar_array
     variable_name = node.children[0] # $:times
-    array_size = node.children[1].children[2].children[0]
+    if node.children[1].children[2].type == :const
+      if !self.constants_to_values[ node.children[1].children[2].children[1] ]
+        raise "undefined constant #{node.children[1].children[2].children[1]}"
+      end
+      array_size = self.constants_to_values[ node.children[1].children[2].children[1] ][1]
+    else
+      array_size = node.children[1].children[2].children[0]
+    end
     array_type = node.children[1].children[0].children[1] == :IntegerArray ? :int32 : :float32
+
+    instructions = []
 
     if array_scope == :var_array
       self.var_arrays ||= {}
       self.var_arrays[variable_name] = [array_scope,variable_name,array_size,array_type]
+      # debugger
+      # reserve gvar slots
+      array_size.times do |i|
+        i = i == 0 ? "" : "_#{i}"
+        var = gvar(:"#{variable_name}#{i}",array_type)
+        instructions << [:set_var_int,[var,[:int8,0]]]
+      end
     else
       self.lvar_arrays ||= {}
       self.lvar_arrays[variable_name] = [array_scope,variable_name,array_size,array_type]
@@ -505,19 +521,27 @@ class GtaScm::RubyToScmCompiler
       # reserve lvar slots
       array_size.times do |i|
         i = i == 0 ? "" : "_#{i}"
-        lvar(:"#{variable_name}#{i}",array_type)
+        var = lvar(:"#{variable_name}#{i}",array_type)
+        instructions << [:set_lvar_int,[var,[:int8,0]]]
       end
     end
 
-    return []
+    return instructions
   end
 
   def handle_routine_declare(node,args)
     code = []
     code << [:labeldef, args[:export]] if args[:export]
     code << [:labeldef, :"routine_#{args[:name]}"]
-    code += transform_node(node.children[1].children[2])
+    body = transform_node(node.children[1].children[2])
+    body = optimise_tail_call(body)
+    code += body
     code
+  end
+
+  def optimise_tail_call(body)
+    # debugger
+    body
   end
 
   ASSIGNMENT_OPERATORS = {
@@ -554,7 +578,10 @@ class GtaScm::RubyToScmCompiler
           right = emit_value(node.children[3])
           return [ :"set_lvar_#{array_type}" , [ left , right ] ]
         elsif array_def = self.var_arrays[array_name]
-          raise "?SDfsd?"
+          array_type = array_def[3] == :int32 ? :int : :float
+          left = emit_value(node)
+          right = emit_value(node.children[3])
+          return [ :"set_var_#{array_type}" , [ left , right ] ]
         end
       else
         debugger
@@ -884,6 +911,28 @@ class GtaScm::RubyToScmCompiler
 
         opcode_name = "#{not_operator}is_"
 
+        if node.type == :send && node.children[0].type == :send && node.children[0].children[1] == :[]
+          if node.children[0].children[0].type == :gvar
+            # gvar array compare
+            array_name = node.children[0].children[0].children[0]
+            array_def = self.var_arrays[ array_name ]
+            raise "no lvar array #{array_name}" if !array_def
+            array_type = array_def[3]
+            left_type = :gvar
+            left_value = emit_value(node.children[0])
+            left_var_type = array_type == :int32 ? :int : :float
+          else
+            # lvar array compare
+            array_name = node.children[0].children[0].children[0]
+            array_def = self.lvar_arrays[ array_name ]
+            raise "no lvar array #{array_name}" if !array_def
+            array_type = array_def[3]
+            left_type = :lvar
+            left_value = emit_value(node.children[0])
+            left_var_type = array_type == :int32 ? :int : :float
+          end
+        end
+
         if node.children[0].type == :const && node.children[0].children[1] == :TIMER_A
           left_value = [:lvar, 32, :timer_a]
           left_var_type = :int
@@ -895,15 +944,15 @@ class GtaScm::RubyToScmCompiler
           left_type = :lvar
           opcode_name << "#{left_var_type}_lvar"
         elsif left_type == :lvar
-          left_value = lvar(node.children[0].children[0])
-          left_var_type = self.lvar_names_to_types[ node.children[0].children[0] ]
+          left_value ||= lvar(node.children[0].children[0])
+          left_var_type ||= self.lvar_names_to_types[ node.children[0].children[0] ]
           raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
           opcode_name << "#{left_var_type}_lvar"
         elsif left_type == :gvar
-          left_value = gvar(node.children[0].children[0])
+          left_value ||= gvar(node.children[0].children[0])
           # left_var_type = self.gvar_names_to_types[ node.children[0].children[0] ]
           # raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
-          left_var_type = :int
+          left_var_type ||= :int
           opcode_name << "#{left_var_type}_var"          
         else
           debugger
@@ -1078,12 +1127,15 @@ class GtaScm::RubyToScmCompiler
         # debugger
         if array_type == :var_array && (array_def = self.var_arrays[ node.children[0].children[0] ])
           [ :var_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
+        elsif array_var.type == :send && array_var.children[1] == :_0
+          [ :lvar_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
         elsif array_var.type == :gvar && array_var.children[0] == :$_0
           [ :var_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
         elsif array_type == :lvar_array && (array_def = self.lvar_arrays[ node.children[0].children[0] ])
           # debugger
           [ :lvar_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
         else
+          debugger
           raise "undefined array #{node.inspect}"
         end
       else

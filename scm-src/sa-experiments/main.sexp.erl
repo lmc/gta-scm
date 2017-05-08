@@ -31,19 +31,6 @@
 (IncludeBin ("games/san-andreas/data/script/main.scm" 56153 56728))
 % =====================================
 
-% == Main Loop Extension ==============
-% Global vars used:
-% 4484 - watchdog timeout
-% 4488 - watchdog timer
-(Include "main-loop-ext")
-% =====================================
-
-% == Save Thread Extension ============
-% Global vars used: 
-% 4496 - code state: 0 = needs init, 1 = init'd
-(Include "save-ext")
-% =====================================
-
 % == Watchdog Thread ==================
 % Global vars used:
 % 4484 - watchdog timeout
@@ -118,6 +105,20 @@
 
 % =====================================
 
+
+
+% == Main Loop Extension ==============
+% Global vars used:
+% 4484 - watchdog timeout
+% 4488 - watchdog timer
+(Include "main-loop-ext")
+% =====================================
+
+% == Save Thread Extension ============
+% Global vars used: 
+% 4496 - code state: 0 = needs init, 1 = init'd
+(Include "save-ext")
+% =====================================
 
 
 % == External Loader ==================

@@ -39,7 +39,10 @@ module GtaScm::Assembler::Feature::VariableAllocator
 
     self.var_touchups.each do |var_name|
       type = self.var_touchups_types[var_name]
-      # debugger
+      if var_name.to_s =~ /spatial/
+        # debugger
+        var_name
+      end
       allocated_offset = self.next_var_slot(type,var_pool)
       self.allocated_vars[var_name] = allocated_offset
       self.define_touchup(var_name,allocated_offset)
