@@ -1,8 +1,10 @@
 script_name("xdetcar")
 
 MAX_CARS = 10
-SEARCH_BOUNDS_XY_1 = -45.0
-SEARCH_BOUNDS_XY_2 =  45.0
+# SEARCH_BOUNDS_XY_1 = -45.0
+# SEARCH_BOUNDS_XY_2 =  45.0
+SEARCH_BOUNDS_XY_1 = -5.0
+SEARCH_BOUNDS_XY_2 =  5.0
 SEARCH_BOUNDS_Z_1 =   25.0
 SEARCH_BOUNDS_Z_2 =  -25.0
 SEARCH_BOUNDS_RADIUS = 25.0
@@ -21,6 +23,11 @@ if emit(false)
   tmp_y2 = 0.0
   tmp_z2 = 0.0
   current_car_model = 0
+  driver = 0
+  driver_shitty = 0
+  player_car = 0
+  touching_car = 0
+  speed = 0.0
   cars = IntegerArray.new(10)
   # cars_00 = 0
   # cars_01 = 0
@@ -76,6 +83,48 @@ get_next_free_index = routine do
   end
 end
 
+get_car_speed = routine do
+  tmp_x2,tmp_y2,tmp_z2 = get_car_speed_vector(current_car)
+  abs_lvar_float(tmp_x2)
+  abs_lvar_float(tmp_y2)
+  abs_lvar_float(tmp_z2)
+  speed = tmp_x2
+  speed += tmp_y2
+  speed += tmp_z2
+end
+
+check_driver_shitty = routine do
+  driver_shitty = 0
+  player_car = get_car_char_is_using(PLAYER_CHAR)
+
+  if player_car > 0
+
+    if touching_car > 0
+      if !is_car_touching_car(player_car,touching_car)
+        touching_car = -1
+      end
+    end
+
+    if is_car_touching_car(player_car,current_car)
+
+      if touching_car == current_car
+        get_car_speed()
+        if speed > 10.0 && TIMER_A > 100
+          driver_shitty = 1
+        elsif speed > 0.1 && TIMER_A > 1000
+          driver_shitty = 1
+        end
+      else
+        touching_car = current_car
+        TIMER_A = 0
+        driver_shitty = 0
+      end
+
+    end
+  end
+
+end
+
 loop do
   wait(30)
   cleanup_dead_cars()
@@ -111,6 +160,13 @@ loop do
           # can't spawn any more scripts safely, do nothing
           wait(30)
         else
+
+          driver = get_driver_of_car(current_car)
+          check_driver_shitty()
+          if driver_shitty == 1
+            start_new_streamed_script(78,9,current_car)
+            tmp_i = 1
+          end
 
           # taxi
           if current_car_model == 420

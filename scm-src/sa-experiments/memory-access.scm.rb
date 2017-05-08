@@ -23,8 +23,8 @@ STEAM_OSX_3_1_EXE_OFFSET = 4194304
 # The header is "MZ\x90\x00"
 STEAM_OSX_3_1_EXE_HEADER = 9460301
 
-idx = 10664568 # STEAM_OSX_3_1_SCM_OFFSET
-idx *= -1
+idx = 0
+idx -= 10664568 # STEAM_OSX_3_1_SCM_OFFSET
 idx += 4194304 # STEAM_OSX_3_1_EXE_OFFSET
 
 # divide by 4 because the array accessor thinks it's an array of int32s (4 bytes)

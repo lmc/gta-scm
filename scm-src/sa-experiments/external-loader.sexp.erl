@@ -31,7 +31,7 @@
   % spawn scripts here
 
   % menu
-  (start_new_streamed_script ((int8 78) (int8 0) (end_var_args)))
+  % (start_new_streamed_script ((int8 78) (int8 0) (end_var_args)))
 
   % detect cars
   (start_new_streamed_script ((int8 78) (int8 1) (end_var_args)))
@@ -47,6 +47,9 @@
 
   % spatial
   (start_new_streamed_script ((int8 78) (int8 6) (end_var_args)))
+
+  % r1 menu
+  (start_new_streamed_script ((int8 78) (int8 8) (end_var_args)))
 
   (wait ((int16 1000)))
 (labeldef external_loader_idle_1)

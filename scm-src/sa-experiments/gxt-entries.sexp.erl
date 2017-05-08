@@ -48,3 +48,6 @@
 (DefineGxt "MAIN" "GSCM297" "SW Corner")
 (DefineGxt "MAIN" "GSCM298" "San Fierro")
 (DefineGxt "MAIN" "GSCM299" "Los Venturas")
+
+(DefineGxt "MAIN" "GSCM300" "Health: ~1~")
+(DefineGxt "MAIN" "GSCM301" "Max Health: ~1~")

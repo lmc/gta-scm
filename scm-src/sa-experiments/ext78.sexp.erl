@@ -33,6 +33,14 @@
 (goto_if_false ((mission_label spatial_script)))
 
 (andor ((int8 0)))
+(not_is_int_lvar_equal_to_number ((lvar 0) (int8 8)))
+(goto_if_false ((mission_label r1_menu)))
+
+(andor ((int8 0)))
+(not_is_int_lvar_equal_to_number ((lvar 0) (int8 9)))
+(goto_if_false ((mission_label shitty_driver_smite)))
+
+(andor ((int8 0)))
 (not_is_int_lvar_equal_to_number ((lvar 0) (int16 420)))
 (goto_if_false ((mission_label car_feature_420_taxi)))
 
@@ -81,3 +89,9 @@
 
 (labeldef spatial_script)
 (IncludeRuby "spatial-script" (external true))
+
+(labeldef r1_menu)
+(IncludeRuby "r1-menu" (external true))
+
+(labeldef shitty_driver_smite)
+(IncludeRuby "smite" (external true))
