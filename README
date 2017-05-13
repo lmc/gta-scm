@@ -91,7 +91,7 @@ supply[area][drug] = 0-15 (bitpack as 4 bits = 8 ints in int32)
 demand[area][drug] = 0-15
 
 demand has constant base, variable +/- effects
-supply is
+supply has base, can be changed by player deals (with decay to base), variable +/- effects
 
 bootstrap script code required:
 

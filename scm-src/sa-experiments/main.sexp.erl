@@ -26,9 +26,11 @@
 
 
 % == Initial Main Code ================
-% skip over 29 bytes of jumped-over code
+% insert initial MAIN code
 (IncludeBin ("games/san-andreas/data/script/main.scm" 55976 56124))
+% skip over 29 bytes of jumped-over code (56124 - 56153)
 (IncludeBin ("games/san-andreas/data/script/main.scm" 56153 56728))
+% skip over 1217 bytes of jumped-over code (56728 - 57945)
 % =====================================
 
 % == Watchdog Thread ==================
@@ -66,7 +68,6 @@
 % =====================================
 
 % == Patches ==========================
-
 (PadUntil (57945))
 
 (IncludeBin ("games/san-andreas/data/script/main.scm" 57945 59976))
@@ -100,7 +101,17 @@
 (gosub ((label save_thread_ext)))
 (PadUntil (88027))
 
-(IncludeBin ("games/san-andreas/data/script/main.scm" 88027 194125))
+% Unused export debug code
+(IncludeBin ("games/san-andreas/data/script/main.scm" 88027 127559))
+% (goto ((label label_127573)))
+(goto ((int32 129490)))
+(goto ((int32 129490)))
+(PadUntil (129478))
+
+% unused gf debug code
+(IncludeBin ("games/san-andreas/data/script/main.scm" 129478 152364))
+(PadUntil (154839))
+(IncludeBin ("games/san-andreas/data/script/main.scm" 154839 194125))
 % End of MAIN code (194,125 bytes used out of 200,000 loadable)
 
 % =====================================

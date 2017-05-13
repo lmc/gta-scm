@@ -434,11 +434,18 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         when :Padding
           GtaScm::Node::Raw.new( [0] * tokens[1][0] )
         when :PadUntil
-          zeros = tokens[1][0] - self.nodes.next_offset
-          end_offset = offset + zeros
-          logger.debug "Inserting #{zeros} zeros #{self.nodes.next_offset} until #{end_offset}"
-          self.paddings[end_offset] = zeros
-          GtaScm::Node::Raw.new( [0] * zeros )
+          # FIXME: if modulo 2 == 1, add a goto (7 bytes) at the start so it aligns and disassembles cleanly
+          zeros_needed = tokens[1][0] - self.nodes.next_offset
+          end_offset = offset + zeros_needed
+          bytes = []
+          if zeros_needed % 2 == 1
+            offset_bytes = GtaScm::Types.value2bin(end_offset,:int32).bytes
+            bytes = [ 0x02, 0x00, 0x01 ] + offset_bytes
+          end
+          logger.debug "Inserting #{zeros_needed} bytes of padding #{self.nodes.next_offset} until #{end_offset}"
+          bytes += ( [0] * (zeros_needed - bytes.size) )
+          self.paddings[end_offset] = bytes.size
+          GtaScm::Node::Raw.new( bytes )
         when :IncludeBin
           bytes = File.read(tokens[1][0],(tokens[1][2] - tokens[1][1]),tokens[1][1])
           GtaScm::Node::Raw.new( bytes.bytes )

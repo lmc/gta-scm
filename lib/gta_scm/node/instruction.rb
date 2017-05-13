@@ -63,7 +63,9 @@ class GtaScm::Node::Instruction < GtaScm::Node::Base
         elsif argument.istring?
           [:istring8,argument.value]
         elsif self.jump_argument?(idx)
-          if argument.value < 0
+          if argument.arg_type_sym == :var || argument.arg_type_sym == :lvar
+            [argument.arg_type_sym,argument.value]
+          elsif argument.value < 0
             [:mission_label,dis.label_for_offset(argument.value,self.offset)]
           else
             [:label,dis.label_for_offset(argument.value,self.offset)]

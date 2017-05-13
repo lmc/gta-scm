@@ -512,6 +512,7 @@ class GtaScm::RubyToScmCompiler
       array_size.times do |i|
         i = i == 0 ? "" : "_#{i}"
         var = gvar(:"#{variable_name}#{i}",array_type)
+        # var = [:var_array, var[0], 0, [array_type,]]
         instructions << [:set_var_int,[var,[:int8,0]]]
       end
     else
@@ -527,6 +528,7 @@ class GtaScm::RubyToScmCompiler
     end
 
     return instructions
+    # return []
   end
 
   def handle_routine_declare(node,args)

@@ -11,7 +11,7 @@ if emit(false)
 
   _return_value = 0
 
-  _d1 = 0.0
+  _distance = 0.0
 
   SPATIAL_ENTRIES = 8
   $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
@@ -20,6 +20,8 @@ if emit(false)
   active_events = IntegerArray.new(ACTIVE_EVENTS_MAX)
 
   EVENTS_MAX = 2
+
+  need_to_decrement_timers = false
 end
 
 routines do
@@ -85,12 +87,25 @@ routines do
     end
   end
 
+  read_event_timer = routine do
+    set_lvar_int_to_var_int(event_timer,$spatial_timers[event_idx])
+  end
+
+  write_event_timer = routine do
+    set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
+  end
 
 end
 
 clear_array()
 loop do
   wait(0)
+
+  need_to_decrement_timers = false
+  if TIMER_A > 1000
+    TIMER_A = 0
+    need_to_decrement_timers = true
+  end
 
   if is_player_playing(PLAYER)
 
@@ -102,8 +117,8 @@ loop do
 
       get_event()
 
-      _d1 = get_distance_between_coords_3d($player_x,$player_y,$player_z,event_x,event_y,event_z)
-      if _d1 < event_radius
+      _distance = get_distance_between_coords_3d($player_x,$player_y,$player_z,event_x,event_y,event_z)
+      if _distance < event_radius
         is_event_idx_in_array()
         if _return_value == 1
           # do nothing (script running)
@@ -123,6 +138,12 @@ loop do
             end
           end
 
+        end
+      elsif need_to_decrement_timers == true
+        read_event_timer()
+        if event_timer > 0 && event_timer != 255
+          event_timer -= 1
+          write_event_timer()
         end
       end
 
@@ -148,20 +169,22 @@ loop do
       break if _j >= EVENTS_MAX
     end
 
-    # tick down timers once a second
-    if TIMER_A > 1_000
-      TIMER_A = 0
-      event_idx = 0
-      loop do
-        set_lvar_int_to_var_int(event_timer,$spatial_timers[event_idx])
-        if event_timer > 0 && event_timer != 255
-          event_timer -= 1
-          set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
-        end
-        event_idx += 1
-        break if event_idx >= EVENTS_MAX
-      end
-    end
+    # # tick down timers once a second
+    # if TIMER_A > 1_000
+    #   TIMER_A = 0
+    #   event_idx = 0
+    #   loop do
+    #     set_lvar_int_to_var_int(event_timer,$spatial_timers[event_idx])
+    #     # TODO: don't tick down timer if within radius?
+    #     # TODO: do this check when we're already checking distance
+    #     if event_timer > 0 && event_timer != 255
+    #       event_timer -= 1
+    #       set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
+    #     end
+    #     event_idx += 1
+    #     break if event_idx >= EVENTS_MAX
+    #   end
+    # end
 
   end
 end

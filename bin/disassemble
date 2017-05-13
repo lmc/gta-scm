@@ -8,7 +8,7 @@
 # NEXT:
 # ID integers from .ide files
 
-USE_CACHE = true
+USE_CACHE = false
 
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"
@@ -95,6 +95,7 @@ if format
   options = {
     label_names: "./games/san-andreas/label_names.txt",
     variable_names: "./games/san-andreas/variable_names.txt",
+    mission_names: "./games/san-andreas/mission_names.txt",
   }
   dis = GtaScm::Disassembler.const_get(format).new(scm,options)
 

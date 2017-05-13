@@ -10,6 +10,7 @@ class GtaScm::Disassembler::Base
 
   attr_accessor :label_names
   attr_accessor :variable_names
+  attr_accessor :mission_names
 
   def initialize(scm, options = {})
     self.scm = scm
@@ -36,6 +37,16 @@ class GtaScm::Disassembler::Base
         offset,name = line.strip.split("=")
         [offset.to_i,name]
       end ]
+    end
+
+    self.mission_names = {}
+    if options[:mission_names]
+      self.mission_names = Hash[ File.read(options[:mission_names]).lines.map do |line|
+        next if line.strip.blank?
+        offset,name = line.strip.split("=")
+        name.gsub!(/,/,'_')
+        [offset.to_i,name]
+      end.compact ]
     end
   end
 
@@ -157,7 +168,7 @@ class GtaScm::Disassembler::Base
   end
 
   def mission_name(id)
-    "mission"
+    self.mission_names[id] || "mission"
   end
 
   require 'fileutils'
