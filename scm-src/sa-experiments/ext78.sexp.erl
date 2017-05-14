@@ -88,7 +88,7 @@
 (IncludeRuby "spatial" (external true))
 
 (labeldef spatial_script)
-(IncludeRuby "spatial-script" (external true))
+(IncludeRuby "spatials/spatial-001-test" (external true))
 
 (labeldef r1_menu)
 (IncludeRuby "r1-menu" (external true))
