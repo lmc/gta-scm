@@ -42,8 +42,9 @@ if emit(false)
   CHAR_EVENT_VEHICLE_DAMAGE_COLLISION = 73
   CHAR_EVENT_VEHICLE_ON_FIRE = 79
 
-  SPATIAL_ENTRIES = 8
-  $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
-  $spatial_index = 0
-  
 end
+
+SPATIAL_ENTRIES = 8
+$spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
+$spatial_index = 0
+

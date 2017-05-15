@@ -124,13 +124,15 @@ loop do
           # do nothing (script running)
           nop()
         else
-          set_lvar_int_to_var_int(event_timer,$spatial_timers[event_idx])
+          # set_lvar_int_to_var_int(event_timer,$spatial_timers[event_idx])
+          read_event_timer()
           if event_timer == 0
             add_event_idx_to_array()
             if _return_value == 1
               # spawn script
               event_timer = 255
-              set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
+              write_event_timer()
+              # set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
               # 
               start_new_streamed_script(78,7,event_idx,event_x,event_y,event_z,event_radius)
             else
@@ -140,11 +142,15 @@ loop do
           end
 
         end
-      elsif need_to_decrement_timers == true
-        read_event_timer()
-        if event_timer > 0 && event_timer != 255
-          event_timer -= 1
-          write_event_timer()
+      else
+        # only decrement the timer if we're outside the distance for it
+        # avoids events respawning when player is still hanging around
+        if need_to_decrement_timers == true
+          read_event_timer()
+          if event_timer > 0 && event_timer != 255
+            event_timer -= 1
+            write_event_timer()
+          end
         end
       end
 

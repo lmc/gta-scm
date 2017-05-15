@@ -125,6 +125,21 @@ describe GtaScm::RubyToScmCompiler do
 
     end
 
+    context "for temp vars" do
+      context "should compile temp vars as global vars from a pool" do
+        let(:ruby){ <<-RUBY
+          temp i = 1
+          wait(i)
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((var _temp_i_0001) (int8 1)))
+          (wait ((var _temp_i_0001)))
+        LISP
+        }
+      end
+    end
+
     context "smallest possible immediate size" do
       context "ints" do
         let(:ruby){"a = 0; b = 127; c = 128; d = -128; e = -129; f = 32767; g = 32768; h = -32768; i = -32769"}
@@ -933,6 +948,7 @@ describe GtaScm::RubyToScmCompiler do
     compiler.scm = @scm
     scm = compiler.transform_node(parsed)
     f = scm.map do |node|
+      puts node.inspect
       Elparser::encode(node)
     end
     f.join("\n")

@@ -60,6 +60,8 @@ do_spawn = 0
 loop do
   wait 0
 
+  temp test = 0
+
   if is_player_playing(PLAYER)
     playing = 1
     # clear_wanted_level(PLAYER)

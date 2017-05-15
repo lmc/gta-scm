@@ -5,6 +5,7 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :label_prefix
   attr_accessor :external
   attr_accessor :metadata
+  attr_accessor :temp_var_assignments
 
   def initialize
     self.local_method_names_to_labels = {}
@@ -12,6 +13,7 @@ class GtaScm::RubyToScmCompiler
     self.var_arrays = {}
     self.lvar_arrays = {}
     self.routines_block = false
+    self.temp_var_assignments = {}
     install_constants!
   end
 
@@ -693,16 +695,33 @@ class GtaScm::RubyToScmCompiler
     # when assigning cross-scope (ie. setting global var to local var)
     # the opcode names are all fucked-up
     # so use regexes to fix it (???!!!)
+    # debugger
     if operator == :"*" || operator == :"/"
       # debugger
       opcode_name.gsub!(/([a-z]+)_(val)_([a-z]+)_((int|float)_l?var)/,"\\1_\\4_\\3_\\2")
-    else
+    # elsif operator == :"="
+    #   debugger;
+    #   'sdf'
+    # else
       opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
     end
 
     # debugger
     return [ opcode_name.to_sym , [left_value,right_value] ]
 
+  end
+
+  def assign_temp_var(var_node)
+    $ruby_to_scm_compiler_temp_var_slot ||= 0
+    $ruby_to_scm_compiler_temp_var_slot  +=  1
+
+    original_var_name = var_node.children[0]
+
+    gvar_name = :"_temp_#{original_var_name}_#{$ruby_to_scm_compiler_temp_var_slot.to_s.rjust(4,"0")}"
+    self.temp_var_assignments[original_var_name] = [:var,gvar_name]
+
+    gvar_node = Parser::AST::Node.new(:gvasgn,[gvar_name,var_node.children[1]])
+    transform_node(gvar_node)
   end
 
   attr_accessor :emit_opcode_call_callback
@@ -716,10 +735,10 @@ class GtaScm::RubyToScmCompiler
 
     if method_label = self.local_method_names_to_labels["#{opcode_name}"]
       [:gosub,[[self.label_type,method_label]]]
+    elsif node.type == :send && node.children[1] == :temp
+      # temp foo = 1
+      assign_temp_var(node.children[2]).andand[0]
     else
-
-
-
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
       if node.children[1] == :[]=
@@ -1103,7 +1122,11 @@ class GtaScm::RubyToScmCompiler
       end
       # [:vlstring,node.children[0].size,node.children[0]]
     when :lvar
-      lvar(node.children[0])
+      if temp_var = self.temp_var_assignments[ node.children[0] ]
+        temp_var
+      else
+        lvar(node.children[0])
+      end
     when :gvar
       name = node.children[0].to_s.gsub(%r(^\$),'')
       if matches = name.match(%r(^_(\d+)_?(.*)?))

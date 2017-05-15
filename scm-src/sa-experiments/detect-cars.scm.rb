@@ -93,6 +93,7 @@ get_car_speed = routine do
   speed += tmp_z2
 end
 
+# Useful?: HAS_CAR_BEEN_DAMAGED_BY_CAR
 check_driver_shitty = routine do
   driver_shitty = 0
   player_car = get_car_char_is_using(PLAYER_CHAR)
