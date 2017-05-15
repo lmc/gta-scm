@@ -30,16 +30,18 @@ module GtaScm::Assembler::Feature::VariableAllocator
     allocated_offset = nil
     return if self.allocated_vars.present?
 
-    var_pool = self.vars_to_use.values.flatten.uniq
+    var_pool = self.vars_to_use.reject{|k,v| k =~ /temp/}.values.flatten.uniq
+    tmp_var_pool = self.vars_to_use.select{|k,v,| k =~ /temp/}.values.flatten.uniq
 
-    if self.parent
-      # debugger
-      # self.parent.var_touchups
-    end
+    # debugger
 
     self.var_touchups.each do |var_name|
       type = self.var_touchups_types[var_name]
-      allocated_offset = self.next_var_slot(type,var_pool)
+      if var_name =~ /temp/
+        allocated_offset = self.next_var_slot(type,tmp_var_pool)
+      else
+        allocated_offset = self.next_var_slot(type,var_pool)
+      end
       self.allocated_vars[var_name] = allocated_offset
       self.define_touchup(var_name,allocated_offset)
     end

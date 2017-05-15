@@ -484,6 +484,28 @@ describe GtaScm::RubyToScmCompiler do
     end
 
 
+    describe "vector classes" do
+      context "with a assignment from a variable" do
+        let(:ruby){ <<-RUBY
+          coords = Vector3.new
+          coords = get_char_coordinates(PLAYER_CHAR)
+          coords.z += 10.0
+          car = create_car(420,coords)
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_float ((lvar 0 coords) (float32 0.0)))
+          (set_lvar_float ((lvar 1 coords_1) (float32 0.0)))
+          (set_lvar_float ((lvar 2 coords_2) (float32 0.0)))
+          (get_char_coordinates ((dmavar 12) (lvar 0 coords_x) (lvar 1 coords_y) (lvar 2 coords_z)))
+          (add_val_to_float_lvar ((lvar 2 coords_2) (float32 10.0)))
+          (create_car ((int16 420) (lvar 0 coords) (lvar 1 coords_1) (lvar 2 coords_2) (lvar 3 car)))
+        LISP
+        }
+      end
+    end
+
+
   end
 
   describe "compares" do
