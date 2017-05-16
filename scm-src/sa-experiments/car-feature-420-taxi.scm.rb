@@ -10,12 +10,14 @@ if emit(false)
   this_car = 0            # lvar 1 used for soft-ref to this car
   blip = 0
 
-  tmp_x = 0.0
-  tmp_y = 0.0
-  tmp_z = 0.0
-  tmp_x2 = 0.0
-  tmp_y2 = 0.0
-  tmp_z2 = 0.0
+  # tmp_x = 0.0
+  # tmp_y = 0.0
+  # tmp_z = 0.0
+  coords1 = Vector3.new
+  # tmp_x2 = 0.0
+  # tmp_y2 = 0.0
+  # tmp_z2 = 0.0
+  coords2 = Vector3.new
   tmp_h = 0.0
 
   player_distance = 0.0
@@ -76,25 +78,25 @@ cleanup_and_exit = routine do
 end
 
 get_player_distance_from_taxi = routine do
-  tmp_x, tmp_y, tmp_z  = get_char_coordinates(PLAYER_CHAR)
-  tmp_x2,tmp_y2,tmp_z2 = get_car_coordinates(this_car)
-  player_distance = get_distance_between_coords_3d(tmp_x2,tmp_y2,tmp_z2,tmp_x,tmp_y,tmp_z)
+  coords1 = get_char_coordinates(PLAYER_CHAR)
+  coords2 = get_car_coordinates(this_car)
+  player_distance = get_distance_between_coords_3d(coords2,coords1)
 end
 
 get_player_distance_from_destination = routine do
-  tmp_x2,tmp_y2,tmp_z2 = get_char_coordinates(PLAYER_CHAR)
-  player_distance = get_distance_between_coords_3d(tmp_x2,tmp_y2,tmp_z2,tmp_x,tmp_y,tmp_z)
+  coords2 = get_char_coordinates(PLAYER_CHAR)
+  player_distance = get_distance_between_coords_3d(coords2,coords1)
 end
 
 
 get_car_speed = routine do
-  tmp_x2,tmp_y2,tmp_z2 = get_car_speed_vector(this_car)
-  abs_lvar_float(tmp_x2)
-  abs_lvar_float(tmp_y2)
-  abs_lvar_float(tmp_z2)
-  speed = tmp_x2
-  speed += tmp_y2
-  speed += tmp_z2
+  coords2 = get_car_speed_vector(this_car)
+  abs_lvar_float(coords2.x)
+  abs_lvar_float(coords2.y)
+  abs_lvar_float(coords2.z)
+  speed = coords2.x
+  speed += coords2.y
+  speed += coords2.z
 end
 
 player_get_in_taxi = routine do
@@ -114,55 +116,55 @@ end
 get_destination_vars = routine do
   if destination_idx == 0
     set_var_text_label($str_7112,"GSCM251")
-    tmp_x,tmp_y,tmp_z,tmp_h = 2457.371, -1662.359, 13.146, 270.0
+    coords1,tmp_h = 2457.371, -1662.359, 13.146, 270.0
   elsif destination_idx == 1
     set_var_text_label($str_7112,"GSCM252")
-    tmp_x,tmp_y,tmp_z,tmp_h = 1818.4, -1865.2, 13.4, 180.0
+    coords1,tmp_h = 1818.4, -1865.2, 13.4, 180.0
   elsif destination_idx == 2
     set_var_text_label($str_7112,"GSCM253")
-    tmp_x,tmp_y,tmp_z,tmp_h = 1474.5, -1595.0, 13.16, 270.0
+    coords1,tmp_h = 1474.5, -1595.0, 13.16, 270.0
   elsif destination_idx == 3
     set_var_text_label($str_7112,"GSCM254") # airport
-    tmp_x,tmp_y,tmp_z,tmp_h = 1558.0, -2289.6, 13.1, 270.0
+    coords1,tmp_h = 1558.0, -2289.6, 13.1, 270.0
   elsif destination_idx == 4
     set_var_text_label($str_7112,"GSCM255") # verona beach
-    tmp_x,tmp_y,tmp_z,tmp_h = 408.75, -1175.464, 4.995, 270.0
+    coords1,tmp_h = 408.75, -1175.464, 4.995, 270.0
   elsif destination_idx == 5
     set_var_text_label($str_7112,"GSCM256") # vinewood studios
-    tmp_x,tmp_y,tmp_z,tmp_h = 930.5, -1215.0, 16.6, 180.0
+    coords1,tmp_h = 930.5, -1215.0, 16.6, 180.0
   elsif destination_idx == 6
     set_var_text_label($str_7112,"GSCM257") # underpass carpark
-    tmp_x,tmp_y,tmp_z,tmp_h = 1660.18, -1157.72, 23.4, 90.0
+    coords1,tmp_h = 1660.18, -1157.72, 23.4, 90.0
   elsif destination_idx == 7
     set_var_text_label($str_7112,"GSCM258") # glen park
-    tmp_x,tmp_y,tmp_z,tmp_h = 2035.45, -1258.35, 23.5, 90.0
+    coords1,tmp_h = 2035.45, -1258.35, 23.5, 90.0
   elsif destination_idx == 8
     set_var_text_label($str_7112,"GSCM259") # north-east los santos
-    tmp_x,tmp_y,tmp_z,tmp_h = 2415.92, -1253.675, 23.5, 90.0
+    coords1,tmp_h = 2415.92, -1253.675, 23.5, 90.0
   elsif destination_idx == 9
     set_var_text_label($str_7112,"GSCM260") # south-east los santos
-    tmp_x,tmp_y,tmp_z,tmp_h = 2854.23, -1842.0, 10.75, 352.0
+    coords1,tmp_h = 2854.23, -1842.0, 10.75, 352.0
   elsif destination_idx == 10
     set_var_text_label($str_7112,"GSCM261") # observatory
-    tmp_x,tmp_y,tmp_z,tmp_h = 1284.62, -2053.5, 58.5, 90.0
+    coords1,tmp_h = 1284.62, -2053.5, 58.5, 90.0
   elsif destination_idx == 11
     set_var_text_label($str_7112,"GSCM262") # palomino creek
-    tmp_x,tmp_y,tmp_z,tmp_h = 2340.8, 48.6, 26.1, 180.0
+    coords1,tmp_h = 2340.8, 48.6, 26.1, 180.0
   elsif destination_idx == 12
     set_var_text_label($str_7112,"GSCM263") # montgomery
-    tmp_x,tmp_y,tmp_z,tmp_h = 1349.875, 254.45, 19.2, 337.0
+    coords1,tmp_h = 1349.875, 254.45, 19.2, 337.0
   elsif destination_idx == 13
     set_var_text_label($str_7112,"GSCM296") # 
-    tmp_x,tmp_y,tmp_z,tmp_h = -2800.0, 2800.0, 19.2, 337.0
+    coords1,tmp_h = -2800.0, 2800.0, 19.2, 337.0
   elsif destination_idx == 14
     set_var_text_label($str_7112,"GSCM297") # 
-    tmp_x,tmp_y,tmp_z,tmp_h = -2700.0, -2700.0, 19.2, 337.0
+    coords1,tmp_h = -2700.0, -2700.0, 19.2, 337.0
   elsif destination_idx == 15
     set_var_text_label($str_7112,"GSCM298") # 
-    tmp_x,tmp_y,tmp_z,tmp_h = -2000.0, 300.0, 19.2, 337.0
+    coords1,tmp_h = -2000.0, 300.0, 19.2, 337.0
   elsif destination_idx == 16
     set_var_text_label($str_7112,"GSCM299") # 
-    tmp_x,tmp_y,tmp_z,tmp_h = 2000.0, 1500.0, 19.2, 337.0
+    coords1,tmp_h = 2000.0, 1500.0, 19.2, 337.0
   end
 end
 
@@ -235,11 +237,11 @@ DRIVE_MODE = 0
 DRIVE_MODE_ALT = 2
 start_driving_to_destination = routine do
   drive_mode = 0
-  task_car_drive_to_coord(driver,this_car,tmp_x,tmp_y,tmp_z,DRIVE_SPEED,0,0,DRIVE_MODE)
+  task_car_drive_to_coord(driver,this_car,coords1,DRIVE_SPEED,0,0,DRIVE_MODE)
   # http://www.gtamodding.com/wiki/00AE
   # set_car_driving_style(this_car,2)
 
-  set_up_skip(tmp_x,tmp_y,tmp_z,tmp_h)
+  set_up_skip(coords1,tmp_h)
 end
 
 handle_menu_keypress = routine do
@@ -350,13 +352,13 @@ loop do
         if driver > 0 && driver != PLAYER_CHAR && driver_shitty == 0 && passenger_count == 0
           set_taxi_lights(this_car,true)
           if speed < PICKUP_MAX_SPEED 
-            tmp_x,tmp_y,tmp_z = get_offset_from_car_in_world_coords(this_car, DOOR_1_X,DOOR_1_Y,DOOR_1_Z)
-            if locate_stopped_char_on_foot_3d(PLAYER_CHAR, tmp_x,tmp_y,tmp_z, DOOR_1_R,DOOR_1_R,DOOR_1_R, 1)
+            coords1 = get_offset_from_car_in_world_coords(this_car, DOOR_1_X,DOOR_1_Y,DOOR_1_Z)
+            if locate_stopped_char_on_foot_3d(PLAYER_CHAR, coords1, DOOR_1_R,DOOR_1_R,DOOR_1_R, 1)
               player_target_door_id = DOOR_1_ID
               player_get_in_taxi()
             end
-            tmp_x,tmp_y,tmp_z = get_offset_from_car_in_world_coords(this_car, DOOR_2_X,DOOR_2_Y,DOOR_2_Z)
-            if locate_stopped_char_on_foot_3d(PLAYER_CHAR, tmp_x,tmp_y,tmp_z, DOOR_2_R,DOOR_2_R,DOOR_2_R, 1)
+            coords1 = get_offset_from_car_in_world_coords(this_car, DOOR_2_X,DOOR_2_Y,DOOR_2_Z)
+            if locate_stopped_char_on_foot_3d(PLAYER_CHAR, coords1, DOOR_2_R,DOOR_2_R,DOOR_2_R, 1)
               player_target_door_id = DOOR_2_ID
               player_get_in_taxi()
             end
@@ -397,8 +399,8 @@ loop do
       handle_taxi_keypress()
 
       # arrived at destination ?
-      tmp_x2,tmp_y2,tmp_z2 = get_car_coordinates(this_car)
-      player_distance = get_distance_between_coords_3d(tmp_x,tmp_y,tmp_z,tmp_x2,tmp_y2,tmp_z2)
+      coords2 = get_car_coordinates(this_car)
+      player_distance = get_distance_between_coords_3d(coords1,coords2)
       get_car_speed()
       if player_distance < 10.0 && speed < 2.0
         player_exit_taxi()
@@ -408,9 +410,9 @@ loop do
     elsif player_taxi_state == 4
 
       # debounce the exit/entry, so we don't get back in immediately after exiting
-      tmp_x,tmp_y,tmp_z = get_char_coordinates(PLAYER_CHAR)
-      tmp_x2,tmp_y2,tmp_z2 = get_car_coordinates(this_car)
-      player_distance = get_distance_between_coords_3d(tmp_x,tmp_y,tmp_z,tmp_x2,tmp_y2,tmp_z2)
+      coords1 = get_char_coordinates(PLAYER_CHAR)
+      coords2 = get_car_coordinates(this_car)
+      player_distance = get_distance_between_coords_3d(coords1,coords2)
       if player_distance > 5.0
         player_taxi_state = 0
       end

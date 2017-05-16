@@ -265,10 +265,24 @@ class GtaScm::RubyToScmCompiler
   end
 
   def handle_multiple_assigns(node)
+    instructions = []
+    value_idx = 0
     node.children[0].children.each_with_index.map do |left,i|
-      right = node.children[1].children[i]
-      emit_n_var_assign(node,:lvar,left,right)[0]
+      if left.type == :lvasgn && self.lvar_objects[ left.children[0] ]
+        variable_name = left.children[0]
+        OBJECT_STRUCTURES[ self.lvar_objects[ variable_name ] ].each_pair do |property,type|
+          left = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+          right = node.children[1].children[value_idx]
+          value_idx += 1
+          instructions << emit_n_var_assign(node,:lvar,left,right)[0]
+        end
+      else
+        right = node.children[1].children[value_idx]
+        value_idx += 1
+        instructions << emit_n_var_assign(node,:lvar,left,right)[0]
+      end
     end
+    instructions
   end
 
   def emit_block(node)
@@ -807,8 +821,20 @@ class GtaScm::RubyToScmCompiler
         opcode_name = node.children[3].children[1]
         opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
       else
-        args = node.children[2..-1]
-        args.map! {|a| emit_value(a)}
+        # args = node.children[2..-1]
+        args = []
+        o_args = node.children[2..-1] || []
+        o_args.each {|a|
+          variable_name = a.children[0]
+          if a.type == :lvar && self.lvar_objects[ variable_name ]
+            OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+              var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+              args << emit_value(var)
+            end
+          else
+            args << emit_value(a)
+          end
+        }
       end
 
       # if args.nil? || opcode_def.arguments.nil?
@@ -1258,6 +1284,10 @@ class GtaScm::RubyToScmCompiler
           debugger
           raise "undefined array #{node.inspect}"
         end
+      # property access
+      elsif node.children[0].andand.type == :lvar && node.children[1].is_a?(Symbol)
+        variable_name = "#{node.children[0].children[0]}_#{node.children[1]}"
+        lvar(variable_name)
       else
         debugger
         raise "emit_value ??? #{node.inspect}"
@@ -1334,6 +1364,10 @@ class GtaScm::RubyToScmCompiler
     if name.is_a?(Parser::AST::Node)
       name = name.children[0]
     end
+
+    # if name.to_sym == :coords
+    #   debugger
+    # end
 
     id = if self.lvar_names_to_ids[name]
       if type && self.lvar_names_to_types[name] && type != self.lvar_names_to_types[name]

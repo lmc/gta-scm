@@ -494,6 +494,7 @@ describe GtaScm::RubyToScmCompiler do
           accum = coords.x
           accum += coords.y
           accum += coords.z
+          coords,accum = 1.0, 2.0, 3.0, 360.0
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
@@ -506,6 +507,10 @@ describe GtaScm::RubyToScmCompiler do
           (set_lvar_float_to_lvar_float ((lvar 4 accum) (lvar 0 coords_x)))
           (add_float_lvar_to_float_lvar ((lvar 4 accum) (lvar 1 coords_y)))
           (add_float_lvar_to_float_lvar ((lvar 4 accum) (lvar 2 coords_z)))
+          (set_lvar_float ((lvar 0 coords_x) (float32 1.0)))
+          (set_lvar_float ((lvar 1 coords_y) (float32 2.0)))
+          (set_lvar_float ((lvar 2 coords_z) (float32 3.0)))
+          (set_lvar_float ((lvar 4 accum) (float32 360.0)))
         LISP
         }
       end
