@@ -491,15 +491,21 @@ describe GtaScm::RubyToScmCompiler do
           coords = get_char_coordinates(PLAYER_CHAR)
           coords.z += 10.0
           car = create_car(420,coords)
+          accum = coords.x
+          accum += coords.y
+          accum += coords.z
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_lvar_float ((lvar 0 coords) (float32 0.0)))
-          (set_lvar_float ((lvar 1 coords_1) (float32 0.0)))
-          (set_lvar_float ((lvar 2 coords_2) (float32 0.0)))
+          (set_lvar_float ((lvar 0 coords_x) (float32 0.0)))
+          (set_lvar_float ((lvar 1 coords_y) (float32 0.0)))
+          (set_lvar_float ((lvar 2 coords_z) (float32 0.0)))
           (get_char_coordinates ((dmavar 12) (lvar 0 coords_x) (lvar 1 coords_y) (lvar 2 coords_z)))
-          (add_val_to_float_lvar ((lvar 2 coords_2) (float32 10.0)))
-          (create_car ((int16 420) (lvar 0 coords) (lvar 1 coords_1) (lvar 2 coords_2) (lvar 3 car)))
+          (add_val_to_float_lvar ((lvar 2 coords_z) (float32 10.0)))
+          (create_car ((int16 420) (lvar 0 coords_x) (lvar 1 coords_y) (lvar 2 coords_z) (lvar 3 car)))
+          (set_lvar_float_to_lvar_float ((lvar 4 accum) (lvar 0 coords_x)))
+          (add_float_lvar_to_float_lvar ((lvar 4 accum) (lvar 1 coords_y)))
+          (add_float_lvar_to_float_lvar ((lvar 4 accum) (lvar 2 coords_z)))
         LISP
         }
       end

@@ -1,8 +1,10 @@
 routines do
   bitpack_init = routine(export: :lib_bitpack_init) do
     $bitpack_idx1 = 0
+    $bitpack_idx2 = 0
     $bitpack_value = 0
     $bitpack_packed = 0
+    $bitpack_bits = 8
   end
 
   bitpack_pack = routine(export: :lib_bitpack_pack) do

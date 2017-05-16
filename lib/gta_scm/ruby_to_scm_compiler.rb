@@ -7,11 +7,18 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :metadata
   attr_accessor :temp_var_assignments
 
+  attr_accessor :lvar_objects
+
+  OBJECT_STRUCTURES = {
+    Vector3: { x: :float, y: :float, z: :float }
+  }
+
   def initialize
     self.local_method_names_to_labels = {}
     self.label_prefix = "label_"
     self.var_arrays = {}
     self.lvar_arrays = {}
+    self.lvar_objects = {}
     self.routines_block = false
     self.temp_var_assignments = {}
     install_constants!
@@ -363,6 +370,8 @@ class GtaScm::RubyToScmCompiler
     if right.type == :send
       if right.children[0].andand.type == :const && right.children[0].children[1] == :IntegerArray && right.children[1] == :new
         return record_array_assign(node)
+      elsif right.children[0].andand.type == :const && right.children[0].children[1] == :Vector3 && right.children[1] == :new
+        return record_object_assign(node)
       else
         return [emit_assignment_opcode_call(right, node)]
       end
@@ -533,6 +542,34 @@ class GtaScm::RubyToScmCompiler
     # return []
   end
 
+  def record_object_assign(node)
+    if node.type == :lvasgn
+      object_name = node.children[1].children[0].children[1]
+      variable_name = node.children[0]
+
+      self.lvar_objects[variable_name] = object_name
+
+      instructions = []
+      OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+        var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+        default_value = type == :int ? 0 : 0.0
+        value = Parser::AST::Node.new(type,[default_value])
+        instructions << [:"set_lvar_#{type}",[emit_value(var),emit_value(value)]]
+      end
+
+      return instructions
+
+    else
+      raise "handle global"
+    end
+  end
+
+  def vars_for_lvar_object(variable_name)
+    OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+      Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+    end
+  end
+
   def handle_routine_declare(node,args)
     code = []
     code << [:labeldef, args[:export]] if args[:export]
@@ -625,7 +662,20 @@ class GtaScm::RubyToScmCompiler
       right_var_type = self.constants_to_types[ right.children[1] ]
       right_type = right_var_type
       right_value = self.constants_to_values[ right.children[1] ]
+    elsif node.children[2].andand.type == :send && node.children[2].children[0].andand.type == :lvar && self.lvar_objects[ node.children[2].children[0].children[0] ]
+      variable_name = node.children[2].children[0].children[0]
+      object_type = self.lvar_objects[ variable_name ]
+      property = node.children[2].children[1]
+      property_type = OBJECT_STRUCTURES[object_type][property]
+
+      left_value = lvar(node.children[0].children[0], property_type)
+      left_var_type = property_type
+
+      right_value = lvar(:"#{variable_name}_#{property}", property_type)
+      right_var_type = property_type
+      opcode_name << "#{right_var_type}_lvar"
     else
+      debugger
       raise "unknown right type #{node.inspect}"
     end
 
@@ -655,7 +705,7 @@ class GtaScm::RubyToScmCompiler
         raise "no type for #{right.children[0]}"
       end
 
-      if left_var_type && right_type != :lvar && left_var_type != right_type
+      if left_var_type && ![:lvar,:send].include?(right_type) && left_var_type != right_type
         debugger
         raise "variable type mismatch (already declared as #{left_var_type}, assigning as #{right_type})"
       end
@@ -685,7 +735,17 @@ class GtaScm::RubyToScmCompiler
       else
         opcode_name << "#{left_var_type}_var"
       end
-
+    elsif node.children[0].type == :send && node.children[0].children[0].type == :lvar
+      variable_name = node.children[0].children[0].children[0]
+      property = node.children[0].children[1]
+      if object_type = self.lvar_objects[ variable_name ]
+        left_type = OBJECT_STRUCTURES[object_type][property]
+        opcode_name << "#{left_type}_lvar"
+        var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+        left_value = emit_value(var)
+      else
+        raise "no object for lvar"
+      end
     else
       debugger
       raise "can only handle lvasgn left hands8"
@@ -851,13 +911,47 @@ class GtaScm::RubyToScmCompiler
         args << gvar(variable_node.to_s.gsub('$',''))
         args << emit_value(opcode_call_node)
       else
-        args = opcode_call_node.children[2..-1] || []
-        args.map! {|a| emit_value(a)}
+        args = []
+        o_args = opcode_call_node.children[2..-1] || []
+        o_args.each {|a|
+          variable_name = a.children[0]
+          if a.type == :lvar && self.lvar_objects[ variable_name ]
+            OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+              var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+              args << emit_value(var)
+            end
+          else
+            args << emit_value(a)
+          end
+        }
 
-        # debugger
+        # expand lvar objects
+        if variable_node.type == :lvasgn && self.lvar_objects[ variable_node.children[0] ]
+          variable_name = variable_node.children[0]
+          OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+            var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+            args << emit_value(var)
+          end
+        # single assign from object property
+        elsif variable_node.type == :lvasgn && variable_node.children[1].type == :send && variable_node.children[1].children[0].andand.type == :lvar && self.lvar_objects[ variable_node.children[1].children[0].children[0] ]
+          variable_name = variable_node.children[1].children[0].children[0]
+          object_type = self.lvar_objects[ variable_name ]
+          property = variable_node.children[1].children[1]
+          property_type = OBJECT_STRUCTURES[object_type][property]
+
+          opcode_name = "set_"
+
+          left_type = property_type
+          args << lvar(variable_node.children[0],left_type)
+          opcode_name << "lvar_#{left_type}"
+
+          opcode_name << "_to_"
+
+          opcode_name << "lvar_#{left_type}"
+          args << lvar(:"#{variable_name}_#{property}",left_type)
 
         # array assign
-        if variable_node.children[1] == :[]=
+        elsif variable_node.children[1] == :[]=
 
           if variable_node.children[0].type == :gvar
             args << emit_value(variable_node)
@@ -897,6 +991,7 @@ class GtaScm::RubyToScmCompiler
       end
     end
 
+    opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
     if !opcode_def
       debugger
     end
@@ -906,9 +1001,9 @@ class GtaScm::RubyToScmCompiler
     end
 
     if args.size == 0
-      return [ opcode_name ]
+      return [ opcode_name.to_sym ]
     else
-      return [ opcode_name, args ].compact
+      return [ opcode_name.to_sym, args ].compact
     end
   end
 
