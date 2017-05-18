@@ -350,6 +350,7 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4004 timers) (int8 0)))
           (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
           (get_game_timer ((var_array 4004 4000 1 (int32 var))))
         LISP
@@ -366,6 +367,8 @@ describe GtaScm::RubyToScmCompiler do
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_var_int ((var tmp) (int8 0)))
+          (set_var_int ((var timers) (int8 0)))
+          (set_var_int ((var timers_1) (int8 0)))
           (set_var_int ((var timers_idx) (int8 0)))
           (get_game_timer ((var_array timers timers_idx 2 (int32 var))))
         LISP
@@ -381,6 +384,7 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4004 timers) (int8 0)))
           (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
           (set_var_int ((var_array 4004 4000 1 (int32 var)) (dmavar 4000 timers_idx)))
           (set_var_int ((dmavar 4000 timers_idx) (var_array 4004 4000 1 (int32 var))))
@@ -396,6 +400,7 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4004 timers) (int8 0)))
           (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
           (set_var_int ((var_array 4004 4000 1 (int32 var)) (int8 -1)))
         LISP
@@ -410,6 +415,7 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4004 timers) (int8 0)))
           (set_lvar_int ((lvar 0 index) (int8 0)))
           (get_game_timer ((var_array 4004 0 1 (int32 lvar))))
         LISP
@@ -429,6 +435,7 @@ describe GtaScm::RubyToScmCompiler do
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_lvar_int ((lvar 0 timers_idx) (int8 0)))
+          (set_lvar_int ((lvar 1 timers) (int8 0)))
           (get_game_timer ((lvar_array 1 0 1 (int32 lvar))))
         LISP
         }
@@ -444,6 +451,8 @@ describe GtaScm::RubyToScmCompiler do
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_lvar_int ((lvar 0 tmp) (int8 0)))
+          (set_lvar_int ((lvar 1 timers) (int8 0)))
+          (set_lvar_int ((lvar 2 timers_1) (int8 0)))
           (set_lvar_int ((lvar 3 timers_idx) (int8 0)))
           (get_game_timer ((lvar_array 1 3 2 (int32 lvar))))
         LISP
@@ -461,6 +470,7 @@ describe GtaScm::RubyToScmCompiler do
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_lvar_int ((lvar 0 timers_idx) (int8 0)))
+          (set_lvar_int ((lvar 1 timers) (int8 0)))
           (set_lvar_int ((lvar_array 1 0 1 (int32 lvar)) (lvar 0 timers_idx)))
           (set_lvar_int ((lvar 0 timers_idx) (lvar_array 1 0 1 (int32 lvar))))
         LISP
@@ -476,6 +486,7 @@ describe GtaScm::RubyToScmCompiler do
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (set_lvar_int ((lvar 0 timers_idx) (int8 0)))
+          (set_lvar_int ((lvar 1 timers) (int8 0)))
           (set_lvar_int ((lvar_array 1 0 1 (int32 lvar)) (int8 -1)))
         LISP
         }
@@ -853,19 +864,19 @@ describe GtaScm::RubyToScmCompiler do
       }
     end
   end
-  context "for loops" do
-    let(:ruby){ <<-RUBY
-      a = 0
-      for a in 0..2
-        a += 1
-      end
-    RUBY
-    }
-    it { is_expected.to eql <<-LISP.strip_heredoc.strip
+  # context "for loops" do
+  #   let(:ruby){ <<-RUBY
+  #     a = 0
+  #     for a in 0..2
+  #       a += 1
+  #     end
+  #   RUBY
+  #   }
+  #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
 
-    LISP
-    }
-  end
+  #   LISP
+  #   }
+  # end
 
   describe "lambdas" do
     context "routine definition and call" do
@@ -886,38 +897,39 @@ describe GtaScm::RubyToScmCompiler do
       }
     end
 
-    context "function definition and call" do
-      let(:ruby){ <<-RUBY
-        routines do
+    # context "function definition and call" do
+    #   pending
+    #   let(:ruby){ <<-RUBY
+    #     routines do
 
-          $lerp_coords1 = Vector3.new
-          $lerp_coords2 = Vector3.new
-          $lerp_coords3 = Vector3.new
-          $lerp_value = 0.0
+    #       $lerp_coords1 = Vector3.new
+    #       $lerp_coords2 = Vector3.new
+    #       $lerp_coords3 = Vector3.new
+    #       $lerp_value = 0.0
 
-          linear_interpolation = function(args: [$lerp_coords1,$lerp_coords2,$lerp_value], returns: [$lerp_coords3]) do
-            $lerp_coords3.x  = $lerp_coords2.x
-            $lerp_coords3.x += $lerp_coords1.x
+    #       linear_interpolation = function(args: [$lerp_coords1,$lerp_coords2,$lerp_value], returns: [$lerp_coords3]) do
+    #         $lerp_coords3.x  = $lerp_coords2.x
+    #         $lerp_coords3.x += $lerp_coords1.x
 
-            $lerp_coords3.y  = $lerp_coords2.y
-            $lerp_coords3.y += $lerp_coords1.y
+    #         $lerp_coords3.y  = $lerp_coords2.y
+    #         $lerp_coords3.y += $lerp_coords1.y
 
-            $lerp_coords3.z  = $lerp_coords2.z
-            $lerp_coords3.z += $lerp_coords1.z
-          end
+    #         $lerp_coords3.z  = $lerp_coords2.z
+    #         $lerp_coords3.z += $lerp_coords1.z
+    #       end
 
-          player_coords = Vector3.new
-          interpolated_coords = Vector3.new
-          player_coords = get_char_coordinates(PLAYER_CHAR)
-          interpolated_coords = linear_interpolation(player_coords,0.0,0.0,0.0, 0.75)
-        end
-      RUBY
-      }
-      it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (return)
-      LISP
-      }
-    end
+    #       player_coords = Vector3.new
+    #       interpolated_coords = Vector3.new
+    #       player_coords = get_char_coordinates(PLAYER_CHAR)
+    #       interpolated_coords = linear_interpolation(player_coords,0.0,0.0,0.0, 0.75)
+    #     end
+    #   RUBY
+    #   }
+    #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
+    #     (return)
+    #   LISP
+    #   }
+    # end
   end
 
   describe "returns" do
@@ -976,39 +988,40 @@ describe GtaScm::RubyToScmCompiler do
     end
 
 
-    describe "tail call optimisation" do
-        let(:ruby){ <<-RUBY
-          foo = routine do
-            wait(0)
-          end
-          bar = routine do
-            wait(1)
-            foo()
-          end
-        RUBY
-        }
-        it { is_expected.to eql <<-LISP.strip_heredoc.strip
-            (goto ((label label_2)))
-            (labeldef label_1)
-            (labeldef routine_foo)
-            (wait ((int8 0)))
-            (return)
-            (labeldef label_2)
-            (goto ((label label_4)))
-            (labeldef label_3)
-            (labeldef routine_bar)
-            (wait ((int8 1)))
-            (goto ((label label_1)))
-            (labeldef label_4)
-          LISP
-        }
-      end
+    # describe "tail call optimisation" do
+    #   pending
+    #   let(:ruby){ <<-RUBY
+    #     foo = routine do
+    #       wait(0)
+    #     end
+    #     bar = routine do
+    #       wait(1)
+    #       foo()
+    #     end
+    #   RUBY
+    #   }
+    #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
+    #       (goto ((label label_2)))
+    #       (labeldef label_1)
+    #       (labeldef routine_foo)
+    #       (wait ((int8 0)))
+    #       (return)
+    #       (labeldef label_2)
+    #       (goto ((label label_4)))
+    #       (labeldef label_3)
+    #       (labeldef routine_bar)
+    #       (wait ((int8 1)))
+    #       (goto ((label label_1)))
+    #       (labeldef label_4)
+    #     LISP
+    #   }
+    # end
   end
 
-  context "strings " do
-    let(:ruby){"load_texture_dictionary(\"radar101\")"}
-    it { is_expected.to eql "(load_texture_dictionary ((string8 \"radar101\")))" }
-  end
+  # context "strings " do
+  #   let(:ruby){"load_texture_dictionary(\"radar101\")"}
+  #   it { is_expected.to eql "(load_texture_dictionary ((string8 \"radar101\")))" }
+  # end
 
   # ===
 

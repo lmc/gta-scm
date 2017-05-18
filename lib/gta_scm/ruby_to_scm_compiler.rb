@@ -10,6 +10,8 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :var_objects
   attr_accessor :lvar_objects
 
+  attr_accessor :function_definitions
+
   OBJECT_STRUCTURES = {
     Vector3: { x: :float, y: :float, z: :float }
   }
@@ -23,6 +25,7 @@ class GtaScm::RubyToScmCompiler
     self.lvar_objects = {}
     self.routines_block = false
     self.temp_var_assignments = {}
+    self.function_definitions = {}
     install_constants!
   end
 
@@ -125,7 +128,7 @@ class GtaScm::RubyToScmCompiler
 
     when :op_asgn
 
-      [ emit_operator_assign(node) ]
+      emit_operator_assign(node)
 
     when :if
 
@@ -136,7 +139,7 @@ class GtaScm::RubyToScmCompiler
       end
 
     when :send
-
+      # debugger
       if node.children[1] == :debugger
         emit_breakpoint(node)
       elsif node.children[1] == :emit
@@ -145,11 +148,11 @@ class GtaScm::RubyToScmCompiler
         emit_global_var_assign(node)
       elsif node.children[1] == :[]= && node.children[0].type == :lvar
         emit_local_var_assign(node)
-      elsif node.children[2].type == :send
+      elsif node.children[2].andand.type == :send
         # property assign
         emit_operator_assign(node)
       else
-        [ emit_opcode_call(node) ]
+        emit_opcode_call(node)
       end
 
     when :break
@@ -321,7 +324,7 @@ class GtaScm::RubyToScmCompiler
     # raise "can only handle :args" if node.children[1].type != :args
     method_body = case node.children[1].type
       when :send
-      [ emit_opcode_call(node.children[1]) ]
+        emit_opcode_call(node.children[1])
       when :begin
         transform_node(node.children[1])
       when :block
@@ -473,7 +476,7 @@ class GtaScm::RubyToScmCompiler
       return [[:"set_#{var_type}_text_label" , [var , right_val ]]]
     end
     if type == :lvar
-      return [emit_operator_assign(node)]
+      return emit_operator_assign(node)
     end
     if type == :block
       nn = emit_method_def(node)
@@ -621,7 +624,7 @@ class GtaScm::RubyToScmCompiler
   end
 
   def handle_function_declare(node,args)
-    debugger
+    # debugger
     code = []
     code << [:labeldef, args[:export]] if args[:export]
     code << [:labeldef, :"routine_#{args[:name]}"]
@@ -668,12 +671,12 @@ class GtaScm::RubyToScmCompiler
           array_type = array_def[3] == :int32 ? :int : :float
           left = emit_value(node)
           right = emit_value(node.children[3])
-          return [ :"set_lvar_#{array_type}" , [ left , right ] ]
+          return [[ :"set_lvar_#{array_type}" , [ left , right ] ]]
         elsif array_def = self.var_arrays[array_name]
           array_type = array_def[3] == :int32 ? :int : :float
           left = emit_value(node)
           right = emit_value(node.children[3])
-          return [ :"set_var_#{array_type}" , [ left , right ] ]
+          return [[ :"set_var_#{array_type}" , [ left , right ] ]]
         end
       elsif node.type == :send && node.children[2].type == :send && self.lvar_objects[ node.children[0].children[0] ]
         # property assign
@@ -829,12 +832,12 @@ class GtaScm::RubyToScmCompiler
     # elsif operator == :"="
     #   debugger;
     #   'sdf'
-    # else
+    else
       opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
     end
 
     # debugger
-    return [ opcode_name.to_sym , [left_value,right_value] ]
+    return [[ opcode_name.to_sym , [left_value,right_value] ]]
 
   end
 
@@ -861,10 +864,13 @@ class GtaScm::RubyToScmCompiler
     opcode_name = node.children[1]
 
     if method_label = self.local_method_names_to_labels["#{opcode_name}"]
-      [:gosub,[[self.label_type,method_label]]]
+      [[:gosub,[[self.label_type,method_label]]]]
+    elsif function_params = self.function_definitions["#{opcode_name}"]
+      debugger
+
     elsif node.type == :send && node.children[1] == :temp
       # temp foo = 1
-      assign_temp_var(node.children[2]).andand[0]
+      [assign_temp_var(node.children[2]).andand[0]]
     else
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
@@ -918,7 +924,7 @@ class GtaScm::RubyToScmCompiler
       end
 
       args = nil if args.size == 0
-      [opcode_name,args].compact
+      [[opcode_name,args].compact]
     end
   end
 
@@ -1185,7 +1191,7 @@ class GtaScm::RubyToScmCompiler
           raise "unknown right type #{node.inspect}"
         end
 
-        return [opcode_name.to_sym,[left_value,right_value]]
+        return [[opcode_name.to_sym,[left_value,right_value]]]
       elsif node.children[1].is_a?(Symbol)
         return emit_opcode_call(node)
       end
@@ -1193,7 +1199,7 @@ class GtaScm::RubyToScmCompiler
       if node.type == :send
         return emit_opcode_call(node)
       elsif label = self.local_method_names_to_labels["#{node.children[1]}"]
-        return [:gosub,[[self.label_type,label]]]
+        return [[:gosub,[[self.label_type,label]]]]
       elsif node.children[0] && node.children[0].type == :send
         # negated opcode call
         return emit_opcode_call(node.children[0],node.children[1] == :!)
@@ -1378,7 +1384,7 @@ class GtaScm::RubyToScmCompiler
         when :and, :or
           emit_if_conditions(condition_node,node.type)
         when :send
-          emit_conditional_opcode_call(condition_node)
+          emit_conditional_opcode_call(condition_node)[0]
         else
           debugger
           raise "dunno what sort of condition node is"
@@ -1396,7 +1402,7 @@ class GtaScm::RubyToScmCompiler
         [andor_id,conditions]
       end
     when :send
-      [ 0, [emit_conditional_opcode_call(node)] ]
+      [ 0, emit_conditional_opcode_call(node) ]
     end
   end
 
