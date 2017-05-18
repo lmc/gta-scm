@@ -39,6 +39,9 @@ if emit(false)
 
   tmp_j = 0
   tmp_k = 0
+
+  initial_distance = 0.0
+  distance_percent = 0.0
 end
 
 DOOR_1_X =  1.5
@@ -242,6 +245,9 @@ start_driving_to_destination = routine do
   # set_car_driving_style(this_car,2)
 
   set_up_skip(coords1,tmp_h)
+
+  get_player_distance_from_destination()
+  initial_distance = player_distance
 end
 
 handle_menu_keypress = routine do

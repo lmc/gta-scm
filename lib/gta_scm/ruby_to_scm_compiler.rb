@@ -7,6 +7,7 @@ class GtaScm::RubyToScmCompiler
   attr_accessor :metadata
   attr_accessor :temp_var_assignments
 
+  attr_accessor :var_objects
   attr_accessor :lvar_objects
 
   OBJECT_STRUCTURES = {
@@ -17,6 +18,7 @@ class GtaScm::RubyToScmCompiler
     self.local_method_names_to_labels = {}
     self.label_prefix = "label_"
     self.var_arrays = {}
+    self.var_objects = {}
     self.lvar_arrays = {}
     self.lvar_objects = {}
     self.routines_block = false
@@ -143,6 +145,9 @@ class GtaScm::RubyToScmCompiler
         emit_global_var_assign(node)
       elsif node.children[1] == :[]= && node.children[0].type == :lvar
         emit_local_var_assign(node)
+      elsif node.children[2].type == :send
+        # property assign
+        emit_operator_assign(node)
       else
         [ emit_opcode_call(node) ]
       end
@@ -305,7 +310,11 @@ class GtaScm::RubyToScmCompiler
     args = {name: method_name}
     if node.children[1].andand.children.andand[0].andand.children.andand[2].andand.type == :hash
       node.children[1].children[0].children[2].children.each do |pair|
-        args[ pair.children[0].children[0] ] = pair.children[1].children[0]
+        if pair.children[1].type == :array
+          args[ pair.children[0].children[0] ] = pair.children[1].children
+        else
+          args[ pair.children[0].children[0] ] = pair.children[1].children[0]
+        end
       end
     end
 
@@ -318,6 +327,8 @@ class GtaScm::RubyToScmCompiler
       when :block
         if node.children[1].children[0].type == :send && node.children[1].children[0].children[1] == :routine
           handle_routine_declare(node,args)
+        elsif node.children[1].children[0].type == :send && node.children[1].children[0].children[1] == :function
+          handle_function_declare(node,args)
         else
           debugger
           raise "cannot handle ???"
@@ -572,6 +583,21 @@ class GtaScm::RubyToScmCompiler
       end
 
       return instructions
+    elsif node.type == :gvasgn
+      object_name = node.children[1].children[0].children[1]
+      variable_name = node.children[0]
+
+      self.var_objects[variable_name] = object_name
+
+      instructions = []
+      OBJECT_STRUCTURES[ self.var_objects[variable_name] ].map do |property,type|
+        var = Parser::AST::Node.new(:gvar,[:"#{variable_name}_#{property}"])
+        default_value = type == :int ? 0 : 0.0
+        value = Parser::AST::Node.new(type,[default_value])
+        instructions << [:"set_var_#{type}",[emit_value(var),emit_value(value)]]
+      end
+
+      return instructions
 
     else
       raise "handle global"
@@ -585,6 +611,17 @@ class GtaScm::RubyToScmCompiler
   end
 
   def handle_routine_declare(node,args)
+    code = []
+    code << [:labeldef, args[:export]] if args[:export]
+    code << [:labeldef, :"routine_#{args[:name]}"]
+    body = transform_node(node.children[1].children[2])
+    body = optimise_tail_call(body)
+    code += body
+    code
+  end
+
+  def handle_function_declare(node,args)
+    debugger
     code = []
     code << [:labeldef, args[:export]] if args[:export]
     code << [:labeldef, :"routine_#{args[:name]}"]
@@ -637,6 +674,22 @@ class GtaScm::RubyToScmCompiler
           left = emit_value(node)
           right = emit_value(node.children[3])
           return [ :"set_var_#{array_type}" , [ left , right ] ]
+        end
+      elsif node.type == :send && node.children[2].type == :send && self.lvar_objects[ node.children[0].children[0] ]
+        # property assign
+        left_variable_name = node.children[0].children[0]
+        left = node
+        left_object_type = self.lvar_objects[ left_variable_name ]
+        left_property = node.children[1].to_s.gsub(/=/,'').to_sym
+        left_property_type = OBJECT_STRUCTURES[left_object_type][left_property]
+        right = node.children[2]
+        if right.children[0].type == :lvar && self.lvar_objects[ right.children[0].children[0] ]
+          right_variable_name = right.children[0].children[0]
+          right_object_type = self.lvar_objects[ right_variable_name ]
+          right_property = node.children[1].to_s.gsub(/=/,'').to_sym
+          return [[ :"set_lvar_#{left_property_type}" , [ emit_value(left) , emit_value(right) ] ]]
+        elsif right.type == :gvar && self.lvar_objects[ right.children[0].children[0] ]
+          debugger
         end
       else
         debugger
@@ -846,6 +899,7 @@ class GtaScm::RubyToScmCompiler
       end
 
       if !opcode_def
+        debugger
         raise UnknownOpcodeError.new(node,name: opcode_name)
       end
 
@@ -1286,8 +1340,12 @@ class GtaScm::RubyToScmCompiler
         end
       # property access
       elsif node.children[0].andand.type == :lvar && node.children[1].is_a?(Symbol)
-        variable_name = "#{node.children[0].children[0]}_#{node.children[1]}"
+        variable_name = :"#{node.children[0].children[0]}_#{node.children[1].to_s.gsub(/=/,'')}"
         lvar(variable_name)
+      # property access
+      elsif node.children[0].andand.type == :gvar && node.children[1].is_a?(Symbol)
+        variable_name = :"#{node.children[0].children[0]}_#{node.children[1].to_s.gsub(/=/,'')}"
+        gvar(variable_name)
       else
         debugger
         raise "emit_value ??? #{node.inspect}"
