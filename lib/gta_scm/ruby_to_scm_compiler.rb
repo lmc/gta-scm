@@ -633,10 +633,12 @@ class GtaScm::RubyToScmCompiler
 
       instructions = []
       OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
-        var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+        var_name = :"#{variable_name}_#{property}"
+        var = Parser::AST::Node.new(:lvar,[var_name])
         default_value = type == :int ? 0 : 0.0
         value = Parser::AST::Node.new(type,[default_value])
         instructions << [:"set_lvar_#{type}",[emit_value(var),emit_value(value)]]
+        self.lvar_names_to_types[var_name] = type
       end
 
       return instructions
@@ -648,10 +650,12 @@ class GtaScm::RubyToScmCompiler
 
       instructions = []
       OBJECT_STRUCTURES[ self.var_objects[variable_name] ].map do |property,type|
-        var = Parser::AST::Node.new(:gvar,[:"#{variable_name}_#{property}"])
+        var_name = :"#{variable_name}_#{property}"
+        var = Parser::AST::Node.new(:gvar,[var_name])
         default_value = type == :int ? 0 : 0.0
         value = Parser::AST::Node.new(type,[default_value])
         instructions << [:"set_var_#{type}",[emit_value(var),emit_value(value)]]
+        self.gvar_names_to_types[var_name.to_s.gsub(/\$/,'').to_sym] = type
       end
 
       return instructions
@@ -696,20 +700,31 @@ class GtaScm::RubyToScmCompiler
   def emit_lazy_operator_assign(left,right)
     opcode_name = "set_"
 
-    opcode_name << (left[0] == :lvar ? "lvar" : "var")
-    opcode_name << "_" 
-    opcode_name << "int" # FIXME: can we just use int for all setters? 
+    if left[0] == :lvar
+      opcode_name << "lvar"
+      opcode_name << "_" 
+      opcode_name << "#{(self.lvar_names_to_types[ left[2] ])}"
+    else
+      opcode_name << "var"
+      opcode_name << "_" 
+      opcode_name << "#{(self.gvar_names_to_types[ left[1] ])}"
+    end
 
-    opcode_name << "_to_"
-    
-    opcode_name << (right[0] == :lvar ? "lvar" : "var")
-    opcode_name << "_" 
-    opcode_name << "int" # FIXME: can we just use int for all setters? 
+    if right[0] == :lvar
+      opcode_name << "_to_"
+      opcode_name << "lvar"
+      opcode_name << "_" 
+      opcode_name << "#{(self.lvar_names_to_types[ right[2] ])}"
+    elsif right[0] == :var
+      opcode_name << "_to_"
+      opcode_name << "var"
+      opcode_name << "_" 
+      opcode_name << "#{(self.gvar_names_to_types[ right[1] ])}"
+    elsif [:int8,:int16,:int32,:float32].include?(right[0])
+      opcode_name << ""
+    end
 
     return [ [opcode_name.to_sym, [left,right]] ]
-  rescue
-    debugger
-    left
   end
 
   ASSIGNMENT_OPERATORS = {
