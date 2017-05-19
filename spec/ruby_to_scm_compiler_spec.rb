@@ -897,39 +897,39 @@ describe GtaScm::RubyToScmCompiler do
       }
     end
 
-    # context "function definition and call" do
-    #   pending
-    #   let(:ruby){ <<-RUBY
-    #     routines do
+    context "function definition and call" do
+      pending
+      let(:ruby){ <<-RUBY
+        routines do
 
-    #       $lerp_coords1 = Vector3.new
-    #       $lerp_coords2 = Vector3.new
-    #       $lerp_coords3 = Vector3.new
-    #       $lerp_value = 0.0
+          $lerp_coords1 = Vector3.new
+          $lerp_coords2 = Vector3.new
+          $lerp_coords3 = Vector3.new
+          $lerp_value = 0.0
 
-    #       linear_interpolation = function(args: [$lerp_coords1,$lerp_coords2,$lerp_value], returns: [$lerp_coords3]) do
-    #         $lerp_coords3.x  = $lerp_coords2.x
-    #         $lerp_coords3.x += $lerp_coords1.x
+          linear_interpolation = function(args: [$lerp_coords1,$lerp_coords2,$lerp_value], returns: [$lerp_coords3]) do
+            $lerp_coords3.x  = $lerp_coords2.x
+            $lerp_coords3.x += $lerp_coords1.x
 
-    #         $lerp_coords3.y  = $lerp_coords2.y
-    #         $lerp_coords3.y += $lerp_coords1.y
+            $lerp_coords3.y  = $lerp_coords2.y
+            $lerp_coords3.y += $lerp_coords1.y
 
-    #         $lerp_coords3.z  = $lerp_coords2.z
-    #         $lerp_coords3.z += $lerp_coords1.z
-    #       end
+            $lerp_coords3.z  = $lerp_coords2.z
+            $lerp_coords3.z += $lerp_coords1.z
+          end
 
-    #       player_coords = Vector3.new
-    #       interpolated_coords = Vector3.new
-    #       player_coords = get_char_coordinates(PLAYER_CHAR)
-    #       interpolated_coords = linear_interpolation(player_coords,0.0,0.0,0.0, 0.75)
-    #     end
-    #   RUBY
-    #   }
-    #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
-    #     (return)
-    #   LISP
-    #   }
-    # end
+          player_coords = Vector3.new
+          interpolated_coords = Vector3.new
+          player_coords = get_char_coordinates(PLAYER_CHAR)
+          interpolated_coords = linear_interpolation(player_coords,0.0,0.0,0.0, 0.75)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (return)
+      LISP
+      }
+    end
   end
 
   describe "returns" do
