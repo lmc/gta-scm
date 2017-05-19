@@ -363,12 +363,63 @@ class GtaScm::RubyToScmCompiler
     ].compact
   end
 
+  def emit_function_call(node)
+    
+    function_name = node.children[1].children[1]
+    input_arguments = arguments( node.children[1].children[2..-1] )
+    defined_arguments = arguments( self.function_definitions[ function_name ][:args] )
+    
+    retval_values = if node.type == :lvasgn
+      arguments([sexp_arg([:lvar,nil,node.children[0]])])
+    end
+    retval_arguments = arguments( self.function_definitions[ function_name ][:returns] )
+
+    argument_instructions = []
+    input_arguments.each_with_index do |input_arg,i|
+      defined_arg = defined_arguments[i]
+      argument_instructions += emit_lazy_operator_assign(defined_arg,input_arg)
+    end
+
+    retval_instructions = []
+    retval_arguments.each_with_index do |retval_arg,i|
+      retval_var = retval_values[i]
+      retval_instructions += emit_lazy_operator_assign(retval_var,retval_arg)
+    end
+
+    label = self.local_method_names_to_labels["#{function_name}"]
+    [
+      *argument_instructions,
+      [:gosub,[[self.label_type,label]]],
+      *retval_instructions
+    ]
+  end
+
+  def sexp_arg(arg)
+    case arg[0]
+    when :var
+      Parser::AST::Node.new(:gvar,[:"$#{arg[1]}"])
+    when :lvar
+      Parser::AST::Node.new(:lvar,[:"#{arg[2]}"])
+    when :float32
+      Parser::AST::Node.new(:float,[arg[1]])
+    when :int32,:int16,:int8
+      Parser::AST::Node.new(:int,[arg[1]])
+    else
+      raise "??"
+    end
+  end
+
   def emit_local_var_assign(node)
     self.emit_n_var_assign(node,:lvar)
   end
 
   def emit_global_var_assign(node)
     self.emit_n_var_assign(node,:var)
+  end
+
+  def emit_argument_assign(argument,value)
+    
+
   end
 
   def emit_n_var_assign(node,var_type,left = nil, right = nil)
@@ -400,6 +451,9 @@ class GtaScm::RubyToScmCompiler
         return record_array_assign(node)
       elsif right.children[0].andand.type == :const && right.children[0].children[1] == :Vector3 && right.children[1] == :new
         return record_object_assign(node)
+      elsif node.type == :lvasgn && node.children[1].type == :send && self.function_definitions[ node.children[1].children[1] ]
+        # local var assign from function call
+        return emit_function_call(node)
       else
         return [emit_assignment_opcode_call(right, node)]
       end
@@ -624,7 +678,7 @@ class GtaScm::RubyToScmCompiler
   end
 
   def handle_function_declare(node,args)
-    # debugger
+    self.function_definitions[ args[:name] ] = args
     code = []
     code << [:labeldef, args[:export]] if args[:export]
     code << [:labeldef, :"routine_#{args[:name]}"]
@@ -637,6 +691,25 @@ class GtaScm::RubyToScmCompiler
   def optimise_tail_call(body)
     # debugger
     body
+  end
+
+  def emit_lazy_operator_assign(left,right)
+    opcode_name = "set_"
+
+    opcode_name << (left[0] == :lvar ? "lvar" : "var")
+    opcode_name << "_" 
+    opcode_name << "int" # FIXME: can we just use int for all setters? 
+
+    opcode_name << "_to_"
+    
+    opcode_name << (right[0] == :lvar ? "lvar" : "var")
+    opcode_name << "_" 
+    opcode_name << "int" # FIXME: can we just use int for all setters? 
+
+    return [ [opcode_name.to_sym, [left,right]] ]
+  rescue
+    debugger
+    left
   end
 
   ASSIGNMENT_OPERATORS = {
@@ -825,7 +898,7 @@ class GtaScm::RubyToScmCompiler
         raise "variable type mismatch (already declared as #{left_var_type}, assigning as #{right_type})"
       end
     elsif left_type == :gvasgn
-      # debugger
+      debugger
       node
 
       if operator == :"="
@@ -925,6 +998,27 @@ class GtaScm::RubyToScmCompiler
     transform_node(gvar_node)
   end
 
+  def arguments(o_args)
+    args = []
+    o_args.each {|a|
+      variable_name = a.children[0]
+      if a.type == :lvar && self.lvar_objects[ variable_name ]
+        OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+          var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+          args << emit_value(var)
+        end
+      elsif a.type == :gvar && self.var_objects[ variable_name ]
+        OBJECT_STRUCTURES[ self.var_objects[variable_name] ].map do |property,type|
+          var = Parser::AST::Node.new(:gvar,[:"#{variable_name}_#{property}"])
+          args << emit_value(var)
+        end
+      else
+        args << emit_value(a)
+      end
+    }
+    args
+  end
+
   attr_accessor :emit_opcode_call_callback
   def emit_opcode_call(node,force_not = false)
     if node.children[1] == :!
@@ -938,7 +1032,7 @@ class GtaScm::RubyToScmCompiler
       [[:gosub,[[self.label_type,method_label]]]]
     elsif function_params = self.function_definitions["#{opcode_name}"]
       debugger
-
+      self.function_definitions
     elsif node.type == :send && node.children[1] == :temp
       # temp foo = 1
       [assign_temp_var(node.children[2]).andand[0]]
@@ -953,18 +1047,24 @@ class GtaScm::RubyToScmCompiler
       else
         # args = node.children[2..-1]
         args = []
-        o_args = node.children[2..-1] || []
-        o_args.each {|a|
-          variable_name = a.children[0]
-          if a.type == :lvar && self.lvar_objects[ variable_name ]
-            OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
-              var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
-              args << emit_value(var)
-            end
-          else
-            args << emit_value(a)
-          end
-        }
+        # o_args = node.children[2..-1] || []
+        # o_args.each {|a|
+        #   variable_name = a.children[0]
+        #   if a.type == :lvar && self.lvar_objects[ variable_name ]
+        #     OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+        #       var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+        #       args << emit_value(var)
+        #     end
+        #   elsif a.type == :gvar && self.var_objects[ variable_name ]
+        #     OBJECT_STRUCTURES[ self.var_objects[variable_name] ].map do |property,type|
+        #       var = Parser::AST::Node.new(:gvar,[:"#{variable_name}_#{property}"])
+        #       args << emit_value(var)
+        #     end
+        #   else
+        #     args << emit_value(a)
+        #   end
+        # }
+        args = self.arguments(node.children[2..-1])
       end
 
       # if args.nil? || opcode_def.arguments.nil?

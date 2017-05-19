@@ -898,7 +898,6 @@ describe GtaScm::RubyToScmCompiler do
     end
 
     context "function definition and call" do
-      pending
       let(:ruby){ <<-RUBY
         routines do
 
@@ -926,7 +925,46 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        (goto ((label label_3)))
+        (set_var_float ((var lerp_coords1_x) (float32 0.0)))
+        (set_var_float ((var lerp_coords1_y) (float32 0.0)))
+        (set_var_float ((var lerp_coords1_z) (float32 0.0)))
+        (set_var_float ((var lerp_coords2_x) (float32 0.0)))
+        (set_var_float ((var lerp_coords2_y) (float32 0.0)))
+        (set_var_float ((var lerp_coords2_z) (float32 0.0)))
+        (set_var_float ((var lerp_coords3_x) (float32 0.0)))
+        (set_var_float ((var lerp_coords3_y) (float32 0.0)))
+        (set_var_float ((var lerp_coords3_z) (float32 0.0)))
+        (set_var_float ((var lerp_value) (float32 0.0)))
+        (labeldef label_1)
+        (labeldef routine_linear_interpolation)
+        (set_float_var_to_float_var ((var lerp_coords3_x) (var lerp_coords2_x)))
+        (add_float_var_to_float_var ((var lerp_coords3_x) (var lerp_coords1_x)))
+        (set_float_var_to_float_var ((var lerp_coords3_y) (var lerp_coords2_y)))
+        (add_float_var_to_float_var ((var lerp_coords3_y) (var lerp_coords1_y)))
+        (set_float_var_to_float_var ((var lerp_coords3_z) (var lerp_coords2_z)))
+        (add_float_var_to_float_var ((var lerp_coords3_z) (var lerp_coords1_z)))
         (return)
+        (labeldef label_2)
+        (set_lvar_float ((lvar 0 player_coords_x) (float32 0.0)))
+        (set_lvar_float ((lvar 1 player_coords_y) (float32 0.0)))
+        (set_lvar_float ((lvar 2 player_coords_z) (float32 0.0)))
+        (set_lvar_float ((lvar 3 interpolated_coords_x) (float32 0.0)))
+        (set_lvar_float ((lvar 4 interpolated_coords_y) (float32 0.0)))
+        (set_lvar_float ((lvar 5 interpolated_coords_z) (float32 0.0)))
+        (get_char_coordinates ((dmavar 12) (lvar 0 player_coords_x) (lvar 1 player_coords_y) (lvar 2 player_coords_z)))
+        (set_var_int_to_lvar_int ((var lerp_coords1_x) (lvar 0 player_coords_x)))
+        (set_var_int_to_lvar_int ((var lerp_coords1_y) (lvar 1 player_coords_y)))
+        (set_var_int_to_lvar_int ((var lerp_coords1_z) (lvar 2 player_coords_z)))
+        (set_var_int_to_var_int ((var lerp_coords2_x) (float32 0.0)))
+        (set_var_int_to_var_int ((var lerp_coords2_y) (float32 0.0)))
+        (set_var_int_to_var_int ((var lerp_coords2_z) (float32 0.0)))
+        (set_var_int_to_var_int ((var lerp_value) (float32 0.75)))
+        (gosub ((label label_1)))
+        (set_lvar_int_to_var_int ((lvar 3 interpolated_coords_x) (var lerp_coords3_x)))
+        (set_lvar_int_to_var_int ((lvar 4 interpolated_coords_y) (var lerp_coords3_y)))
+        (set_lvar_int_to_var_int ((lvar 5 interpolated_coords_z) (var lerp_coords3_z)))
+        (labeldef label_3)
       LISP
       }
     end
