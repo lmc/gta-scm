@@ -5,7 +5,10 @@ routines do
   $lerp_coords3 = Vector3.new
   $lerp_value = 0.0
 
-  linear_interpolation = function(args: [$lerp_coords1,$lerp_coords2,$lerp_value], returns: [$lerp_coords3]) do
+  linear_interpolation = function(
+    args: [$lerp_coords1,$lerp_coords2,$lerp_value],
+    returns: [$lerp_coords3]
+  ) do
     
     if $lerp_coords2.x > $lerp_coords1.x
       $lerp_coords3.x  = $lerp_coords2.x

@@ -42,6 +42,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
       else
         allocated_offset = self.next_var_slot(type,var_pool)
       end
+      debugger if !allocated_offset #|| var_name =~ /lerp_coords1_x/
       self.allocated_vars[var_name] = allocated_offset
       self.define_touchup(var_name,allocated_offset)
     end

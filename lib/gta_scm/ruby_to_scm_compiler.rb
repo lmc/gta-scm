@@ -148,7 +148,7 @@ class GtaScm::RubyToScmCompiler
         emit_global_var_assign(node)
       elsif node.children[1] == :[]= && node.children[0].type == :lvar
         emit_local_var_assign(node)
-      elsif node.children[2].andand.type == :send
+      elsif node.children[1] =~ /=/ && node.children[2].andand.type == :send
         # property assign
         emit_operator_assign(node)
       else
@@ -724,6 +724,8 @@ class GtaScm::RubyToScmCompiler
       opcode_name << ""
     end
 
+    # debugger
+
     return [ [opcode_name.to_sym, [left,right]] ]
   end
 
@@ -766,7 +768,7 @@ class GtaScm::RubyToScmCompiler
           right = emit_value(node.children[3])
           return [[ :"set_var_#{array_type}" , [ left , right ] ]]
         end
-      elsif node.type == :send && node.children[2].type == :send && self.lvar_objects[ node.children[0].children[0] ]
+      elsif node.type == :send && node.children[2].andand.type == :send && self.lvar_objects[ node.children[0].andand.children.andand[0] ]
         # local var object property assign
         left_variable_name = node.children[0].children[0]
         left = node
@@ -786,7 +788,7 @@ class GtaScm::RubyToScmCompiler
           right_property = node.children[1].to_s.gsub(/=/,'').to_sym
           return [[ :"set_var_#{left_property_type}" , [ emit_value(left) , emit_value(right) ] ]]
         end
-      elsif node.type == :send && node.children[2].type == :send && self.var_objects[ node.children[0].children[0] ]
+      elsif node.type == :send && node.children[2].andand.type == :send && self.var_objects[ node.children[0].andand.children.andand[0] ]
         # global var object property assign
         left_variable_name = node.children[0].children[0]
         left = node
@@ -840,8 +842,8 @@ class GtaScm::RubyToScmCompiler
       end
       right_value = lvar(right.children[0],right_var_type)
     elsif right_type == :gvar
-      right_var_type = self.gvar_names_to_types[ right.children[0] ]
-      debugger
+      right_var_type = self.gvar_names_to_types[ right.children[0].to_s.gsub(/\$/,'').to_sym ]
+      # debugger if !right_var_type
       if operator == :"="
         opcode_name << "var_#{right_var_type}"
       else
@@ -864,7 +866,11 @@ class GtaScm::RubyToScmCompiler
 
       right_value = lvar(:"#{variable_name}_#{property}", property_type)
       right_var_type = property_type
-      opcode_name << "#{right_var_type}_lvar"
+      if operator == :"="
+        opcode_name << "lvar_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_lvar"
+      end
     elsif node.children[2].andand.type == :send && node.children[2].children[0].andand.type == :gvar && self.var_objects[ node.children[2].children[0].children[0] ]
       variable_name = node.children[2].children[0].children[0]
       object_type = self.var_objects[ variable_name ]
@@ -876,10 +882,19 @@ class GtaScm::RubyToScmCompiler
 
       right_value = emit_value(node.children[2])
       right_var_type = property_type
-      opcode_name << "#{right_var_type}_var"
+      if operator == :"="
+        opcode_name << "var_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_var"
+      end
     else
       debugger
       raise "unknown right type #{node.inspect}"
+    end
+
+
+    if right_value && right_value.flatten.map(&:to_s).join =~ /lerp_coords3_x/
+      debugger
     end
 
     opcode_name << "_#{middle}_"
@@ -913,7 +928,7 @@ class GtaScm::RubyToScmCompiler
         raise "variable type mismatch (already declared as #{left_var_type}, assigning as #{right_type})"
       end
     elsif left_type == :gvasgn
-      debugger
+      # debugger
       node
 
       if operator == :"="
@@ -943,7 +958,11 @@ class GtaScm::RubyToScmCompiler
       property = node.children[0].children[1]
       if object_type = self.lvar_objects[ variable_name ]
         left_type = OBJECT_STRUCTURES[object_type][property]
-        opcode_name << "#{left_type}_lvar"
+        if operator == :"="
+          opcode_name << "lvar_#{left_type}"
+        else
+          opcode_name << "#{left_type}_lvar"
+        end
         var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
         left_value = emit_value(var)
       else
@@ -965,7 +984,11 @@ class GtaScm::RubyToScmCompiler
       property = node.children[1].to_s.gsub(/=/,'').to_sym
       if object_type = self.var_objects[ variable_name ]
         left_type = OBJECT_STRUCTURES[object_type][property]
-        opcode_name << "#{left_type}_var"
+        if operator == :"="
+          opcode_name << "var_#{left_type}"
+        else
+          opcode_name << "#{left_type}_var"
+        end
         var = Parser::AST::Node.new(:gvar,[:"#{variable_name}_#{property}"])
         left_value = emit_value(var)
       else
@@ -1342,6 +1365,15 @@ class GtaScm::RubyToScmCompiler
           # raise "can't find type for #{node.children[0].children[0]}" if !left_var_type
           left_var_type ||= :int
           opcode_name << "#{left_var_type}_var"          
+        elsif left_type == :send && node.children[0].type == :send && node.children[0].children[0].type == :gvar && self.var_objects[ node.children[0].children[0].children[0] ]
+          variable_name = node.children[0].children[0].children[0]
+          object_type = self.var_objects[ variable_name ]
+          property = node.children[0].children[1]
+          property_type = OBJECT_STRUCTURES[object_type][property]
+          left_value = emit_value(node.children[0])
+          left_var_type = property_type
+          left_type = :var
+          opcode_name << "#{left_var_type}_var"
         else
           debugger
           raise "can only handle lvars on left side #{node.inspect}"
@@ -1373,7 +1405,16 @@ class GtaScm::RubyToScmCompiler
           opcode_name << "number"
           right_var_type = self.constants_to_types[ node.children[2].children[1] ]
           right_value = self.constants_to_values[ node.children[2].children[1] ]
+        elsif right_type == :send && node.children[2].type == :send && node.children[2].children[0].type == :gvar && self.var_objects[ node.children[2].children[0].children[0] ]
+          variable_name = node.children[2].children[0].children[0]
+          object_type = self.var_objects[ variable_name ]
+          property = node.children[2].children[1]
+          property_type = OBJECT_STRUCTURES[object_type][property]
+          right_var_type = property_type
+          right_value = emit_value(node.children[2])
+          opcode_name << "#{right_var_type}_var"
         else
+          debugger
           raise "unknown right type #{node.inspect}"
         end
 

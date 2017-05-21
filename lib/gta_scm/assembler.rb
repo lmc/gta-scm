@@ -671,6 +671,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         self.use_touchup(node.offset,[1,arg_idx,1],arg_tokens[1])
         arg.set( :var, 0xBBBB )
       when :var
+        # debugger if arg_tokens[1] =~ /lerp_coords1_x/
         self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
         arg.set( arg_tokens[0] , 0xCCCC )
       when :dmavar
@@ -735,6 +736,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     # self.touchup_uses = self.parent.touchup_uses
     # self.touchup_types = self.parent.touchup_types
     self.constants_to_values = self.parent.constants_to_values
+    self.vars_to_use = self.parent.vars_to_use
   end
 
   def logger

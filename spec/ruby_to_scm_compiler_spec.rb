@@ -900,7 +900,6 @@ describe GtaScm::RubyToScmCompiler do
     context "function definition and call" do
       let(:ruby){ <<-RUBY
         routines do
-
           $lerp_coords1 = Vector3.new
           $lerp_coords2 = Vector3.new
           $lerp_coords3 = Vector3.new
@@ -920,7 +919,7 @@ describe GtaScm::RubyToScmCompiler do
           player_coords = Vector3.new
           interpolated_coords = Vector3.new
           player_coords = get_char_coordinates(PLAYER_CHAR)
-          interpolated_coords = linear_interpolation(player_coords,0.0,0.0,0.0, 0.75)
+          interpolated_coords = linear_interpolation(player_coords, 0.0,0.0,0.0, 0.75)
         end
       RUBY
       }
@@ -938,11 +937,11 @@ describe GtaScm::RubyToScmCompiler do
         (set_var_float ((var lerp_value) (float32 0.0)))
         (labeldef label_1)
         (labeldef routine_linear_interpolation)
-        (set_float_var_to_float_var ((var lerp_coords3_x) (var lerp_coords2_x)))
+        (set_var_float_to_var_float ((var lerp_coords3_x) (var lerp_coords2_x)))
         (add_float_var_to_float_var ((var lerp_coords3_x) (var lerp_coords1_x)))
-        (set_float_var_to_float_var ((var lerp_coords3_y) (var lerp_coords2_y)))
+        (set_var_float_to_var_float ((var lerp_coords3_y) (var lerp_coords2_y)))
         (add_float_var_to_float_var ((var lerp_coords3_y) (var lerp_coords1_y)))
-        (set_float_var_to_float_var ((var lerp_coords3_z) (var lerp_coords2_z)))
+        (set_var_float_to_var_float ((var lerp_coords3_z) (var lerp_coords2_z)))
         (add_float_var_to_float_var ((var lerp_coords3_z) (var lerp_coords1_z)))
         (return)
         (labeldef label_2)
