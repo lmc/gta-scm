@@ -44,7 +44,7 @@ class GtaScm::RubyToScmCompiler
       gvar_names_to_ids:     self.gvar_names_to_ids,
       generate_gvar_counter: self.generate_gvar_counter,
       function_definitions:  self.function_definitions,
-      var_arrays:           self.var_arrays,
+      var_arrays:            self.var_arrays,
       var_objects:           self.var_objects,
       local_method_names_to_labels: self.local_method_names_to_labels,
       local_method_names_to_label_types: self.local_method_names_to_label_types
@@ -866,6 +866,16 @@ class GtaScm::RubyToScmCompiler
     if right_type == :int || right_type == :float
       opcode_name << "val"
       right_value = emit_value(right)
+    elsif right_type == :lvar && self.temp_var_assignments[ right.children[0] ]
+      right_value = self.temp_var_assignments[ right.children[0] ]
+      right_var_type = self.gvar_names_to_types[ right_value[1] ]
+      right_type = right_var_type
+
+      if operator == :"="
+        opcode_name << "var_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_var"
+      end
     elsif right_type == :lvar
       right_var_type = self.lvar_names_to_types[ right.children[0] ]
       if operator == :"="
@@ -925,14 +935,17 @@ class GtaScm::RubyToScmCompiler
       raise "unknown right type #{node.inspect}"
     end
 
-
-    if right_value && right_value.flatten.map(&:to_s).join =~ /lerp_coords3_x/
-      debugger
-    end
-
     opcode_name << "_#{middle}_"
 
-    if left_type == :lvasgn
+    if left_type == :lvasgn && self.temp_var_assignments[ left.children[0] ]
+      left_value = self.temp_var_assignments[ left.children[0] ]
+      left_var_type = self.gvar_names_to_types[ left_value[1] ]
+      if operator == :"="
+        opcode_name << "var_#{left_var_type}"
+      else
+        opcode_name << "#{left_var_type}_var"
+      end
+    elsif left_type == :lvasgn
       if operator == :"="
         left_value = lvar(left.children[0],right_var_type)
       else
@@ -944,8 +957,8 @@ class GtaScm::RubyToScmCompiler
         left_var_type = right.type
       end
 
-      if operator == :"=" && right_type != :float && right_type != :int
-        left_var_type = self.lvar_names_to_types[ right.children[0] ]
+      if operator == :"="# && right_type != :float && right_type != :int
+        left_var_type ||= self.lvar_names_to_types[ right.children[0] ]
         opcode_name << "lvar_#{left_var_type}"
       else
         opcode_name << "#{left_var_type}_lvar"
@@ -1038,16 +1051,13 @@ class GtaScm::RubyToScmCompiler
     # so use regexes to fix it (???!!!)
     # debugger
     if operator == :"*" || operator == :"/"
-      # debugger
       opcode_name.gsub!(/([a-z]+)_(val)_([a-z]+)_((int|float)_l?var)/,"\\1_\\4_\\3_\\2")
-    # elsif operator == :"="
-    #   debugger;
-    #   'sdf'
     else
       opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
     end
 
-    if opcode_name =~ /_float_var__float_lvar/
+    # if opcode_name =~ /sub_float_lvar_from_float_lvar/ && 
+    if left_value.inspect+right_value.inspect =~ /distance_travelled/
       debugger
     end
 
@@ -1239,25 +1249,36 @@ class GtaScm::RubyToScmCompiler
         args << gvar(variable_node.to_s.gsub('$',''))
         args << emit_value(opcode_call_node)
       else
-        args = []
-        o_args = opcode_call_node.children[2..-1] || []
-        o_args.each {|a|
-          variable_name = a.children[0]
-          if a.type == :lvar && self.lvar_objects[ variable_name ]
-            OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
-              var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
-              args << emit_value(var)
-            end
-          else
-            args << emit_value(a)
-          end
-        }
+        # args = []
+        # o_args = opcode_call_node.children[2..-1] || []
+        # o_args.each {|a|
+        #   variable_name = a.children[0]
+        #   if a.type == :lvar && self.lvar_objects[ variable_name ]
+        #     OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+        #       var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+        #       args << emit_value(var)
+        #     end
+        #   else
+        #     args << emit_value(a)
+        #   end
+        # }
+        args = self.arguments( opcode_call_node.children[2..-1] )
 
+        # temp vars
+        if variable_node.type == :lvasgn && self.temp_var_assignments[ variable_node.children[0] ]
+          args << self.temp_var_assignments[ variable_node.children[0] ]
         # expand lvar objects
-        if variable_node.type == :lvasgn && self.lvar_objects[ variable_node.children[0] ]
+        elsif variable_node.type == :lvasgn && self.lvar_objects[ variable_node.children[0] ]
           variable_name = variable_node.children[0]
           OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
             var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+            args << emit_value(var)
+          end
+        # expand var objects
+        elsif variable_node.type == :gvasgn && self.var_objects[ variable_node.children[0] ]
+          variable_name = variable_node.children[0]
+          OBJECT_STRUCTURES[ self.var_objects[variable_name] ].map do |property,type|
+            var = Parser::AST::Node.new(:gvar,[:"$#{variable_name}_#{property}"])
             args << emit_value(var)
           end
         # single assign from object property
@@ -1308,10 +1329,6 @@ class GtaScm::RubyToScmCompiler
           if assign_type == :gvasgn
             args << gvar(variable_node.to_s.gsub('$',''))
           else
-            if !variable_node.children or !opcode_def.andand.arguments.andand.last
-              debugger
-              "ff"
-            end
             args << lvar( variable_node.children[0] , opcode_def.arguments.last[:type] )
           end
 
@@ -1324,7 +1341,8 @@ class GtaScm::RubyToScmCompiler
       debugger
     end
 
-    if args.size != opcode_def.arguments.size
+    if args.size != opcode_def.andand.arguments.andand.size
+      debugger
       raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
     end
 

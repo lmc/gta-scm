@@ -41,7 +41,7 @@ if emit(false)
   tmp_k = 0
 
   initial_distance = 0.0
-  distance_percent = 0.0
+  distance_recorded = 0.0
 end
 
 wait(0)
@@ -330,14 +330,31 @@ sanity_check_taxi = routine do
   wait(0)
 end
 
+update_trip_progress = routine do
+  wait(0)
+  # $player_coords = get_char_coordinates(PLAYER_CHAR)
+  # player_distance = get_distance_between_coords_3d($player_coords,coords1)
+  get_player_distance_from_destination()
+
+  # temp distance_travelled = 0.0
+  temp distance_travelled = 0.0
+  distance_travelled = initial_distance
+  distance_travelled -= player_distance
+
+  if distance_travelled > distance_recorded
+    distance_recorded = distance_travelled
+  end
+
+end
+
 # handle leaving/paying
 
 loop do
   wait(0)
 
 
-  interpolated = Vector3.new
-  interpolated = linear_interpolation( 100.0,200.0,300.0, 0.0,0.0,0.0, 0.25)
+  # interpolated = Vector3.new
+  # interpolated = linear_interpolation( 100.0,200.0,300.0, 0.0,0.0,0.0, 0.25)
 
 
   if !is_player_playing(PLAYER)
@@ -410,11 +427,13 @@ loop do
     elsif player_taxi_state == 3
 
       sanity_check_taxi()
+      update_trip_progress()
       handle_taxi_keypress()
 
       # arrived at destination ?
-      coords2 = get_car_coordinates(this_car)
-      player_distance = get_distance_between_coords_3d(coords1,coords2)
+      # coords2 = get_car_coordinates(this_car)
+      # player_distance = get_distance_between_coords_3d(coords1,coords2)
+      get_player_distance_from_destination()
       get_car_speed()
       if player_distance < 10.0 && speed < 2.0
         player_exit_taxi()

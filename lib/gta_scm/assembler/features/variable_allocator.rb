@@ -50,7 +50,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
         else
           allocated_offset = self.next_var_slot(type,var_pool)
         end
-        if !allocated_offset || var_name =~ /carid2gxt_gxt/
+        if !allocated_offset# || var_name =~ /carid2gxt_gxt/
           debugger
         end
         self.allocated_vars[var_name] = allocated_offset

@@ -138,6 +138,19 @@ describe GtaScm::RubyToScmCompiler do
         LISP
         }
       end
+      context "should work with maths" do
+        let(:ruby){ <<-RUBY
+          temp i = 1
+          foo = 2
+          i += foo
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((var _temp_i_0001) (int8 1)))
+          (wait ((var _temp_i_0001)))
+        LISP
+        }
+      end
     end
 
     context "smallest possible immediate size" do
