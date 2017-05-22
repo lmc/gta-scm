@@ -749,6 +749,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.vars_to_use = self.parent.vars_to_use
     self.compiler_data = self.parent.compiler_data
 
+    self.allocated_vars = self.parent.allocated_vars if self.respond_to?(:allocated_vars) && self.parent.respond_to?(:allocated_vars)
+
     # self.touchup_defines = self.parent.touchup_defines
   end
 

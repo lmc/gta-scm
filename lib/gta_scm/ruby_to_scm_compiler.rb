@@ -1387,6 +1387,11 @@ class GtaScm::RubyToScmCompiler
           left_var_type = :int
           left_type = :lvar
           opcode_name << "#{left_var_type}_lvar"
+        elsif left_type == :lvar && self.temp_var_assignments[ node.children[0].children[0] ]
+          left_type = :gvar
+          left_value = self.temp_var_assignments[ node.children[0].children[0] ]
+          left_var_type = self.gvar_names_to_types[ left_value[1] ]
+          opcode_name << "#{left_var_type}_var"
         elsif left_type == :lvar
           left_value ||= lvar(node.children[0].children[0])
           left_var_type ||= self.lvar_names_to_types[ node.children[0].children[0] ]

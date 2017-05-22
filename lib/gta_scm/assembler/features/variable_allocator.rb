@@ -16,9 +16,9 @@ module GtaScm::Assembler::Feature::VariableAllocator
 
   def on_before_touchups
     super
-    if !self.parent
+    # if !self.parent
       allocate_vars_to_dma_addresses!
-    end
+    # end
   end
 
   def use_var_address(node_offset,array_keys,touchup_name,type = nil)
@@ -30,23 +30,32 @@ module GtaScm::Assembler::Feature::VariableAllocator
 
   def allocate_vars_to_dma_addresses!
     allocated_offset = nil
-    return if self.allocated_vars.present?
+    # return if self.allocated_vars.present?
 
     var_pool = self.vars_to_use.reject{|k,v| k =~ /temp/}.values.flatten.uniq
     tmp_var_pool = self.vars_to_use.select{|k,v,| k =~ /temp/}.values.flatten.uniq
 
-    # debugger
+    # piece of shit assembler doesn't properly copy these in `copy_touchups_from_parent!`, merge it in here
+    if self.parent
+      self.allocated_vars.merge!(self.parent.allocated_vars) if self.parent.respond_to?(:allocated_vars)
+    end
 
     self.var_touchups.each do |var_name|
-      type = self.var_touchups_types[var_name]
-      if var_name =~ /temp/
-        allocated_offset = self.next_var_slot(type,tmp_var_pool)
+      if allocated_offset = self.allocated_vars[var_name]
+        self.define_touchup(var_name,allocated_offset)
       else
-        allocated_offset = self.next_var_slot(type,var_pool)
+        type = self.var_touchups_types[var_name]
+        if var_name =~ /temp/
+          allocated_offset = self.next_var_slot(type,tmp_var_pool)
+        else
+          allocated_offset = self.next_var_slot(type,var_pool)
+        end
+        if !allocated_offset || var_name =~ /carid2gxt_gxt/
+          debugger
+        end
+        self.allocated_vars[var_name] = allocated_offset
+        self.define_touchup(var_name,allocated_offset)
       end
-      # debugger if !allocated_offset || var_name =~ /lerp_coords1_x/
-      self.allocated_vars[var_name] = allocated_offset
-      self.define_touchup(var_name,allocated_offset)
     end
 
     if allocated_offset && variables_range

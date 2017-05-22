@@ -173,5 +173,4 @@
 % (Include "gxt-entries")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")
-(AssignGlobalVariables)
 (AssembleExternal 79 "ext79")

@@ -308,16 +308,17 @@ end
 
 check_driver_shitty = routine do
   if driver > 0 && driver != PLAYER_CHAR
-    tmp_i = get_char_highest_priority_event(driver)
+    temp event = 0
+    event = get_char_highest_priority_event(driver)
     if
-      tmp_i == CHAR_EVENT_GUN_AIMED_AT             ||
-      tmp_i == CHAR_EVENT_LOW_ANGER_AT_PLAYER      ||
-      tmp_i == CHAR_EVENT_HIGH_ANGER_AT_PLAYER     ||
-      tmp_i == CHAR_EVENT_DRAGGED_OUT_CAR          ||
-      tmp_i == CHAR_EVENT_VEHICLE_THREAT           ||
-      tmp_i == CHAR_EVENT_VEHICLE_DAMAGE_WEAPON    ||
-      tmp_i == CHAR_EVENT_VEHICLE_DAMAGE_COLLISION ||
-      tmp_i == CHAR_EVENT_VEHICLE_ON_FIRE
+      event == CHAR_EVENT_GUN_AIMED_AT             ||
+      event == CHAR_EVENT_LOW_ANGER_AT_PLAYER      ||
+      event == CHAR_EVENT_HIGH_ANGER_AT_PLAYER     ||
+      event == CHAR_EVENT_DRAGGED_OUT_CAR          ||
+      event == CHAR_EVENT_VEHICLE_THREAT           ||
+      event == CHAR_EVENT_VEHICLE_DAMAGE_WEAPON    ||
+      event == CHAR_EVENT_VEHICLE_DAMAGE_COLLISION ||
+      event == CHAR_EVENT_VEHICLE_ON_FIRE
     then
       driver_shitty = 1
     end
