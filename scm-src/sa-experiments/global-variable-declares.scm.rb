@@ -3,7 +3,12 @@ if emit(false)
   $player_x = 0.0
   $player_y = 0.0
   $player_z = 0.0
+  $player_coords = Vector3.new
   $gametime = 0
+
+  $carid2gxt_tmp = 0
+  $carid2gxt_id = 0
+  $carid2gxt_gxt = ""
 
   TEST_CONSTANT = 1057
 

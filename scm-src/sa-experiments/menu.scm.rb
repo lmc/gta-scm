@@ -303,19 +303,16 @@ show_garage_menu = routine do
     unpack_int()
 
     # call car_id -> gxt string routine for tmp_car_id (results in $str_7112)
-    $_7112 = 0
-    $_7116 = 0
-    $_7104 = tmp_car_id
+    # $_7112 = 0
+    # $_7116 = 0
+    # $_7104 = tmp_car_id
+    $carid2gxt_id = tmp_car_id
+    set_var_text_label($carid2gxt_gxt,"")
     gosub(CARID2GXT)
-
-    if $_7112 == 0
-      set_var_text_label($str_7112,"GSCM004")
-      # set_var_text_label($str_7112,"NUMBER")
-    end
 
     # set menu item string to car name
     tmp_i = $_7124_cars_index
-    set_menu_item_with_number(menu,0,tmp_i,$str_7112,tmp_car_id)
+    set_menu_item_with_number(menu,0,tmp_i,$carid2gxt_gxt,tmp_car_id)
 
     # FIXME: compiler bug on this
     $_7124_cars_index += 1
@@ -372,17 +369,15 @@ show_car_creator_menu = routine do
   # end
 
   tmp_i = 0
-  $_7112 = 0
-  $_7116 = 0
-  $_7104 = tmp_car_id
+  # $_7112 = 0
+  # $_7116 = 0
+  # $_7104 = tmp_car_id
+  set_var_text_label($carid2gxt_gxt,"")
+  $carid2gxt_id = tmp_car_id
   gosub(CARID2GXT)
 
-  if $_7112 == 0
-    set_var_text_label($str_7112,"GSCM004")
-    # set_var_text_label($str_7112,"NUMBER")
-  end
 
-  set_menu_item_with_number(menu,0,tmp_i,$str_7112,tmp_car_id)
+  set_menu_item_with_number(menu,0,tmp_i,$carid2gxt_gxt,tmp_car_id)
   set_menu_item_with_number(menu,1,tmp_i,"NUMBER",tmp_car_id)
 
   tmp_i += 2

@@ -142,6 +142,7 @@
 (IncludeRuby "global-variable-declares")
 (IncludeRuby "bitpacker")
 (IncludeRuby "corona")
+(IncludeRuby "linear-interpolation")
 % =====================================
 
 % == Car ID to GXT routine ============
@@ -172,4 +173,5 @@
 % (Include "gxt-entries")
 (AssignGlobalVariables)
 (AssembleExternal 78 "ext78")
+(AssignGlobalVariables)
 (AssembleExternal 79 "ext79")

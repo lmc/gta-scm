@@ -31,7 +31,7 @@
   % spawn scripts here
 
   % menu
-  % (start_new_streamed_script ((int8 78) (int8 0) (end_var_args)))
+  (start_new_streamed_script ((int8 78) (int8 0) (end_var_args)))
 
   % detect cars
   (start_new_streamed_script ((int8 78) (int8 1) (end_var_args)))

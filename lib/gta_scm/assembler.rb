@@ -36,6 +36,7 @@ class GtaScm::Assembler::Base
   attr_accessor :paddings
 
   attr_accessor :constants_to_values
+  attr_accessor :compiler_data
 
 
   def initialize(input_dir)
@@ -55,6 +56,7 @@ class GtaScm::Assembler::Base
     self.paddings = {}
 
     self.constants_to_values ||= {}
+    self.compiler_data = nil
   end
 
   def assemble(scm,out_path)
@@ -331,6 +333,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           compiler = GtaScm::RubyToScmCompiler.new
           compiler.metadata = {filename: filename}
           compiler.constants_to_values.merge!(self.constants_to_values)
+          compiler.compiler_data = self.compiler_data if self.compiler_data
 
           parsed = compiler.parse_ruby(ruby)
 
@@ -345,7 +348,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             self.read_line(scm,line,file,line_idx)
           end
 
+          # self.touchup_defines.merge!(compiler.)
           self.constants_to_values.merge!(compiler.constants_to_values)
+          self.compiler_data = compiler.compiler_data
 
           end_offset = self.nodes.last.offset + self.nodes.last.size
           self.on_include(start_offset,end_offset,tokens)
@@ -382,6 +387,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           output = StringIO.new
           iasm.assemble(iscm,file,output)
+
+          self.compiler_data = iasm.compiler_data
 
           output.rewind
           code = output.read
@@ -425,6 +432,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           self.on_include(offset,n,tokens)
           self.external_offsets[external_id] = [file,self.nodes.size]
           self.include_sizes.merge!(iasm.include_sizes)
+          self.compiler_data = iasm.compiler_data
           n
 
         when :Rawhex
@@ -491,10 +499,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   end
 
   def define_touchup(touchup_name,value)
+    # debugger if touchup_name =~ /lerp_coords1_x/
     self.touchup_defines[touchup_name] = value
   end
 
   def use_touchup(node_offset,array_keys,touchup_name,use_type = nil)
+    # debugger if touchup_name =~ /code_persist_version/
     if self.emit_nodes
       self.touchup_uses[touchup_name] << [node_offset,array_keys]
     end
@@ -737,6 +747,9 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     # self.touchup_types = self.parent.touchup_types
     self.constants_to_values = self.parent.constants_to_values
     self.vars_to_use = self.parent.vars_to_use
+    self.compiler_data = self.parent.compiler_data
+
+    # self.touchup_defines = self.parent.touchup_defines
   end
 
   def logger

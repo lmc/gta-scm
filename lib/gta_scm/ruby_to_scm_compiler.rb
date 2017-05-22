@@ -38,6 +38,30 @@ class GtaScm::RubyToScmCompiler
     # self.constants_to_values[:BREAKPOINT_PC] = [:dmavar, 12]
   end
 
+  def compiler_data
+    {
+      gvar_names_to_types:   self.gvar_names_to_types,
+      gvar_names_to_ids:     self.gvar_names_to_ids,
+      generate_gvar_counter: self.generate_gvar_counter,
+      function_definitions:  self.function_definitions,
+      var_arrays:           self.var_arrays,
+      var_objects:           self.var_objects,
+      local_method_names_to_labels: self.local_method_names_to_labels,
+      local_method_names_to_label_types: self.local_method_names_to_label_types
+    }
+  end
+
+  def compiler_data=(data)
+    self.gvar_names_to_types = data[:gvar_names_to_types]
+    self.gvar_names_to_ids = data[:gvar_names_to_ids]
+    self.generate_gvar_counter = data[:generate_gvar_counter]
+    self.function_definitions = data[:function_definitions]
+    self.var_arrays = data[:var_arrays]
+    self.var_objects = data[:var_objects]
+    self.local_method_names_to_labels = data[:local_method_names_to_labels]
+    self.local_method_names_to_label_types = data[:local_method_names_to_label_types]
+  end
+
   def parse_ruby(ruby)
     begin
       parsed = Parser::CurrentRuby.parse(ruby)
@@ -307,6 +331,7 @@ class GtaScm::RubyToScmCompiler
   end
 
   attr_accessor :local_method_names_to_labels
+  attr_accessor :local_method_names_to_label_types
   def emit_method_def(node)
     method_name = node.children[0]
 
@@ -342,10 +367,13 @@ class GtaScm::RubyToScmCompiler
       end
 
     self.local_method_names_to_labels ||= {}
+    self.local_method_names_to_label_types ||= {}
     raise "method name #{method_name} already defined!" if self.local_method_names_to_labels[method_name]
 
     method_label = self.local_method_names_to_labels["#{method_name}"] = generate_label!
     method_end_label = self.local_method_names_to_labels["#{method_name}_end"] = generate_label!
+
+    self.local_method_names_to_label_types["#{method_name}"] = self.label_type
 
     jump_opcode = [:goto, [[self.label_type, method_end_label]]]
     jump_opcode = nil if self.routines_block
@@ -387,9 +415,10 @@ class GtaScm::RubyToScmCompiler
     end
 
     label = self.local_method_names_to_labels["#{function_name}"]
+    label_type = self.local_method_names_to_label_types["#{function_name}"]
     [
       *argument_instructions,
-      [:gosub,[[self.label_type,label]]],
+      [:gosub,[[label_type,label]]],
       *retval_instructions
     ]
   end
@@ -699,6 +728,10 @@ class GtaScm::RubyToScmCompiler
 
   def emit_lazy_operator_assign(left,right)
     opcode_name = "set_"
+
+    if left.nil?
+      debugger
+    end
 
     if left[0] == :lvar
       opcode_name << "lvar"
