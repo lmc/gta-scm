@@ -12,6 +12,9 @@ class GtaScm::RubyToScmCompiler
 
   attr_accessor :function_definitions
 
+  # to get node source text:
+  # node.location.expression.source
+
   OBJECT_STRUCTURES = {
     Vector3: { x: :float, y: :float, z: :float }
   }
@@ -1057,9 +1060,9 @@ class GtaScm::RubyToScmCompiler
     end
 
     # if opcode_name =~ /sub_float_lvar_from_float_lvar/ && 
-    if left_value.inspect+right_value.inspect =~ /distance_travelled/
-      debugger
-    end
+    # if left_value.inspect+right_value.inspect =~ /distance_travelled/
+    #   debugger
+    # end
 
     # debugger
     return [[ opcode_name.to_sym , [left_value,right_value] ]]

@@ -88,6 +88,15 @@
 (IncludeRuby "spatial" (external true))
 
 (labeldef spatial_script)
+(not_is_int_lvar_equal_to_number ((lvar 1) (int8 0)))
+(goto_if_false ((mission_label spatial_script_000)))
+(not_is_int_lvar_equal_to_number ((lvar 1) (int8 1)))
+(goto_if_false ((mission_label spatial_script_001)))
+(goto ((mission_label failsafe)))
+
+(labeldef spatial_script_000)
+(IncludeRuby "spatials/spatial-000-test" (external true))
+(labeldef spatial_script_001)
 (IncludeRuby "spatials/spatial-001-test" (external true))
 
 (labeldef r1_menu)

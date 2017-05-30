@@ -242,7 +242,11 @@ DRIVE_MODE = 0
 DRIVE_MODE_ALT = 2
 start_driving_to_destination = routine do
   drive_mode = 0
-  task_car_drive_to_coord(driver,this_car,coords1,DRIVE_SPEED,0,0,DRIVE_MODE)
+  # task_car_drive_to_coord(driver,this_car,coords1,DRIVE_SPEED,0,0,DRIVE_MODE)
+  task_car_drive_to_coord(driver,this_car,coords1,DRIVE_SPEED,
+    0,
+    2, # long distance pathfinding mode?
+    DRIVE_MODE)
   # http://www.gtamodding.com/wiki/00AE
   # set_car_driving_style(this_car,2)
 
