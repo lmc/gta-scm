@@ -6,20 +6,14 @@
 % we run at the end of the main loop in the MAIN thread
 (labeldef main_loop_ext)
 
-% TODO: replace with clean shutdown check in save hook?
-% check if watchdog timer has stopped updating (new game or thread killed)
-(get_game_timer ((dmavar 21136)))
-(set_var_int_to_var_int ((var watchdog_timeout) (dmavar 21136)))
-(sub_val_from_int_var ((var watchdog_timeout) (int16 1000)))
-
-(andor ((int8 0)))
-(is_int_var_greater_than_int_var ((var watchdog_timeout) (var watchdog_timer)))
+(andor ((int8 1)))
+(is_int_var_equal_to_number ((var code_state) (int8 0)))
+% only run custom code if world init is complete
+% ((dmavar 13576) gets set once in init code and never used again)
+(is_int_var_greater_than_number ((dmavar 13576) (int8 0)))
 (goto_if_false ((label main_loop_ext_end)))
 
-% if watchdog timer has stopped updating, re-spawn thread
-(get_game_timer ((var watchdog_timer)))
-% (terminate_all_scripts_with_this_name ((string8 "xwtchdg")))
-(start_new_script ((label watchdog) (end_var_args)))
+(gosub ((label restart_after_save)))
 
 % jump back to start of main loop
 (labeldef main_loop_ext_end)

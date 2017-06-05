@@ -1524,7 +1524,11 @@ class GtaScm::RubyToScmCompiler
   def emit_raw(node)
     args = []
     args << node.children[2].children[0]
-    args << node.children[3].children.map{|n| n.children[0]}
+    if node.children[3].type == :array
+      args << node.children[3].children.map{|n| n.children[0]}
+    else
+      args << node.children[3].children[0]
+    end
     [args]
   end
 

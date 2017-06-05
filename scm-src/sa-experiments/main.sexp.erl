@@ -43,7 +43,7 @@
 % 3432 - save persist version ID
 % 3436 - save persist version string
 % 3440 - save persist version string
-(Include "watchdog")
+% (Include "watchdog")
 % =====================================
 
 % == Debug RPC ==================

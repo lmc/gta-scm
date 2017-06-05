@@ -1073,6 +1073,21 @@ describe GtaScm::RubyToScmCompiler do
   #   it { is_expected.to eql "(load_texture_dictionary ((string8 \"radar101\")))" }
   # end
 
+  context "emit()" do
+    describe "when provided with raw s-exp tokens" do
+      let(:ruby){ <<-RUBY
+        emit(:Rawhex,["B6","05"])
+        emit(:labeldef,:mylabel)
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (Rawhex ("B6" "05"))
+          (labeldef mylabel)
+        LISP
+      }
+    end
+  end
+
   # ===
 
   def compile(ruby)
