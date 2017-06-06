@@ -113,6 +113,106 @@ describe GtaScm::RubyToScmCompiler do
       end
     end
 
+
+    context "for instance vars" do
+
+      context "for ints" do
+        context "for immediate values" do
+          context "for =" do
+            let(:ruby){"@test = 0"}
+            it { is_expected.to eql "(set_lvar_int ((lvar 0 test) (int8 0)))" }
+          end
+          context "for +=" do
+            let(:ruby){"@test += 0"}
+            it { is_expected.to eql "(add_val_to_int_lvar ((lvar 0 test) (int8 0)))" }
+          end
+          context "for -=" do
+            let(:ruby){"@test -= 0"}
+            it { is_expected.to eql "(sub_val_from_int_lvar ((lvar 0 test) (int8 0)))" }
+          end
+          context "for *=" do
+            let(:ruby){"@test *= 0"}
+            it { is_expected.to eql "(mult_int_lvar_by_val ((lvar 0 test) (int8 0)))" }
+          end
+          context "for /=" do
+            let(:ruby){"@test /= 0"}
+            it { is_expected.to eql "(div_int_lvar_by_val ((lvar 0 test) (int8 0)))" }
+          end
+        end
+        context "for other variables" do
+          context "for =" do
+            let(:ruby){"@a = 1; @test = @a"}
+            it { is_expected.to eql <<-LISP.strip_heredoc.strip
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int_to_lvar_int ((lvar 1 test) (lvar 0 a)))
+              LISP
+            }
+          end
+          context "for +=" do
+            let(:ruby){"@a = 1; @b = 2; @a += @b"}
+            it { is_expected.to eql <<-LISP.strip_heredoc.strip
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
+                (add_int_lvar_to_int_lvar ((lvar 0 a) (lvar 1 b)))
+              LISP
+            }
+          end
+          context "for -=" do
+            let(:ruby){"@a = 1; @b = 2; @a -= @b"}
+            it { is_expected.to eql <<-LISP.strip_heredoc.strip
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
+                (sub_int_lvar_from_int_lvar ((lvar 0 a) (lvar 1 b)))
+              LISP
+            }
+          end
+          context "for *=" do
+            let(:ruby){"@a = 1; @b = 2; @a *= @b"}
+            it { is_expected.to eql <<-LISP.strip_heredoc.strip
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
+                (mult_int_lvar_by_int_lvar ((lvar 0 a) (lvar 1 b)))
+              LISP
+            }
+          end
+          context "for /=" do
+            let(:ruby){"@a = 1; @b = 2; @a /= @b"}
+            it { is_expected.to eql <<-LISP.strip_heredoc.strip
+                (set_lvar_int ((lvar 0 a) (int8 1)))
+                (set_lvar_int ((lvar 1 b) (int8 2)))
+                (div_int_lvar_by_int_lvar ((lvar 0 a) (lvar 1 b)))
+              LISP
+            }
+          end
+        end
+      end
+
+      context "for floats" do
+        context "for immediate values" do
+          context "for =" do
+            let(:ruby){"@test = 0.0"}
+            it { is_expected.to eql "(set_lvar_float ((lvar 0 test) (float32 0.0)))" }
+          end
+          context "for +=" do
+            let(:ruby){"@test += 0.0"}
+            it { is_expected.to eql "(add_val_to_float_lvar ((lvar 0 test) (float32 0.0)))" }
+          end
+          context "for -=" do
+            let(:ruby){"@test -= 0.0"}
+            it { is_expected.to eql "(sub_val_from_float_lvar ((lvar 0 test) (float32 0.0)))" }
+          end
+          context "for *=" do
+            let(:ruby){"@test *= 0.0"}
+            it { is_expected.to eql "(mult_float_lvar_by_val ((lvar 0 test) (float32 0.0)))" }
+          end
+          context "for /=" do
+            let(:ruby){"@test /= 0.0"}
+            it { is_expected.to eql "(div_float_lvar_by_val ((lvar 0 test) (float32 0.0)))" }
+          end
+        end
+      end
+    end
+
     context "for global vars" do
 
       context "for ints" do

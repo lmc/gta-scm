@@ -29,7 +29,11 @@ class GtaScm::RubyToScmCompiler
             value = search[keys]
             node = self
             keys.each do |key|
-              node = node[key]
+              if node[key]
+                node = node[key]
+              else
+                return false
+              end
             end
             if node.is_a?(::Parser::AST::Node)
               return false if !node.match(value)
@@ -181,6 +185,10 @@ class GtaScm::RubyToScmCompiler
     when :lvasgn
 
       emit_local_var_assign(node)
+
+    when :ivasgn
+
+      emit_instance_var_assign(node)
 
     when :casgn
 
@@ -478,6 +486,10 @@ class GtaScm::RubyToScmCompiler
     self.emit_n_var_assign(node,:lvar)
   end
 
+  def emit_instance_var_assign(node)
+    self.emit_n_var_assign(node,:lvar)
+  end
+
   def emit_global_var_assign(node)
     self.emit_n_var_assign(node,:var)
   end
@@ -575,7 +587,7 @@ class GtaScm::RubyToScmCompiler
       var = case var_type
       when :var
         gvar(left,:float)
-      when :lvar
+      when :lvar, :ivar
         lvar(left,:float)
       else
         raise("???")
@@ -594,7 +606,7 @@ class GtaScm::RubyToScmCompiler
       end
       return [[:"set_#{var_type}_text_label" , [var , right_val ]]]
     end
-    if type == :lvar
+    if type == :lvar || type == :ivar
       return emit_operator_assign(node)
     end
     if type == :block
@@ -920,6 +932,15 @@ class GtaScm::RubyToScmCompiler
         opcode_name << "#{right_var_type}_lvar"
       end
       right_value = lvar(right.children[0],right_var_type)
+    elsif right_type == :ivar
+      right_var_type = self.lvar_names_to_types[ right.children[0].to_s.gsub(/^\@/,'').to_sym ]
+      right_type = :lvar
+      if operator == :"="
+        opcode_name << "lvar_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_lvar"
+      end
+      right_value = lvar(right.children[0],right_var_type)
     elsif right_type == :gvar
       right_var_type = self.gvar_names_to_types[ right.children[0].to_s.gsub(/\$/,'').to_sym ]
       # debugger if !right_var_type
@@ -981,20 +1002,20 @@ class GtaScm::RubyToScmCompiler
       else
         opcode_name << "#{left_var_type}_var"
       end
-    elsif left_type == :lvasgn
+    elsif left_type == :lvasgn || left_type == :ivasgn
       if operator == :"="
         left_value = lvar(left.children[0],right_var_type)
       else
         left_value = lvar(left.children[0])
       end
-      left_var_type = self.lvar_names_to_types[ left.children[0] ]
+      left_var_type = self.lvar_names_to_types[ left.children[0].to_s.gsub(/^@/,'').to_sym ]
 
       if !left_var_type
         left_var_type = right.type
       end
 
       if operator == :"="# && right_type != :float && right_type != :int
-        left_var_type ||= self.lvar_names_to_types[ right.children[0] ]
+        left_var_type ||= self.lvar_names_to_types[ right.children[0].to_s.gsub(/^@/,'').to_sym ]
         opcode_name << "lvar_#{left_var_type}"
       else
         opcode_name << "#{left_var_type}_lvar"
@@ -1092,10 +1113,10 @@ class GtaScm::RubyToScmCompiler
       opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
     end
 
-    # if opcode_name =~ /sub_float_lvar_from_float_lvar/ && 
+    if opcode_name =~ /ivar/
     # if left_value.inspect+right_value.inspect =~ /distance_travelled/
-    #   debugger
-    # end
+      debugger
+    end
 
     # debugger
     return [[ opcode_name.to_sym , [left_value,right_value] ]]
@@ -1751,6 +1772,8 @@ class GtaScm::RubyToScmCompiler
     if name.is_a?(Parser::AST::Node)
       name = name.children[0]
     end
+
+    name = name.to_s.gsub(/^\@/,'').to_sym
 
     # if name.to_sym == :coords
     #   debugger
