@@ -288,6 +288,14 @@ describe GtaScm::RubyToScmCompiler do
           LISP
         }
       end
+      context "instance to global assignment" do
+        let(:ruby){"@local_var = 1; $global_var = @local_var"}
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+            (set_lvar_int ((lvar 0 local_var) (int8 1)))
+            (set_var_int_to_lvar_int ((var global_var) (lvar 0 local_var)))
+          LISP
+        }
+      end
       context "local to dma assignment" do
         let(:ruby){"local_var = 1; $_24 = local_var"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
@@ -606,6 +614,23 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
       
+      context "with instance vars" do
+        let(:ruby){ <<-RUBY
+          @timers_idx = 0
+          @timers = IntegerArray.new(1)
+          @timers[@timers_idx] = -1
+          @timers[@timers_idx] = get_game_timer()
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 timers_idx) (int8 0)))
+          (set_lvar_int ((lvar 1 timers) (int8 0)))
+          (set_lvar_int ((lvar_array 1 0 1 (int32 lvar)) (int8 -1)))
+          (get_game_timer ((lvar_array 1 0 1 (int32 lvar))))
+        LISP
+        }
+      end
+      
     end
 
 
@@ -643,6 +668,40 @@ describe GtaScm::RubyToScmCompiler do
         LISP
         }
       end
+      context "with a assignment from an instance variable" do
+        let(:ruby){ <<-RUBY
+          @coords = Vector3.new
+          @coords = get_char_coordinates(PLAYER_CHAR)
+          @coords.z += 10.0
+          car = create_car(420,@coords)
+          accum = @coords.x
+          accum += @coords.y
+          accum += @coords.z
+          @coords.x = @coords.y
+          @coords.x += @coords.z
+          @coords,accum = 1.0, 2.0, 3.0, 360.0
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_float ((lvar 0 coords_x) (float32 0.0)))
+          (set_lvar_float ((lvar 1 coords_y) (float32 0.0)))
+          (set_lvar_float ((lvar 2 coords_z) (float32 0.0)))
+          (get_char_coordinates ((dmavar 12) (lvar 0 coords_x) (lvar 1 coords_y) (lvar 2 coords_z)))
+          (add_val_to_float_lvar ((lvar 2 coords_z) (float32 10.0)))
+          (create_car ((int16 420) (lvar 0 coords_x) (lvar 1 coords_y) (lvar 2 coords_z) (lvar 3 car)))
+          (set_lvar_float_to_lvar_float ((lvar 4 accum) (lvar 0 coords_x)))
+          (add_float_lvar_to_float_lvar ((lvar 4 accum) (lvar 1 coords_y)))
+          (add_float_lvar_to_float_lvar ((lvar 4 accum) (lvar 2 coords_z)))
+          (set_lvar_float ((lvar 0 coords_x) (lvar 1 coords_y)))
+          (add_float_lvar_to_float_lvar ((lvar 0 coords_x) (lvar 2 coords_z)))
+          (set_lvar_float ((lvar 0 coords_x) (float32 1.0)))
+          (set_lvar_float ((lvar 1 coords_y) (float32 2.0)))
+          (set_lvar_float ((lvar 2 coords_z) (float32 3.0)))
+          (set_lvar_float ((lvar 4 accum) (float32 360.0)))
+        LISP
+        }
+      end
+
     end
 
 

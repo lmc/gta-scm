@@ -37,6 +37,8 @@ class GtaScm::RubyToScmCompiler
             end
             if node.is_a?(::Parser::AST::Node)
               return false if !node.match(value)
+            else
+              return false
             end
           end
           return true
@@ -214,7 +216,7 @@ class GtaScm::RubyToScmCompiler
         emit_raw(node)
       elsif node.children[1] == :[]= && node.children[0].type == :gvar
         emit_global_var_assign(node)
-      elsif node.children[1] == :[]= && node.children[0].type == :lvar
+      elsif node.children[1] == :[]= && node.match([0] => [:lvar,:ivar])
         emit_local_var_assign(node)
       elsif node.children[1] =~ /=/ && node.children[2].andand.type == :send
         # property assign
@@ -344,8 +346,8 @@ class GtaScm::RubyToScmCompiler
     instructions = []
     value_idx = 0
     node.children[0].children.each_with_index.map do |left,i|
-      if left.type == :lvasgn && self.lvar_objects[ left.children[0] ]
-        variable_name = left.children[0]
+      if (left.type == :lvasgn || left.type == :ivasgn) && self.lvar_objects[ left[0].to_s.gsub(/^@/,'').to_sym ]
+        variable_name = left[0].to_s.gsub(/^@/,'').to_sym
         OBJECT_STRUCTURES[ self.lvar_objects[ variable_name ] ].each_pair do |property,type|
           left = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
           right = node.children[1].children[value_idx]
@@ -523,7 +525,7 @@ class GtaScm::RubyToScmCompiler
     #   return [emit_operator_assign(node)]
     # end
 
-    if right.type == :send
+    if right.type == :send && !(right.match([0] => :ivar))
       if right.children[0].andand.type == :const && right.children[0].children[1] == :IntegerArray && right.children[1] == :new
         return record_array_assign(node)
       elsif right.children[0].andand.type == :const && right.children[0].children[1] == :Vector3 && right.children[1] == :new
@@ -537,6 +539,8 @@ class GtaScm::RubyToScmCompiler
     end
 
     type = right.type
+
+    type = :ivar if right.match([0] => :ivar)
 
     if type == :const
       right_val = self.constants_to_values[ right.children[1] ]
@@ -702,9 +706,9 @@ class GtaScm::RubyToScmCompiler
   end
 
   def record_object_assign(node)
-    if node.type == :lvasgn
+    if node.type == :lvasgn || node.type == :ivasgn
       object_name = node.children[1].children[0].children[1]
-      variable_name = node.children[0]
+      variable_name = node.children[0].to_s.gsub(/^@/,'').to_sym
 
       self.lvar_objects[variable_name] = object_name
 
@@ -849,16 +853,17 @@ class GtaScm::RubyToScmCompiler
           right = emit_value(node.children[3])
           return [[ :"set_var_#{array_type}" , [ left , right ] ]]
         end
-      elsif node.type == :send && node.children[2].andand.type == :send && self.lvar_objects[ node.children[0].andand.children.andand[0] ]
+      # elsif node.type == :send && node.children[2].andand.type == :send && self.lvar_objects[ node.children[0].andand.children.andand[0] ]
+      elsif node.type == :send && node.match([2] => :send) && self.lvar_objects[ node[0][0].to_s.gsub(/^@/,'').to_sym ]
         # local var object property assign
-        left_variable_name = node.children[0].children[0]
+        left_variable_name = node[0][0].to_s.gsub(/^@/,'').to_sym
         left = node
         left_object_type = self.lvar_objects[ left_variable_name ]
         left_property = node.children[1].to_s.gsub(/=/,'').to_sym
         left_property_type = OBJECT_STRUCTURES[left_object_type][left_property]
         right = node.children[2]
-        if right.children[0].type == :lvar && self.lvar_objects[ right.children[0].children[0] ]
-          right_variable_name = right.children[0].children[0]
+        if right.match([0] => [:lvar,:ivar]) && self.lvar_objects[ right[0][0].to_s.gsub(/^@/,'').to_sym ]
+          right_variable_name = right[0][0].to_s.gsub(/^@/,'').to_sym
           right_object_type = self.lvar_objects[ right_variable_name ]
           right_property = node.children[1].to_s.gsub(/=/,'').to_sym
           return [[ :"set_lvar_#{left_property_type}" , [ emit_value(left) , emit_value(right) ] ]]
@@ -943,7 +948,6 @@ class GtaScm::RubyToScmCompiler
       right_value = lvar(right.children[0],right_var_type)
     elsif right_type == :gvar
       right_var_type = self.gvar_names_to_types[ right.children[0].to_s.gsub(/\$/,'').to_sym ]
-      # debugger if !right_var_type
       if operator == :"="
         opcode_name << "var_#{right_var_type}"
       else
@@ -955,8 +959,24 @@ class GtaScm::RubyToScmCompiler
       right_var_type = self.constants_to_types[ right.children[1] ]
       right_type = right_var_type
       right_value = self.constants_to_values[ right.children[1] ]
-    elsif node.match([2] => :send, [2,0] => :lvar) && self.lvar_objects[ node[2][0][0] ]
-      variable_name = node.children[2].children[0].children[0]
+    elsif node.match([1] => :send, [1,0] => [:lvar,:ivar]) && self.lvar_objects[ node[1][0][0].to_s.gsub(/^@/,'').to_sym ]
+      variable_name = node[1][0][0].to_s.gsub(/^@/,'').to_sym
+      object_type = self.lvar_objects[ variable_name ]
+      property = node.children[1].children[1]
+      property_type = OBJECT_STRUCTURES[object_type][property]
+
+      left_value = lvar(node.children[0], property_type)
+      left_var_type = property_type
+
+      right_value = lvar(:"#{variable_name}_#{property}", property_type)
+      right_var_type = property_type
+      if operator == :"="
+        opcode_name << "lvar_#{right_var_type}"
+      else
+        opcode_name << "#{right_var_type}_lvar"
+      end
+    elsif node.match([2] => :send, [2,0] => [:lvar,:ivar]) && self.lvar_objects[ node[2][0][0].to_s.gsub(/^@/,'').to_sym ]
+      variable_name = node[2][0][0].to_s.gsub(/^@/,'').to_sym
       object_type = self.lvar_objects[ variable_name ]
       property = node.children[2].children[1]
       property_type = OBJECT_STRUCTURES[object_type][property]
@@ -1048,6 +1068,8 @@ class GtaScm::RubyToScmCompiler
       if operator == :"="
         if node.children[1].type == :lvar
           left_var_type = self.lvar_names_to_types[ right.children[0] ]
+        elsif node.children[1].type == :ivar
+          left_var_type = self.lvar_names_to_types[ right.children[0].to_s.gsub(/^@/,'').to_sym ]
         else
           left_var_type = self.gvar_names_to_types[ right.children[0] ]          
         end
@@ -1056,8 +1078,8 @@ class GtaScm::RubyToScmCompiler
       else
         opcode_name << "#{left_var_type}_var"
       end
-    elsif node.match([0] => :send, [0,0] => :lvar)
-      variable_name = node.children[0].children[0].children[0]
+    elsif node.match([0] => :send, [0,0] => [:lvar,:ivar])
+      variable_name = node.children[0].children[0].children[0].to_s.gsub(/^@/,'').to_sym
       property = node.children[0].children[1]
       if object_type = self.lvar_objects[ variable_name ]
         left_type = OBJECT_STRUCTURES[object_type][property]
@@ -1139,8 +1161,8 @@ class GtaScm::RubyToScmCompiler
   def arguments(o_args)
     args = []
     o_args.each {|a|
-      variable_name = a.children[0]
-      if a.type == :lvar && self.lvar_objects[ variable_name ]
+      variable_name = a.children[0].to_s.gsub(/^@/,'').to_sym
+      if (a.type == :lvar || a.type == :ivar) && self.lvar_objects[ variable_name ]
         OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
           var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
           args << emit_value(var)
@@ -1275,7 +1297,7 @@ class GtaScm::RubyToScmCompiler
     opcode_name = opcode_call_node.children[1]
     opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
-    if opcode_call_node.children[0].is_a?(Parser::AST::Node) && [:gvar,:lvar].include?(opcode_call_node.children[0].type) && [:to_i,:to_f].include?(opcode_call_node.children[1])
+    if opcode_call_node.children[0].is_a?(Parser::AST::Node) && [:gvar,:lvar,:ivar].include?(opcode_call_node.children[0].type) && [:to_i,:to_f].include?(opcode_call_node.children[1])
       return emit_cast_opcode_call(variable_node)
     end
 
@@ -1288,7 +1310,7 @@ class GtaScm::RubyToScmCompiler
 
       variable_node.children.each_with_index do |arg,i|
         arg_def = opcode_def.arguments[i]
-        if arg.type == :lvasgn
+        if arg.type == :lvasgn || arg.type == :ivasgn
           # args << lvar( arg.children[0] , arg_def[:type] )
           args << lvar( arg.children[0] , nil )
         elsif arg.type == :gvasgn
@@ -1327,6 +1349,13 @@ class GtaScm::RubyToScmCompiler
         # expand lvar objects
         elsif variable_node.type == :lvasgn && self.lvar_objects[ variable_node.children[0] ]
           variable_name = variable_node.children[0]
+          OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
+            var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
+            args << emit_value(var)
+          end
+        # expand ivar objects
+        elsif variable_node.type == :ivasgn && self.lvar_objects[ variable_node[0].to_s.gsub(/^@/,'').to_sym ]
+          variable_name = variable_node[0].to_s.gsub(/^@/,'').to_sym
           OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
             var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
             args << emit_value(var)
@@ -1386,6 +1415,7 @@ class GtaScm::RubyToScmCompiler
           if assign_type == :gvasgn
             args << gvar(variable_node.to_s.gsub('$',''))
           else
+            # debugger
             args << lvar( variable_node.children[0] , opcode_def.arguments.last[:type] )
           end
 
@@ -1652,6 +1682,8 @@ class GtaScm::RubyToScmCompiler
       else
         lvar(node.children[0])
       end
+    when :ivar
+      lvar(node[0].to_s.gsub(/^@/,'').to_sym)
     when :gvar
       name = node.children[0].to_s.gsub(%r(^\$),'')
       if matches = name.match(%r(^_(\d+)_?(.*)?))
@@ -1689,7 +1721,7 @@ class GtaScm::RubyToScmCompiler
           raise "undefined array #{node.inspect}"
         end
       # property access
-      elsif node.children[0].andand.type == :lvar && node.children[1].is_a?(Symbol)
+      elsif node.match([0] => [:lvar,:ivar]) && node.children[1].is_a?(Symbol)
         variable_name = :"#{node.children[0].children[0]}_#{node.children[1].to_s.gsub(/=/,'')}"
         lvar(variable_name)
       # property access
