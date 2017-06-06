@@ -146,8 +146,9 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_var_int ((var _temp_i_0001) (int8 1)))
-          (wait ((var _temp_i_0001)))
+          (set_var_int ((var _temp_i_0002) (int8 1)))
+          (set_lvar_int ((lvar 0 foo) (int8 2)))
+          (add_int_lvar_to_int_var ((var _temp_i_0002) (lvar 0 foo)))
         LISP
         }
       end
@@ -1093,6 +1094,7 @@ describe GtaScm::RubyToScmCompiler do
   def compile(ruby)
     parsed = Parser::CurrentRuby.parse(ruby)
     compiler = GtaScm::RubyToScmCompiler.new
+    # compiler = GtaScm::RubyToScmCompiler2.new
     compiler.scm = @scm
     scm = compiler.transform_node(parsed)
     f = scm.map do |node|

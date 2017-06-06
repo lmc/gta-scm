@@ -15,6 +15,39 @@ class GtaScm::RubyToScmCompiler
   # to get node source text:
   # node.location.expression.source
 
+  require 'parser/current'
+
+  module RefinedParserNodes
+    refine(::Parser::AST::Node) do
+      def [](index)
+        children[index]
+      end
+
+      def match(search)
+        if search.is_a?(Hash)
+          search.keys.each do |keys|
+            value = search[keys]
+            node = self
+            keys.each do |key|
+              node = node[key]
+            end
+            if node.is_a?(::Parser::AST::Node)
+              return false if !node.match(value)
+            end
+          end
+          return true
+        elsif search.is_a?(Symbol)
+          return self.type == search
+        elsif search.is_a?(Array)
+          return search.include?(self.type)
+        else
+          raise ArgumentError
+        end
+      end
+    end
+  end
+  using RefinedParserNodes
+
   OBJECT_STRUCTURES = {
     Vector3: { x: :float, y: :float, z: :float }
   }
@@ -901,7 +934,7 @@ class GtaScm::RubyToScmCompiler
       right_var_type = self.constants_to_types[ right.children[1] ]
       right_type = right_var_type
       right_value = self.constants_to_values[ right.children[1] ]
-    elsif node.children[2].andand.type == :send && node.children[2].children[0].andand.type == :lvar && self.lvar_objects[ node.children[2].children[0].children[0] ]
+    elsif node.match([2] => :send, [2,0] => :lvar) && self.lvar_objects[ node[2][0][0] ]
       variable_name = node.children[2].children[0].children[0]
       object_type = self.lvar_objects[ variable_name ]
       property = node.children[2].children[1]
@@ -917,7 +950,7 @@ class GtaScm::RubyToScmCompiler
       else
         opcode_name << "#{right_var_type}_lvar"
       end
-    elsif node.children[2].andand.type == :send && node.children[2].children[0].andand.type == :gvar && self.var_objects[ node.children[2].children[0].children[0] ]
+    elsif node.match([2] => :send, [2,0] => :gvar) && self.var_objects[ node[2][0][0] ]
       variable_name = node.children[2].children[0].children[0]
       object_type = self.var_objects[ variable_name ]
       property = node.children[2].children[1]
@@ -1002,7 +1035,7 @@ class GtaScm::RubyToScmCompiler
       else
         opcode_name << "#{left_var_type}_var"
       end
-    elsif node.children[0].type == :send && node.children[0].children[0].type == :lvar
+    elsif node.match([0] => :send, [0,0] => :lvar)
       variable_name = node.children[0].children[0].children[0]
       property = node.children[0].children[1]
       if object_type = self.lvar_objects[ variable_name ]
@@ -1017,7 +1050,7 @@ class GtaScm::RubyToScmCompiler
       else
         raise "no object for lvar"
       end
-    elsif node.children[0].type == :send && node.children[0].children[0].type == :gvar
+    elsif node.match([0] => :send, [0,0] => :gvar)
       variable_name = node.children[0].children[0].children[0]
       property = node.children[0].children[1]
       if object_type = self.var_objects[ variable_name ]
@@ -1028,7 +1061,7 @@ class GtaScm::RubyToScmCompiler
       else
         raise "no object for lvar"
       end
-    elsif node.type == :send && node.children[0].type == :gvar
+    elsif node.match([] => :send, [0] => :gvar)
       variable_name = node.children[0].children[0]
       property = node.children[1].to_s.gsub(/=/,'').to_sym
       if object_type = self.var_objects[ variable_name ]
@@ -1345,7 +1378,7 @@ class GtaScm::RubyToScmCompiler
     end
 
     if args.size != opcode_def.andand.arguments.andand.size
-      debugger
+      # debugger
       raise IncorrectArgumentCount, "opcode #{opcode_name} expects #{opcode_def.arguments.size} args, got #{args.size}"
     end
 
@@ -1890,3 +1923,24 @@ class GtaScm::RubyToScmCompiler
   class InvalidConditionalLogicalOperatorUse < ::ArgumentError; end
   class IncorrectArgumentCount < ::ArgumentError; end
 end
+
+
+
+class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
+  using RefinedParserNodes
+
+  def transform_node(node)
+    node = self.simplify_node(node)
+  end
+
+
+  def simplify_node(node)
+    debugger
+  end
+
+
+end
+
+
+
+
