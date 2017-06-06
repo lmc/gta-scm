@@ -555,6 +555,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               arr = arr[array_key]
             end
 
+            shim_value = 0
+            if touchup_name.match(/(.+)(\+|\-)(\d+)$/)
+              touchup_name = $1.to_sym
+              shim_value = "#{$2}#{$3}".to_i
+            end
+
             if touchup_value = self.touchup_defines[touchup_name]
               if touchup_name.to_s.match(/^label_/)
                 if self.code_offset
@@ -566,19 +572,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               end
             elsif self.parent && touchup_value = self.parent.touchup_defines[touchup_name]
               # all good ???
-
             else
               debugger
               raise "Missing touchup: a touchup: #{touchup_name} has no definition. It was used at node offset: #{offset} at #{array_keys} - #{node.inspect}"
             end
 
-            # if self.touchup_types[touchup_name] == :mission_jump
-            #   touchup_value *= -1
-            # end
-
-            if touchup_name == :label_lib_bitpack_init || touchup_name == "label_lib_bitpack_init"
-              # debugger
-            end
+            touchup_value += shim_value
 
             o_touchup_value = touchup_value
 
@@ -697,8 +696,13 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         end
       when :var_array
         if arg_tokens[1].is_a?(Symbol)
-          self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
-          arg.set_array(arg_tokens[0],0xEEEE,arg_tokens[2],arg_tokens[3],arg_tokens[4])
+          if arg_tokens[1].match(/(.+)(\+|\-)(\d+)$/)
+            self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
+            arg.set_array(arg_tokens[0],0xEEEE,arg_tokens[2],arg_tokens[3],arg_tokens[4])
+          else
+            self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
+            arg.set_array(arg_tokens[0],0xEEEE,arg_tokens[2],arg_tokens[3],arg_tokens[4])
+          end
         else
           arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
         end

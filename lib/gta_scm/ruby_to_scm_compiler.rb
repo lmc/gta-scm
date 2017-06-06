@@ -1704,18 +1704,37 @@ class GtaScm::RubyToScmCompiler
       if node.children[1] == :[] || node.children[1] == :[]=
         array_type = node.children[0].type == :gvar ? :var_array : :lvar_array
         array_var = node.children[0]
+        array_value = emit_value(array_var)[1]
+
         index_type = node.children[2].type == :gvar ? :var : :lvar
         index_var = node.children[2]
-        # debugger
+        index_value = emit_value(index_var)[1]
+
+        shift_value = 0
+        if node.match([2] => :send) && [:+,:-].include?(node[2][1])
+          index_var = index_var[0]
+          index_type = index_var.type == :gvar ? :var : :lvar
+          index_value = emit_value(index_var)[1]
+          shift_value = node[2][2][0]
+          shift_value *= 4  if index_type == :var
+          shift_value *= -1 if node[2][1] == :-
+          if array_value.is_a?(Numeric)
+            array_value += shift_value
+          else
+            # raise ArgumentError, "can only use index-relative on arrays with known addresses"
+            array_value = :"#{array_value}#{node[2][1]}#{shift_value.abs}".to_sym
+          end
+        end
+
         if array_type == :var_array && (array_def = self.var_arrays[ node.children[0].children[0] ])
-          [ :var_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
+          [ :var_array , array_value , index_value , array_def[2] , [ array_def[3] , index_type] ]
         elsif array_var.type == :send && array_var.children[1] == :_0
-          [ :lvar_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
+          [ :lvar_array , shift_value , index_value , 0 , [ :int32 , index_type] ]
         elsif array_var.type == :gvar && array_var.children[0] == :$_0
-          [ :var_array , 0 , emit_value(index_var)[1] , 0 , [ :int32 , index_type] ]
+          [ :var_array , shift_value , index_value , 0 , [ :int32 , index_type] ]
         elsif array_type == :lvar_array && (array_def = self.lvar_arrays[ node.children[0].children[0] ])
           # debugger
-          [ :lvar_array , emit_value(array_var)[1] , emit_value(index_var)[1] , array_def[2] , [ array_def[3] , index_type] ]
+          [ :lvar_array , array_value , index_value , array_def[2] , [ array_def[3] , index_type] ]
         else
           debugger
           raise "undefined array #{node.inspect}"

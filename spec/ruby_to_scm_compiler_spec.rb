@@ -544,6 +544,26 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
 
+      context "with an index and offset" do
+        let(:ruby){ <<-RUBY
+          $stack = IntegerArray.new(3)
+          $sc = 2
+          $stack[$sc - 2] = 1
+          $stack[$sc - 1] = 2
+          $stack[$sc - 0] = 3
+          $stack[$sc + 1] = 4
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((dmavar 4004 timers) (int8 0)))
+          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
+          (get_game_timer ((var_array 4004 4000 1 (int32 var))))
+          (get_game_timer ((var_array 4000 4000 1 (int32 var))))
+          (get_game_timer ((var_array 4008 4000 1 (int32 var))))
+        LISP
+        }
+      end
+
     end
 
     describe "local arrays" do

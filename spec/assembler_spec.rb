@@ -102,6 +102,25 @@ describe GtaScm::Assembler do
           end
         end
       end
+
+      context "var_array with var index/offset" do
+        it "should assemble" do
+          line = '(set_var_int ((var_array stack-4 3000 32 (int32 var)) (var_array stack 3000 32 (int32 var))))'
+          assembler.read_line(scm,line,"test",0)
+
+          # assembler.define_touchup(:stack_counter,3000)
+          assembler.define_touchup(:stack,10000)
+          assembler.install_touchup_values!
+
+          assembler.nodes[0].tap do |node|
+            # 89 00 08 c6 01 bc 6c 52 81 02 24 01
+            # 84 00 02 1c 1b 07 e0 0b 5c 0b 20 80
+            expect(node.opcode.hex).to eql "04 00"
+            expect(node.arguments[0].hex).to eql "07 0c 27 b8 0b 20 80"
+            expect(node.arguments[1].hex).to eql "07 10 27 b8 0b 20 80"
+          end
+        end
+      end
     end
     
   end
