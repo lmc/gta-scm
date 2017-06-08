@@ -1831,10 +1831,10 @@ class GtaScm::RubyToScmCompiler
     # end
 
     id = if self.lvar_names_to_ids[name]
-      if type && self.lvar_names_to_types[name] && type != self.lvar_names_to_types[name]
-        debugger
-        raise "mismatched type for #{name} (already defined as #{self.lvar_names_to_types[name]}, used as #{type}}"
-      end
+      # if type && self.lvar_names_to_types[name] && type != self.lvar_names_to_types[name]
+      #   debugger
+      #   raise "mismatched type for #{name} (already defined as #{self.lvar_names_to_types[name]}, used as #{type}}"
+      # end
       self.lvar_names_to_ids[name]
     else
       self.generate_lvar_counter += 1

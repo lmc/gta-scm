@@ -555,11 +555,14 @@ describe GtaScm::RubyToScmCompiler do
         RUBY
         }
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (set_var_int ((dmavar 4004 timers) (int8 0)))
-          (set_var_int ((dmavar 4000 timers_idx) (int8 0)))
-          (get_game_timer ((var_array 4004 4000 1 (int32 var))))
-          (get_game_timer ((var_array 4000 4000 1 (int32 var))))
-          (get_game_timer ((var_array 4008 4000 1 (int32 var))))
+          (set_var_int ((var stack) (int8 0)))
+          (set_var_int ((var stack_1) (int8 0)))
+          (set_var_int ((var stack_2) (int8 0)))
+          (set_var_int ((var sc) (int8 2)))
+          (set_var_int ((var_array stack-8 sc 3 (int32 var)) (int8 1)))
+          (set_var_int ((var_array stack-4 sc 3 (int32 var)) (int8 2)))
+          (set_var_int ((var_array stack-0 sc 3 (int32 var)) (int8 3)))
+          (set_var_int ((var_array stack+4 sc 3 (int32 var)) (int8 4)))
         LISP
         }
       end

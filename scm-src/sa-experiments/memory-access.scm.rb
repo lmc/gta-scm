@@ -16,6 +16,9 @@
 
 # SCM VM memory starts here:
 STEAM_OSX_3_1_SCM_OFFSET = 10664568
+STEAM_OSX_3_1_TCB_OFFSET = 10933576
+STEAM_OSX_3_1_TCB_SIZE = 224
+STEAM_OSX_3_1_TCB_MAX = 96
 
 # Windows EXEs have a PZ header here: (0x400000)
 STEAM_OSX_3_1_EXE_OFFSET = 4194304
@@ -23,17 +26,28 @@ STEAM_OSX_3_1_EXE_OFFSET = 4194304
 # The header is "MZ\x90\x00"
 STEAM_OSX_3_1_EXE_HEADER = 9460301
 
-idx = 0
-idx -= 10664568 # STEAM_OSX_3_1_SCM_OFFSET
-idx += 4194304 # STEAM_OSX_3_1_EXE_OFFSET
+@i = 0
+@thread_idx = 0
+@lvar_2 = 42069
+@lvar_3 = -1
 
-# divide by 4 because the array accessor thinks it's an array of int32s (4 bytes)
-idx /= 4
-
-pe_header = 0
-set_lvar_int_to_var_int(pe_header,$_0[idx])
-expected = STEAM_OSX_3_1_EXE_HEADER
-
-if pe_header == expected
-  add_one_off_sound(0.0,0.0,0.0,SOUND_BING)
+loop do
+  @i = 0
+  @i -= STEAM_OSX_3_1_SCM_OFFSET
+  @i += STEAM_OSX_3_1_TCB_OFFSET
 end
+
+# idx = 0
+# idx -= 10664568 # STEAM_OSX_3_1_SCM_OFFSET
+# idx += 4194304 # STEAM_OSX_3_1_EXE_OFFSET
+
+# # divide by 4 because the array accessor thinks it's an array of int32s (4 bytes)
+# idx /= 4
+
+# pe_header = 0
+# set_lvar_int_to_var_int(pe_header,$_0[idx])
+# expected = STEAM_OSX_3_1_EXE_HEADER
+
+# if pe_header == expected
+#   add_one_off_sound(0.0,0.0,0.0,SOUND_BING)
+# end

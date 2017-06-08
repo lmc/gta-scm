@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+# sudo ./bin/search_process_memory 69 69 69 69
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/process'
+
+pid = nil
+
+if !pid
+  # pid = `ps -A | grep -m1 'Vice City.app' | awk '{print $1}'`.to_i
+  pid = `ps -A | grep -m1 'San Andreas.app' | awk '{print $1}'`.to_i
+end
+
+needle = "1234"
+ARGV.each do |arg|
+  if arg.match(/=/)
+    raise ArgumentError
+  else
+    needle << arg.to_i(16).chr
+  end
+end
+
+process = GtaScm::Process.new#(pid)
+process.detect_pid_and_attach!
+
+puts "searching for needle: #{needle.inspect} #{hex(needle)}"
+
+# start_addr = 4492648
+start_addr = 0x465e74
+start_addr = 0x465fa0
+# start_addr = 4612000 + 0xd9
+start_addr = 0x00913C20 + 333128
+# 4611783
+addr = (start_addr - 0)
+while addr < (start_addr + 10240)
+  # bytes = Ragweed::Wraposx::vm_read(process.task,addr,needle.size)
+  # if bytes == needle
+  #   puts "#{addr}: #{hex(bytes)}"
+  # end
+  # print "#{addr}\r"
+  # addr += 1
+  bytes = process.read(addr,4)
+  puts "#{addr}: #{hex(bytes)} (#{GtaScm::Types.bin2value(bytes,:int32)})"
+  addr += 4
+end

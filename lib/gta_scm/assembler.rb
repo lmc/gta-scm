@@ -555,6 +555,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               arr = arr[array_key]
             end
 
+            o_touchup_name = touchup_name
+
             shim_value = 0
             if touchup_name.match(/(.+)(\+|\-)(\d+)$/)
               touchup_name = $1.to_sym
@@ -594,7 +596,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             end
 
             touchup_value = touchup_value[0...arr.size]
-            logger.debug "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name})"
+            logger.debug "patching #{offset}[#{array_keys.join(',')}] = #{o_touchup_value} (#{GtaScm::ByteArray.new(touchup_value).hex}) (#{touchup_name}#{o_touchup_name != touchup_name ? " (#{o_touchup_name})" : ""})"
 
             arr.replace(touchup_value)
         end
@@ -695,17 +697,21 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           arg.set( arg_tokens[0] , arg_tokens[1] )
         end
       when :var_array
-        if arg_tokens[1].is_a?(Symbol)
-          if arg_tokens[1].match(/(.+)(\+|\-)(\d+)$/)
-            self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
-            arg.set_array(arg_tokens[0],0xEEEE,arg_tokens[2],arg_tokens[3],arg_tokens[4])
-          else
-            self.use_var_address(node.offset,[1,arg_idx,1],:"#{arg_tokens[1]}")
-            arg.set_array(arg_tokens[0],0xEEEE,arg_tokens[2],arg_tokens[3],arg_tokens[4])
-          end
-        else
-          arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
+        array_arg = arg_tokens[1]
+        index_arg = arg_tokens[2]
+
+        if array_arg.is_a?(Symbol)
+          self.use_var_address(node.offset,[1,arg_idx,1],:"#{array_arg}")
+          array_arg = 0xDDDD
         end
+        if index_arg.is_a?(Symbol)
+          self.use_var_address(node.offset,[1,arg_idx,2],:"#{index_arg}")
+          index_arg = 0xEEEE
+        end
+          # if index_arg.match(/(.+)(\+|\-)(\d+)$/)
+        # debugger
+        arg.set_array(arg_tokens[0],array_arg,index_arg,arg_tokens[3],arg_tokens[4])
+        # arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       when :lvar_array
         arg.set_array(arg_tokens[0],arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       when :dereference
