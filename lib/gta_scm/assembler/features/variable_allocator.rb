@@ -41,6 +41,7 @@ module GtaScm::Assembler::Feature::VariableAllocator
     end
 
     self.var_touchups.each do |var_name|
+      next if var_name.match(/(.+)(\+|\-)(\d+)$/) # skip label+4 touchups
       if allocated_offset = self.allocated_vars[var_name]
         self.define_touchup(var_name,allocated_offset)
       else

@@ -115,11 +115,17 @@ loop do
   $stackzzz[$stack_counterzzz] = 2
   $stack_counterzzz += 1
   $stackzzz[$stack_counterzzz] = 3
-  $stack_counterzzz += 1
+  # $stack_counterzzz += 1
 
-  $stackzzz[$stack_counterzzz]     = 4
-  $stackzzz[$stack_counterzzz - 1] = 5
-  $stackzzz[$stack_counterzzz - 2] = 6
+  wait(5000)
+
+  stack_val_3 = $stackzzz[$stack_counterzzz]
+  stack_val_2 = $stackzzz[$stack_counterzzz - 1]
+  stack_val_1 = $stackzzz[$stack_counterzzz - 2]
+
+  # $stackzzz[$stack_counterzzz]     = 4
+  # $stackzzz[$stack_counterzzz - 1] = 5
+  # $stackzzz[$stack_counterzzz - 2] = 6
 
   if do_spawn == 0
     do_spawn = 1

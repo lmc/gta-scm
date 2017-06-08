@@ -1135,9 +1135,9 @@ class GtaScm::RubyToScmCompiler
       opcode_name.gsub!(/([a-z]+)_(l?var_(int|float))_([a-z]+)_(l?var_(int|float))/,"\\1_\\5_\\4_\\2")
     end
 
-    if opcode_name =~ /ivar/
-    # if left_value.inspect+right_value.inspect =~ /distance_travelled/
-      debugger
+    # if opcode_name =~ /ivar/
+    if left_value.inspect+right_value.inspect =~ /stack_counterzzz/
+      # debugger
     end
 
     # debugger
@@ -1328,20 +1328,21 @@ class GtaScm::RubyToScmCompiler
         args << gvar(variable_node.to_s.gsub('$',''))
         args << emit_value(opcode_call_node)
       else
-        # args = []
-        # o_args = opcode_call_node.children[2..-1] || []
-        # o_args.each {|a|
-        #   variable_name = a.children[0]
-        #   if a.type == :lvar && self.lvar_objects[ variable_name ]
-        #     OBJECT_STRUCTURES[ self.lvar_objects[variable_name] ].map do |property,type|
-        #       var = Parser::AST::Node.new(:lvar,[:"#{variable_name}_#{property}"])
-        #       args << emit_value(var)
-        #     end
-        #   else
-        #     args << emit_value(a)
-        #   end
-        # }
-        args = self.arguments( opcode_call_node.children[2..-1] )
+
+        if (
+          (opcode_call_node.type == :send && opcode_call_node.match([0] => [:gvar,:lvar,:ivar], [2] => [:gvar,:lvar,:ivar]) && opcode_call_node.children[1] == :[]) or
+          (opcode_call_node.type == :send && opcode_call_node.match([0] => [:gvar,:lvar,:ivar],[2]=>:send,[2,0]=>[:gvar,:lvar,:ivar]) && opcode_call_node.children[1] == :[])
+        )then
+          if variable_node.type == :lvasgn
+            args = [ lvar(variable_node) ]
+          elsif variable_node.type == :gvasgn
+            args = [ gvar(variable_node[0]) ]
+          else
+            raise "???"
+          end
+        else
+          args = self.arguments( opcode_call_node.children[2..-1] )
+        end
 
         # temp vars
         if variable_node.type == :lvasgn && self.temp_var_assignments[ variable_node.children[0] ]
@@ -1408,6 +1409,11 @@ class GtaScm::RubyToScmCompiler
             opcode_name = :"set_var_#{array_type}"
             opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
             args << emit_value( variable_node.children[1] )
+
+            if variable_node.inspect =~ /stack_counterzzz/
+              # debugger
+            end
+
           end
 
         else
