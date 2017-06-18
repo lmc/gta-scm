@@ -1,4 +1,22 @@
 
+# require 'parser/current'
+
+# Parser::Builders::Default.inspect
+
+# class ::Parser::Builders::Default
+#   alias _assignable assignable
+#   def assignable(node)
+#     case node.type
+#     when :back_ref, :nth_ref
+#       debugger
+#       # diagnostic :error, :backref_assignment, nil, node.loc.expression
+#       node.updated(:gvasgn)
+#     else
+#       _assignable(node)
+#     end
+#   end
+# end
+
 class GtaScm::RubyToScmCompiler
 
   attr_accessor :scm
@@ -53,6 +71,34 @@ class GtaScm::RubyToScmCompiler
     end
   end
   using RefinedParserNodes
+
+  # class Parser < ::Parser::Base
+  #   def default_encoding
+  #     Encoding::UTF_8
+  #   end
+  #   Racc_debug_parser = nil
+  #   Racc_arg = nil
+
+  #   def version
+  #     23
+  #   end
+  #   def self.default_parser
+  #     parser = new
+
+  #     parser
+  #   end
+  # end
+
+  def self.default_builder
+    # debugger
+    GtaScmRubyBuilder.new
+  end
+
+  def transform_source(ruby)
+    ruby = ruby.gsub(%r{\$\[([^\]]+)\]},"$0[\\1]") # $[foo] => $0[foo]
+    # debugger
+    ruby
+  end
 
   OBJECT_STRUCTURES = {
     Vector3: { x: :float, y: :float, z: :float }
@@ -899,6 +945,9 @@ class GtaScm::RubyToScmCompiler
         raise "dunno???"
       end
     end
+
+    # debugger
+
     left_type ||= left.type
     right_type ||= right.type
 
@@ -1736,7 +1785,7 @@ class GtaScm::RubyToScmCompiler
           [ :var_array , array_value , index_value , array_def[2] , [ array_def[3] , index_type] ]
         elsif array_var.type == :send && array_var.children[1] == :_0
           [ :lvar_array , shift_value , index_value , 0 , [ :int32 , index_type] ]
-        elsif array_var.type == :gvar && array_var.children[0] == :$_0
+        elsif array_var.type == :gvar && [:$_0,:$0].include?(array_var.children[0])
           [ :var_array , shift_value , index_value , 0 , [ :int32 , index_type] ]
         elsif array_type == :lvar_array && (array_def = self.lvar_arrays[ node.children[0].children[0] ])
           # debugger
@@ -1978,6 +2027,8 @@ class GtaScm::RubyToScmCompiler
     end
   end
 
+  def compile_lvars_as_temp_vars?; false; end
+
   class NodeError < ::ArgumentError;
     def initialize(node,metadata)
       @node = node
@@ -2009,13 +2060,42 @@ end
 class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   using RefinedParserNodes
 
-  def transform_node(node)
-    node = self.simplify_node(node)
+  def compile_lvars_as_temp_vars?; true; end
+
+  # def transform_node(node)
+  #   node = self.simplify_node(node)
+  # end
+
+  # def simplify_node(node)
+  #   debugger
+  # end
+
+  # @lvar
+  def on_lvar_use(*)
+  end
+  # @lvar = 1
+  def on_lvar_assign(*)
   end
 
+  # $gvar
+  def on_gvar_use(*)
+  end
+  # $gvar = 1
+  def on_gvar_assign(*)
+  end
 
-  def simplify_node(node)
-    debugger
+  # uvar
+  def on_uvar_use(*)
+  end
+  # uvar = 1
+  def on_uvar_assign(*)
+  end
+
+  # CONST
+  def on_const_use(*)
+  end
+  # CONST = 1
+  def on_const_assign(*)
   end
 
 

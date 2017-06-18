@@ -40,19 +40,26 @@ script(stack_gvar: 3072, stack_size: 32, stack_counter_lvar: 31) do
   loop do
     wait(0)
     if is_button_pressed(0,15)
-      # stack[stack_counter] = PLAYER_CHAR
-      # stack_counter += 1
-      # stack[stack_counter] = 399
-      # stack_counter += 1
-      # stack[stack_counter] = 0.0
-      # stack_counter += 1
-      # stack[stack_counter] = 5.0
-      # stack_counter += 1
-      # stack[stack_counter] = 0.0
-      # stack_counter += 1
+      # push empty slots onto stack for use as return values
+      # stack[stack_counter + 0] = nil
+      # stack_counter += 1 # (return values count)
+
+      # push arguments onto stack
+      # stack[stack_counter + 0] = PLAYER_CHAR
+      # stack[stack_counter + 1] = 399
+      # stack[stack_counter + 2] = 0.0
+      # stack[stack_counter + 3] = 5.0
+      # stack[stack_counter + 4] = 0.0
+      # stack_counter += 5 # (arguments count)
+
+      # call routine
       # gosub(spawn_car_in_front_of_char)
+      #   use arguments with `stack[stack_counter - 1]`
+      #   write to return values with `stack[stack_counter - 6]`
+
+      # stack_counter -= 5 # (arguments count)
       # car = stack[stack_counter]
-      # stack_counter -= 1 (number of return values)
+      # stack_counter -= 1 # (return values count)
       car = spawn_car_in_front_of_char(PLAYER_CHAR, 399, 0.0, 5.0, 0.0)
     end
   end

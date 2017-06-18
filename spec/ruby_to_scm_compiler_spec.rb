@@ -304,6 +304,14 @@ describe GtaScm::RubyToScmCompiler do
           LISP
         }
       end
+      # context "local to dma assignment (new)" do
+      #   let(:ruby){"local_var = 1; $[24000] = local_var"}
+      #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
+      #       (set_lvar_int ((lvar 0 local_var) (int8 1)))
+      #       (set_var_int_to_lvar_int ((dmavar 24) (lvar 0 local_var)))
+      #     LISP
+      #   }
+      # end
       context "local to dma maths" do
         let(:ruby){"local_var = 1; $_24 = local_var; $_24 += 1; $_24 *= 100; local_var *= 100; local_var = $_24"}
         it { is_expected.to eql <<-LISP.strip_heredoc.strip
@@ -544,7 +552,7 @@ describe GtaScm::RubyToScmCompiler do
         }
       end
 
-      context "with an index and offset" do
+      context "with a global index and offset" do
         let(:ruby){ <<-RUBY
           $stack = IntegerArray.new(3)
           $sc = 2
@@ -563,6 +571,29 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_int ((var_array stack-4 sc 3 (int32 var)) (int8 2)))
           (set_var_int ((var_array stack-0 sc 3 (int32 var)) (int8 3)))
           (set_var_int ((var_array stack+4 sc 3 (int32 var)) (int8 4)))
+        LISP
+        }
+      end
+
+      context "with a local index and offset" do
+        let(:ruby){ <<-RUBY
+          stack = IntegerArray.new(3)
+          sc = 2
+          stack[sc - 2] = 1
+          stack[sc - 1] = 2
+          stack[sc - 0] = 3
+          stack[sc + 1] = 4
+        RUBY
+        }
+        it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_lvar_int ((lvar 0 stack) (int8 0)))
+          (set_lvar_int ((lvar 1 stack_1) (int8 0)))
+          (set_lvar_int ((lvar 2 stack_2) (int8 0)))
+          (set_lvar_int ((lvar 3 sc) (int8 2)))
+          (set_lvar_int ((lvar_array -2 3 3 (int32 lvar)) (int8 1)))
+          (set_lvar_int ((lvar_array -1 3 3 (int32 lvar)) (int8 2)))
+          (set_lvar_int ((lvar_array 0 3 3 (int32 lvar)) (int8 3)))
+          (set_lvar_int ((lvar_array 1 3 3 (int32 lvar)) (int8 4)))
         LISP
         }
       end
@@ -1271,11 +1302,109 @@ describe GtaScm::RubyToScmCompiler do
     end
   end
 
+  context "accessors" do
+    describe "global memory accessor (old)" do
+      let(:ruby){ <<-RUBY
+        $index = 0
+        $_0[$index] = 1 # gvar 0
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((var index) (int8 0)))
+          (set_var_int ((var_array 0 index 0 (int32 var)) (int8 1)))
+        LISP
+      }
+    end
+    describe "global memory accessor (new)" do
+      let(:ruby){ <<-RUBY
+        $index = 0
+        $0[$index] = 1 # gvar 0
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((var index) (int8 0)))
+          (set_var_int ((var_array 0 index 0 (int32 var)) (int8 1)))
+        LISP
+      }
+    end
+    describe "local memory accessor (new)" do
+      let(:ruby){ <<-RUBY
+        @index = 0
+        @[@index] = 1 # lvar 0
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (set_var_int ((var index) (int8 0)))
+          (set_var_int ((var_array 0 index 0 (int32 var)) (int8 1)))
+        LISP
+      }
+    end
+    describe "global memory accessor" do
+      let(:ruby){ <<-RUBY
+        $index = 0
+        GLOBAL[$index] = 1 # gvar 0
+        LOCAL[$index] = 1  # lvar 0
+        STACK[$index] = 1  # gvar 32678
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
+  end
+
+  context "Old syntax" do
+    let(:ruby){ <<-RUBY
+      STATIC_STACK_OFFSET = 0x400000
+      script(static_stack: STATIC_STACK_OFFSET, name: "test") do
+        function(:my_stack_function, args: {arg1: :int, arg2: :int}, returns: {func_tmp: :int}) do
+          func_tmp = arg1
+          func_tmp += arg2
+          return func_tmp
+        end
+        @local_var = 1
+        temp_var = 2
+        @bool_var = true
+        return_val = my_stack_function(@local_var,temp_var)
+      end
+    RUBY
+    }
+
+    # won't know var types at function definition
+    # will need to wait until we see they're invoked and track it from there
+    # intermediate representation required
+  end
+
+  context "New syntax" do
+    let(:ruby){ <<-RUBY
+      STATIC_STACK_OFFSET = 0x400000
+      script(static_stack: STATIC_STACK_OFFSET, name: "test") do
+        function(:my_stack_function) do |arg1,arg2|
+          func_tmp = arg1
+          func_tmp += arg2
+          return func_tmp
+        end
+        @local_var = 1
+        temp_var = 2
+        @bool_var = true
+        return_val = my_stack_function(@local_var,temp_var)
+      end
+    RUBY
+    }
+
+    # won't know var types at function definition
+    # will need to wait until we see they're invoked and track it from there
+    # intermediate representation required
+  end
+
   # ===
 
   def compile(ruby)
+    compiler = GtaScm::RubyToScmCompiler.new()
+    ruby = compiler.transform_source(ruby)
     parsed = Parser::CurrentRuby.parse(ruby)
-    compiler = GtaScm::RubyToScmCompiler.new
+    # parser = GtaScm::RubyToScmCompiler::Parser.parse(ruby)
     # compiler = GtaScm::RubyToScmCompiler2.new
     compiler.scm = @scm
     scm = compiler.transform_node(parsed)

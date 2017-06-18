@@ -330,7 +330,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iscm.logger.level = self.logger.level
           iscm.load_opcode_definitions!
 
-          compiler = GtaScm::RubyToScmCompiler.new
+          # compiler = GtaScm::RubyToScmCompiler.new(GtaScm::RubyToScmCompiler.default_builder())
+          compiler = GtaScm::RubyToScmCompiler.new()
           compiler.metadata = {filename: filename}
           compiler.constants_to_values.merge!(self.constants_to_values)
           compiler.compiler_data = self.compiler_data if self.compiler_data
