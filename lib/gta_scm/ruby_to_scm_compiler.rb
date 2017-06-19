@@ -41,33 +41,58 @@ class GtaScm::RubyToScmCompiler
         children[index]
       end
 
-      def match(search)
-        if search.is_a?(Hash)
-          search.keys.each do |keys|
-            value = search[keys]
-            node = self
-            keys.each do |key|
-              if node[key]
-                node = node[key]
+      def each(&block)
+        self.children.each(&block)
+      end
+
+      def each_with_index(&block)
+        self.children.each_with_index(&block)
+      end
+      def map(&block)
+        self.children.map(&block)
+      end
+
+      def match(*searches)
+        if searches.size == 0
+          raise ArgumentError
+        elsif searches.size > 1
+          searches.all?{|s| self.match(s) }
+        else
+          search = searches[0]
+          if search.is_a?(Hash)
+            search.keys.each do |keys|
+              value = search[keys]
+              node = self
+              keys.each do |key|
+                if node[key]
+                  node = node[key]
+                else
+                  return false
+                end
+              end
+              if node.is_a?(::Parser::AST::Node)
+                return false if !node.match(value)
+              elsif node.is_a?(Symbol)
+                if value.is_a?(Array)
+                  return false if !value.include?(node)
+                else
+                  return false if node != value
+                end
               else
                 return false
               end
             end
-            if node.is_a?(::Parser::AST::Node)
-              return false if !node.match(value)
-            else
-              return false
-            end
+            return true
+          elsif search.is_a?(Symbol)
+            return self.type == search
+          elsif search.is_a?(Array)
+            return search.include?(self.type)
+          else
+            raise ArgumentError
           end
-          return true
-        elsif search.is_a?(Symbol)
-          return self.type == search
-        elsif search.is_a?(Array)
-          return search.include?(self.type)
-        else
-          raise ArgumentError
         end
       end
+
     end
   end
   using RefinedParserNodes
@@ -2060,35 +2085,206 @@ end
 class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   using RefinedParserNodes
 
+  attr_accessor :state
+  attr_accessor :opcodes
+  attr_accessor :opcode_names
+  attr_accessor :functions
+  attr_accessor :current_function
+
   def compile_lvars_as_temp_vars?; true; end
 
-  # def transform_node(node)
-  #   node = self.simplify_node(node)
-  # end
+  def initialize(*args)
+    super
+    self.functions = {
+      # top-level stack frame for local vars
+      nil => {
+        locals: {}
+      }
+    }
+    self.opcodes = GtaScm::OpcodeDefinitions.new
+    self.opcodes.load_definitions!("san-andreas")
+    self.opcode_names = Hash[self.opcodes.names2opcodes.map{|k,v| [k.downcase.to_sym,k]}]
+    self.current_function = nil
+  end
 
-  # def simplify_node(node)
-  #   debugger
-  # end
+  def opcode(name)
+    self.opcodes[ self.opcode_names[name] ]
+  end
+
+  def opcode_return_types(name)
+    self.opcode(name).arguments.select{|a| a[:var]}.map{|a| a[:type]}
+  end
+
+  def transform_code(node)
+    self.state = :scanning
+    transform_node(node)
+    self.state = :generating
+    transformed = transform_node(node)
+    return transformed
+  end
+
+  def transform_node(node)
+    case
+
+    # generic block, seperate instructions as children
+    when node.match( :begin )
+      transforms = []
+      node.each do |child|
+        transforms += transform_node(child)
+      end
+      transforms
+
+    # Script declare
+    # 
+    # script(name: "foo") do
+    #   ...
+    # end
+    #
+    # s(:block,
+    #   s(:send, nil, :function,
+    #     s(:sym, :my_stack_function)),
+    #   s(:args,
+    #     s(:arg, :arg1),
+    #     s(:arg, :arg2)),
+    #   s(:begin,
+    #     [body]
+    when node.match( :block , [0] => :send , [0,1] => :script , [1] => :args , [2] => [:begin] )
+      on_script_block( node )
+
+    # Function declare
+    # 
+    # function(:name) do |arg1|
+    #   ...
+    # end
+    # 
+    # s(:block,
+    #   s(:send, nil, :function,
+    #     s(:sym, :my_stack_function)),
+    #   s(:args,
+    #     s(:arg, :arg1),
+    #     s(:arg, :arg2)),
+    #   s(:begin,
+    #     [body]
+    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => :begin )
+      on_function_block( node )
+
+    # Assignment
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_assign( node )
+
+    # Operator Assign
+    when node.match( [:op_asgn] , [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/] )
+      on_operator_assign( node )
+
+    # Opcode call with return values
+    # 
+    # func_tmp2 = get_game_timer()
+    #
+    # s(:lvasgn, :func_tmp2,
+    #   s(:send, nil, :get_game_timer))
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && self.opcode_names[ node[1][1] ]
+      on_opcode_call(node)
+
+    # Function call with return values
+    #
+    # return_val = my_stack_function(@local_var,temp_var)
+    #
+    # s(:lvasgn, :return_val,
+    #   s(:send, nil, :my_stack_function,
+    #     s(:ivar, :@local_var),
+    #     s(:lvar, :temp_var)))
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && self.functions[ node[1][1] ]
+      on_function_call(node)
+
+    # Return
+    when node.match( :return )
+      on_return( node )
+
+    # FIXME: are these appropriate? they don't generate instructions
+    when node.match( [:lvar,:ivar,:gvar] )
+      on_var_use(node)
+
+    when node.match( [:int,:float,:string] )
+      on_immediate_use(node)
+
+    # Default case
+    else
+      debugger
+      node
+      nil
+    end
+  end
 
   # @lvar
-  def on_lvar_use(*)
+  def on_lvar_use(node)
+    case node.type
+    when :lvar, :lvasgn
+      [:lvar,node[0]]
+    else
+      raise "unknown lvar #{node.inspect}"
+    end
   end
   # @lvar = 1
-  def on_lvar_assign(*)
+  def on_lvar_assign(node,rhs)
+    lhs = on_lvar_use(node)
+
+    if scanning?
+      if lhs[0] == :lvar && rhs
+        self.functions[self.current_function][:locals][ lhs[1] ] ||= []
+        self.functions[self.current_function][:locals][ lhs[1] ] << rhs
+      end
+    end
+
+    return lhs
+  end
+
+  def gvar_name(name)
+    name.to_s.gsub(/^\$/,'').to_sym
   end
 
   # $gvar
-  def on_gvar_use(*)
+  def on_gvar_use(node)
+    case node.type
+    when :gvar, :gvasgn
+      [:gvar,gvar_name(node[0])]
+    else
+      raise "unknown gvar #{node.inspect}"
+    end
   end
   # $gvar = 1
-  def on_gvar_assign(*)
+  def on_gvar_assign(node,rhs)
+    on_gvar_use(node)
   end
 
-  # uvar
-  def on_uvar_use(*)
+  def ivar_name(name)
+    name.to_s.gsub(/^@/,'').to_sym
   end
-  # uvar = 1
-  def on_uvar_assign(*)
+
+  # @ivar
+  def on_ivar_use(node)
+    case node.type
+    when :ivar, :ivasgn
+      [:ivar,ivar_name(node[0])]
+    else
+      raise "unknown ivar #{node.inspect}"
+    end
+  end
+  # @ivar = 1
+  def on_ivar_assign(node,rhs)
+    on_ivar_use(node)
+  end
+
+  def on_var_use(node)
+    case node.type
+    when :lvar
+      on_lvar_use(node)
+    when :ivar
+      on_ivar_use(node)
+    when :gvar
+      on_gvar_use(node)
+    else
+      raise "unknown var use #{node.inspect}"
+    end
   end
 
   # CONST
@@ -2096,6 +2292,231 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
   # CONST = 1
   def on_const_assign(*)
+  end
+
+  def on_immediate_use(node)
+    case node.type
+    when :int
+      [:int32,node[0]]
+    when :float
+      [:float32,node[0]]
+    else
+      raise "unknown immediate #{node.inspect}"
+    end
+  end
+
+  # Script declare
+  # 
+  # script(name: "foo") do
+  #   ...
+  # end
+  #
+  # s(:block,
+  #   s(:send, nil, :function,
+  #     s(:sym, :my_stack_function)),
+  #   s(:args,
+  #     s(:arg, :arg1),
+  #     s(:arg, :arg2)),
+  #   s(:begin,
+  #     [body]
+  def on_script_block(node)
+    transform_node(node[2])
+  end
+
+  # Function declare
+  # 
+  # function(:name) do |arg1|
+  #   ...
+  # end
+  # 
+  # s(:block,
+  #   s(:send, nil, :function,
+  #     s(:sym, :my_stack_function)),
+  #   s(:args,
+  #     s(:arg, :arg1),
+  #     s(:arg, :arg2)),
+  #   s(:begin,
+  #     [body]
+  def on_function_block(node)
+    self.current_function = node[0][2][0]
+
+    if scanning?
+      self.functions[self.current_function] = {
+        returns:   {},
+        arguments: {},
+        locals:    {}
+      }
+      node[1].each do |arg|
+        self.functions[self.current_function][:arguments][ arg[0] ] = nil
+      end
+    end
+
+    body = transform_node(node[2])
+    # debugger
+
+    [
+      [:function,self.current_function],
+      *body,
+      [:endfunction]
+    ]
+    
+  ensure
+    self.current_function = nil
+  end
+
+  def assignment_lhs(node,rhs)
+    case
+    when node.match(:lvasgn)
+      on_lvar_assign(node,rhs)
+    when node.match(:ivasgn)
+      on_ivar_assign(node,rhs)
+    when node.match(:gvasgn)
+      on_gvar_assign(node,rhs)
+    when node.match( :op_asgn , [0] => [:lvasgn] )
+      on_lvar_assign(node[0],nil)
+    else
+      raise "unknown assignment_lhs #{node.inspect}"
+    end
+  end
+
+  def assignment_rhs(node)
+    case
+    when node.match([:lvasgn,:ivasgn,:gvasgn], [1] => [:int,:float,:string])
+      on_immediate_use(node[1])
+    when node.match([:lvasgn,:ivasgn,:gvasgn], [1] => :lvar)
+      on_lvar_use(node[1])
+    when node.match( :op_asgn , [2] => :lvar )
+      on_lvar_use(node[2])
+    else
+      raise "unknown assignment_rhs #{node.inspect}"
+    end
+  end
+
+  # Assignment
+  def on_assign(node)
+    rhs = self.assignment_rhs(node)
+    lhs = self.assignment_lhs(node,rhs)
+
+    [
+      [:assign,[lhs,rhs]]
+    ]
+  end
+
+  # Operator Assign
+  def on_operator_assign(node)
+    rhs = assignment_rhs(node)
+    lhs = assignment_lhs(node,nil)
+    operator = assignment_operator(node)
+
+    [
+      [:assign_operator, [lhs, operator, rhs]]
+    ]
+  end
+
+  def assignment_operator(node)
+    if node.match( :op_asgn , [1] => [:+,:-,:*,:/] )
+      node[1]
+    else
+      raise "unknown assignment operator #{node.inspect}"
+    end
+  end
+
+  # Function call with return values
+  #
+  # return_val = my_stack_function(@local_var,temp_var)
+  #
+  # s(:lvasgn, :return_val,
+  #   s(:send, nil, :my_stack_function,
+  #     s(:ivar, :@local_var),
+  #     s(:lvar, :temp_var)))
+  def on_function_call(node)
+    [
+      [:function_call, node[1][1]]
+    ]
+  end
+
+  def function_call_return_vars(node,rhs)
+    vars = []
+    # case
+    # when node.match(:lvasgn)
+    #   vars << 
+  end
+
+  # Opcode call with return values
+  # 
+  # func_tmp2 = get_game_timer()
+  #
+  # s(:lvasgn, :func_tmp2,
+  #   s(:send, nil, :get_game_timer))
+  #
+  # when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && !!(self.opcode_names[ node[1][1] ])
+  def on_opcode_call(node)
+    opcode_name = opcode_call_name(node)
+    return_types = opcode_return_types(opcode_name)
+    return_vars = opcode_return_vars(node,return_types)
+
+    arguments = opcode_call_arguments(node)
+
+    [
+      [opcode_name,arguments + return_vars]
+    ]
+  end
+
+  def opcode_call_name(node)
+    case
+    when node.match(:lvasgn,[1] => :send)
+      node[1][1]
+    else
+      raise "unknown opcode name #{node.inspect}"
+    end
+  end
+
+  def opcode_return_vars(node,return_types)
+    case
+    # single var assignment
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] )
+      [
+        assignment_lhs(node,return_types[0])
+      ]
+    else
+      raise "unknown opcode return vars #{node.inspect} #{return_types.inspect}"
+    end
+  end
+
+  def opcode_call_arguments(node)
+    arguments = case
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send )
+      node[1][2..-1]
+    else
+      raise "unknown opcode call arguments #{node.inspect}"
+    end
+    arguments.map do |argument|
+      on_var_use(argument)
+    end
+  end
+
+  # Return
+  def on_return(node)
+    if scanning?
+      if !self.current_function
+        raise "returning outside a function"
+      end
+      node.each_with_index do |return_var,return_index|
+        self.functions[self.current_function][:returns][return_index] ||= []
+        self.functions[self.current_function][:returns][return_index] << transform_node(return_var)
+      end
+    end
+
+    [
+      [:return]
+    ]
+  end
+
+  def scanning?
+    self.state == :scanning
+  end
+  def generating?
+    self.state == :generating
   end
 
 

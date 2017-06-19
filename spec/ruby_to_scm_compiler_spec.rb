@@ -5,6 +5,8 @@ require 'parser/current'
 
 describe GtaScm::RubyToScmCompiler do
 
+  let(:compiler_type){ :v1 }
+
   before :all do
     @scm = GtaScm::Scm.load_string("san-andreas","")
     @scm.load_opcode_definitions!
@@ -1352,6 +1354,18 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+    describe "int accessor" do
+      let(:ruby){ <<-RUBY
+        int $foo
+        int @foo
+        int foo
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
   end
 
   context "Old syntax" do
@@ -1377,22 +1391,71 @@ describe GtaScm::RubyToScmCompiler do
   end
 
   context "New syntax" do
+    let(:compiler_type){ :v2_ir }
+
     let(:ruby){ <<-RUBY
-      STATIC_STACK_OFFSET = 0x400000
-      script(static_stack: STATIC_STACK_OFFSET, name: "test") do
+      # STATIC_STACK_OFFSET = 198_976
+      # STATIC_STACK_SIZE = 1024
+      script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        # @_sb = STATIC_STACK_OFFSET
+        # @_sb /= 4
+        # @_sp = @_sb
+        # @_sm = @_sb
+        # @_sm += STATIC_STACK_SIZE
+
         function(:my_stack_function) do |arg1,arg2|
+          # increment stack for tmp vars
+          # stack[sp + 0] = func_tmp
+          # stack[sp + 1] = func_tmp2
+          # sp += 2
+
+          # stack[sp - 4] = return value
+          # stack[sp - 3] = arg1
+          # stack[sp - 2] = arg2
+          # stack[sp - 1] = func_tmp
+
           func_tmp = arg1
           func_tmp += arg2
-          return func_tmp
+          func_tmp2 = get_game_timer(func_tmp)
+          return func_tmp, func_tmp2, 3
+
+          # decrement stack for tmp vars
+          # sp -= 2
         end
+
+
+
         @local_var = 1
         temp_var = 2
-        @bool_var = true
-        return_val = my_stack_function(@local_var,temp_var)
+
+        # == function call
+
+          # increment stack for return values
+          # stack[sp + 0] = 0          # return value
+          # sp += 1
+
+          # increment stack for arguments
+          # stack[sp + 0] = @local_var # arg1
+          # stack[sp + 1] = temp_var   # arg2
+          # sp += 2
+
+          return_val = my_stack_function(@local_var,temp_var)
+
+          # decrement stack to remove arguments
+          # sp -= 2
+
+          # assign return vars and decrement stack
+          # return_val = stack[sp]
+          # sp -= 1
+
+        # == end function call
       end
     RUBY
     }
+    it { is_expected.to eql <<-LISP.strip_heredoc.strip
 
+      LISP
+    }
     # won't know var types at function definition
     # will need to wait until we see they're invoked and track it from there
     # intermediate representation required
@@ -1401,18 +1464,37 @@ describe GtaScm::RubyToScmCompiler do
   # ===
 
   def compile(ruby)
-    compiler = GtaScm::RubyToScmCompiler.new()
-    ruby = compiler.transform_source(ruby)
-    parsed = Parser::CurrentRuby.parse(ruby)
-    # parser = GtaScm::RubyToScmCompiler::Parser.parse(ruby)
-    # compiler = GtaScm::RubyToScmCompiler2.new
-    compiler.scm = @scm
-    scm = compiler.transform_node(parsed)
-    f = scm.map do |node|
-      puts node.inspect
-      Elparser::encode(node)
+
+    case compiler_type
+    when :v1
+      compiler = GtaScm::RubyToScmCompiler.new()
+      # compiler = GtaScm::RubyToScmCompiler2.new()
+      ruby = compiler.transform_source(ruby)
+      parsed = Parser::CurrentRuby.parse(ruby)
+      # parser = GtaScm::RubyToScmCompiler::Parser.parse(ruby)
+      # compiler = GtaScm::RubyToScmCompiler2.new
+      compiler.scm = @scm
+      scm = compiler.transform_node(parsed)
+      f = scm.map do |node|
+        puts node.inspect
+        Elparser::encode(node)
+      end
+      f.join("\n")
+    when :v2_ir
+      compiler = GtaScm::RubyToScmCompiler2.new()
+      ruby = compiler.transform_source(ruby)
+      parsed = Parser::CurrentRuby.parse(ruby)
+      compiler.scm = @scm
+      scm = compiler.transform_code(parsed)
+      # debugger
+      compiler.functions
+      f = scm.map do |node|
+        puts node.inspect
+        Elparser::encode(node)
+      end
+      f.join("\n")
+
     end
-    f.join("\n")
   end
 
 
