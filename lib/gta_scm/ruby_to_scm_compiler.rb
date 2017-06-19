@@ -2090,6 +2090,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   attr_accessor :opcode_names
   attr_accessor :functions
   attr_accessor :current_function
+  attr_accessor :last_child_was_return
+  attr_accessor :label_type
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -2105,6 +2107,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     self.opcodes.load_definitions!("san-andreas")
     self.opcode_names = Hash[self.opcodes.names2opcodes.map{|k,v| [k.downcase.to_sym,k]}]
     self.current_function = nil
+    self.label_type = :label
   end
 
   def opcode(name)
@@ -2129,7 +2132,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     # generic block, seperate instructions as children
     when node.match( :begin )
       transforms = []
+      self.last_child_was_return = false
       node.each do |child|
+        self.last_child_was_return = true if child.type == :return
         transforms += transform_node(child)
       end
       transforms
@@ -2185,7 +2190,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && self.opcode_names[ node[1][1] ]
       on_opcode_call(node)
 
-    # Function call with return values
+    # Function call with single return value
     #
     # return_val = my_stack_function(@local_var,temp_var)
     #
@@ -2194,6 +2199,21 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     #     s(:ivar, :@local_var),
     #     s(:lvar, :temp_var)))
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && self.functions[ node[1][1] ]
+      on_function_call(node)
+
+    # Function call with multiple return values
+    #
+    # x,y,z = my_stack_function(@local_var,temp_var)
+    #
+    # s(:masgn,
+    #   s(:mlhs,
+    #     s(:lvasgn, :x),
+    #     s(:lvasgn, :y),
+    #     s(:lvasgn, :z)),
+    #   s(:send, nil, :my_stack_function,
+    #     s(:ivar, :@local_var),
+    #     s(:lvar, :temp_var)))
+    when node.match( :masgn , [0] => :mlhs , [1] => :send ) && self.functions[ node[1][1] ]
       on_function_call(node)
 
     # Return
@@ -2219,7 +2239,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def on_lvar_use(node)
     case node.type
     when :lvar, :lvasgn
-      [:lvar,node[0]]
+      if generating?
+        [:stack,resolved_lvar_stack_offset(node[0]),node[0]]
+      else
+        [:lvar,node[0]]
+      end
     else
       raise "unknown lvar #{node.inspect}"
     end
@@ -2236,6 +2260,22 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
 
     return lhs
+  end
+
+  def resolved_lvar_stack_offset(lvar_name)
+    slots = []
+    if self.current_function
+      slots += self.functions[self.current_function][:returns].map{|k,v| k }
+      slots += self.functions[self.current_function][:arguments].map{|k,v| k }
+    end
+    slots += self.functions[self.current_function][:locals].map{|k,v| k}
+    if index = slots.index(lvar_name)
+      index = (slots.size - index) * -1 # subtract 1 since stack-0 is the empty top of the stack
+      # debugger
+      index
+    else
+      raise "no resolved stack offset for #{lvar_name} in #{self.current_function}"
+    end
   end
 
   def gvar_name(name)
@@ -2320,7 +2360,12 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   #   s(:begin,
   #     [body]
   def on_script_block(node)
-    transform_node(node[2])
+    [
+      [:labeldef,:start_script],
+      *function_prologue(nil),
+      *transform_node(node[2]),
+      [:labeldef,:end_script],
+    ]
   end
 
   # Function declare
@@ -2352,16 +2397,49 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
 
     body = transform_node(node[2])
-    # debugger
+
+    prologue = []
+    epilogue = []
+    if generating?
+      prologue = function_prologue(self.current_function)
+      if !self.last_child_was_return
+        epilogue += function_epilogue(self.current_function)
+        epilogue += [[:return]]
+      end
+    end
+
 
     [
-      [:function,self.current_function],
+      [:goto,[[self.label_type,:"function_end_#{self.current_function}"]]],
+      [:labeldef,:"function_#{self.current_function}"],
+      *prologue,
       *body,
-      [:endfunction]
+      *epilogue,
+      [:labeldef,:"function_end_#{self.current_function}"],
     ]
     
   ensure
     self.current_function = nil
+  end
+
+  def resolve_lvar_type(lvar_name,function_name)
+    
+  end
+
+  def function_prologue(function_name)
+    prologue = []
+    self.functions[function_name][:locals].each_pair do |lvar_name,uses|
+      lvar_type = resolve_lvar_type(lvar_name,function_name)
+      # prologue << [ :stack_push , lvar_name ]
+    end
+    prologue << [ :stack_adjust , self.functions[function_name][:locals].size ]
+    prologue
+  end
+
+  def function_epilogue(function_name)
+    epilogue = []
+    epilogue << [ :stack_adjust , self.functions[function_name][:locals].size * -1 ]
+    epilogue
   end
 
   def assignment_lhs(node,rhs)
@@ -2430,17 +2508,92 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   #     s(:ivar, :@local_var),
   #     s(:lvar, :temp_var)))
   def on_function_call(node)
+    function_name = node[1][1]
     [
-      [:function_call, node[1][1]]
+      *stack_adjust_up_return_vars(node,function_name),
+      *stack_adjust_up_arguments(node,function_name),
+      [:gosub, :"function_#{function_name}"],
+      *stack_adjust_down_arguments(node,function_name),
+      *stack_adjust_down_return_vars(node,function_name),
     ]
   end
 
-  def function_call_return_vars(node,rhs)
-    vars = []
-    # case
-    # when node.match(:lvasgn)
-    #   vars << 
+  def stack_adjust_up_return_vars(node,function_name)
+    [
+      [:stack_adjust, self.functions[function_name][:returns].size]
+    ]
   end
+
+
+  def stack_adjust_down_return_vars(node,function_name)
+    return_vars = function_call_return_vars(node)
+    
+    if return_vars.size != self.functions[function_name][:returns].size
+      raise "wrong number of return args (function returns #{self.functions[function_name][:returns].size}, invoked with #{return_vars.size})"
+    end
+
+    return_var_assigns = []
+    return_vars.each_with_index do |return_var,return_index|
+      # stack_offset = ((return_vars.size - 1) - return_index) * -1
+      return_var_assigns << [:assign,[return_var,[:stack,return_index]]]
+    end
+
+    [
+      [:stack_adjust, self.functions[function_name][:returns].size * -1],
+      *return_var_assigns,
+    ]
+  end
+
+  def function_call_arguments(node)
+    case
+    when node.match( :masgn , [1] => :send )
+      node[1][2..-1]
+    else
+      raise "unknown function call arguments #{node.inspect}"
+    end
+  end
+
+  def function_call_return_vars(node)
+    case
+    # single var assignment
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] )
+      [
+        assignment_lhs(node,nil) # FIXME: will we know the type here?
+      ]
+    when node.match( :masgn , [0] => :mlhs , [1] => :send )
+      node[0].map do |var|
+        assignment_lhs(var,nil)
+      end
+    else
+      debugger
+      raise "unknown opcode return vars #{node.inspect}"
+    end
+  end
+
+  def stack_adjust_up_arguments(node,function_name)
+    arguments = function_call_arguments(node)
+
+    if arguments.size != self.functions[function_name][:arguments].size
+      raise "wrong number of arguments for #{function_name} (expected #{self.functions[function_name][:arguments].size}, invoked with #{arguments.size})"
+    end
+
+    argument_assigns = []
+    arguments.each_with_index do |argument,argument_index|
+      argument_assigns << [:assign, [ [:stack,argument_index] , transform_node(argument) ]]
+    end
+    
+    [
+      *argument_assigns,
+      [:stack_adjust, self.functions[function_name][:arguments].size]
+    ]
+  end
+
+  def stack_adjust_down_arguments(node,function_name)
+    [
+      [:stack_adjust, self.functions[function_name][:arguments].size * -1]
+    ]
+  end
+
 
   # Opcode call with return values
   # 
@@ -2497,6 +2650,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   # Return
   def on_return(node)
+
     if scanning?
       if !self.current_function
         raise "returning outside a function"
@@ -2507,9 +2661,26 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       end
     end
 
+    return_var_assignments = return_assignments(node)
+
+    epilogue = []
+    if generating?
+      epilogue = function_epilogue(self.current_function)
+    end
+
     [
+      *return_var_assignments,
+      *epilogue,
       [:return]
     ]
+  end
+
+  def return_assignments(node)
+    assignments = []
+    node.each_with_index do |return_value,return_index|
+      assignments << [:assign,[ [:stack,resolved_lvar_stack_offset(return_index)], [transform_node(return_value)] ]]
+    end
+    assignments
   end
 
   def scanning?

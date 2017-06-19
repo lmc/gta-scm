@@ -1427,6 +1427,9 @@ describe GtaScm::RubyToScmCompiler do
 
         @local_var = 1
         temp_var = 2
+        x = 0
+        y = 0
+        z = 0
 
         # == function call
 
@@ -1439,7 +1442,7 @@ describe GtaScm::RubyToScmCompiler do
           # stack[sp + 1] = temp_var   # arg2
           # sp += 2
 
-          return_val = my_stack_function(@local_var,temp_var)
+          x,y,z = my_stack_function(@local_var,temp_var)
 
           # decrement stack to remove arguments
           # sp -= 2
@@ -1453,7 +1456,36 @@ describe GtaScm::RubyToScmCompiler do
     RUBY
     }
     it { is_expected.to eql <<-LISP.strip_heredoc.strip
-
+        (labeldef start_script)
+        (stack_adjust 4)
+        (goto ((label function_end_my_stack_function)))
+        (labeldef function_my_stack_function)
+        (stack_adjust 2)
+        (assign ((stack -2 func_tmp) (stack -4 arg1)))
+        (assign_operator ((stack -2 func_tmp) + (stack -3 arg2)))
+        (get_game_timer ((stack -2 func_tmp) (stack -1 func_tmp2)))
+        (assign ((stack -7) ((stack -2 func_tmp))))
+        (assign ((stack -6) ((stack -1 func_tmp2))))
+        (assign ((stack -5) ((int32 3))))
+        (stack_adjust -2)
+        (return)
+        (labeldef function_end_my_stack_function)
+        (assign ((ivar local_var) (int32 1)))
+        (assign ((stack -4 temp_var) (int32 2)))
+        (assign ((stack -3 x) (int32 0)))
+        (assign ((stack -2 y) (int32 0)))
+        (assign ((stack -1 z) (int32 0)))
+        (stack_adjust 3)
+        (assign ((stack 0) (ivar local_var)))
+        (assign ((stack 1) (stack -4 temp_var)))
+        (stack_adjust 2)
+        (gosub function_my_stack_function)
+        (stack_adjust -2)
+        (stack_adjust -3)
+        (assign ((stack -3 x) (stack 0)))
+        (assign ((stack -2 y) (stack 1)))
+        (assign ((stack -1 z) (stack 2)))
+        (labeldef end_script)
       LISP
     }
     # won't know var types at function definition
