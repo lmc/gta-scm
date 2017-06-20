@@ -1393,104 +1393,144 @@ describe GtaScm::RubyToScmCompiler do
   context "New syntax" do
     let(:compiler_type){ :v2_ir }
 
-    let(:ruby){ <<-RUBY
-      # STATIC_STACK_OFFSET = 198_976
-      # STATIC_STACK_SIZE = 1024
-      script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
-        # @_sb = STATIC_STACK_OFFSET
-        # @_sb /= 4
-        # @_sp = @_sb
-        # @_sm = @_sb
-        # @_sm += STATIC_STACK_SIZE
+    describe "test 1" do
+      let(:ruby){ <<-RUBY
+        # STATIC_STACK_OFFSET = 198_976
+        # STATIC_STACK_SIZE = 1024
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+          # @_sb = STATIC_STACK_OFFSET
+          # @_sb /= 4
+          # @_sp = @_sb
+          # @_sm = @_sb
+          # @_sm += STATIC_STACK_SIZE
 
-        function(:my_stack_function) do |arg1,arg2|
-          # increment stack for tmp vars
-          # stack[sp + 0] = func_tmp
-          # stack[sp + 1] = func_tmp2
-          # sp += 2
+          function(:my_stack_function) do |arg1,arg2|
+            # increment stack for tmp vars
+            # stack[sp + 0] = func_tmp
+            # stack[sp + 1] = func_tmp2
+            # sp += 2
 
-          # stack[sp - 4] = return value
-          # stack[sp - 3] = arg1
-          # stack[sp - 2] = arg2
-          # stack[sp - 1] = func_tmp
+            # stack[sp - 5] = return value
+            # stack[sp - 4] = arg1
+            # stack[sp - 3] = arg2
+            # stack[sp - 2] = func_tmp
+            # stack[sp - 1] = func_tmp2
 
-          func_tmp = arg1
-          func_tmp += arg2
-          func_tmp2 = get_game_timer(func_tmp)
-          return func_tmp, func_tmp2, 3
+            func_tmp = arg1
+            func_tmp += arg2
+            func_tmp2 = get_game_timer()
+            func_tmp += func_tmp2
+            return func_tmp
 
-          # decrement stack for tmp vars
-          # sp -= 2
+            # decrement stack for tmp vars
+            # sp -= 2
+          end
+
+          @local_var = 1
+          temp_var = 2
+
+          # == function call
+
+            # increment stack for return values
+            # stack[sp + 0] = 0          # return value
+            # sp += 1
+
+            # increment stack for arguments
+            # stack[sp + 0] = @local_var # arg1
+            # stack[sp + 1] = temp_var   # arg2
+            # sp += 2
+
+            @local_var = my_stack_function(123,temp_var)
+
+            # decrement stack to remove arguments
+            # sp -= 2
+
+            # assign return vars and decrement stack
+            # return_val = stack[sp]
+            # sp -= 1
+
+          # == end function call
         end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (labeldef start_script)
+          (stack_adjust 1)
+          (goto ((label function_end_my_stack_function)))
+          (labeldef function_my_stack_function)
+          (stack_adjust 2)
+          (assign ((stack -2 func_tmp int) (stack -4 arg1 int)))
+          (assign_operator ((stack -2 func_tmp int) + (stack -3 arg2 int)))
+          (get_game_timer ((stack -1 func_tmp2 int)))
+          (assign_operator ((stack -2 func_tmp int) + (stack -1 func_tmp2 int)))
+          (assign ((stack -5 return_0) ((stack -2 func_tmp int))))
+          (stack_adjust -2)
+          (return)
+          (labeldef function_end_my_stack_function)
+          (assign ((ivar local_var) (int32 1)))
+          (assign ((stack -1 temp_var int) (int32 2)))
+          (stack_adjust 1)
+          (assign ((stack 0) (int32 123)))
+          (assign ((stack 1) (stack -1 temp_var int)))
+          (stack_adjust 2)
+          (gosub function_my_stack_function)
+          (stack_adjust -2)
+          (stack_adjust -1)
+          (assign ((ivar local_var) (stack 0 return_0)))
+          (labeldef end_script)
+        LISP
+      }
+      # won't know var types at function definition
+      # will need to wait until we see they're invoked and track it from there
+      # intermediate representation required
+    end
+    describe "test 2" do
+      let(:ruby){ <<-RUBY
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
 
+          function(:my_stack_function) do |player_char|
+            tx,ty,tz = get_char_coordinates(player_char)
+            return tx,ty,tz
+          end
 
-
-        @local_var = 1
-        temp_var = 2
-        x = 0
-        y = 0
-        z = 0
-
-        # == function call
-
-          # increment stack for return values
-          # stack[sp + 0] = 0          # return value
-          # sp += 1
-
-          # increment stack for arguments
-          # stack[sp + 0] = @local_var # arg1
-          # stack[sp + 1] = temp_var   # arg2
-          # sp += 2
-
-          x,y,z = my_stack_function(@local_var,temp_var)
-
-          # decrement stack to remove arguments
-          # sp -= 2
-
-          # assign return vars and decrement stack
-          # return_val = stack[sp]
-          # sp -= 1
-
-        # == end function call
-      end
-    RUBY
-    }
-    it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        (labeldef start_script)
-        (stack_adjust 4)
-        (goto ((label function_end_my_stack_function)))
-        (labeldef function_my_stack_function)
-        (stack_adjust 2)
-        (assign ((stack -2 func_tmp) (stack -4 arg1)))
-        (assign_operator ((stack -2 func_tmp) + (stack -3 arg2)))
-        (get_game_timer ((stack -2 func_tmp) (stack -1 func_tmp2)))
-        (assign ((stack -7) ((stack -2 func_tmp))))
-        (assign ((stack -6) ((stack -1 func_tmp2))))
-        (assign ((stack -5) ((int32 3))))
-        (stack_adjust -2)
-        (return)
-        (labeldef function_end_my_stack_function)
-        (assign ((ivar local_var) (int32 1)))
-        (assign ((stack -4 temp_var) (int32 2)))
-        (assign ((stack -3 x) (int32 0)))
-        (assign ((stack -2 y) (int32 0)))
-        (assign ((stack -1 z) (int32 0)))
-        (stack_adjust 3)
-        (assign ((stack 0) (ivar local_var)))
-        (assign ((stack 1) (stack -4 temp_var)))
-        (stack_adjust 2)
-        (gosub function_my_stack_function)
-        (stack_adjust -2)
-        (stack_adjust -3)
-        (assign ((stack -3 x) (stack 0)))
-        (assign ((stack -2 y) (stack 1)))
-        (assign ((stack -1 z) (stack 2)))
-        (labeldef end_script)
-      LISP
-    }
-    # won't know var types at function definition
-    # will need to wait until we see they're invoked and track it from there
-    # intermediate representation required
+          player_char = 1
+          x = 0.0
+          y = 0.0
+          z = 0.0
+          x,y,z = my_stack_function(player_char)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (labeldef start_script)
+          (stack_adjust 4)
+          (goto ((label function_end_my_stack_function)))
+          (labeldef function_my_stack_function)
+          (stack_adjust 3)
+          (get_char_coordinates ((stack -4 player_char int) ((stack -3 tx float)) ((stack -2 ty float)) ((stack -1 tz float))))
+          (assign ((stack -7 return_0) ((stack -3 tx float))))
+          (assign ((stack -6 return_1) ((stack -2 ty float))))
+          (assign ((stack -5 return_2) ((stack -1 tz float))))
+          (stack_adjust -3)
+          (return)
+          (labeldef function_end_my_stack_function)
+          (assign ((stack -4 player_char int) (int32 1)))
+          (assign ((stack -3 x float) (float32 0.0)))
+          (assign ((stack -2 y float) (float32 0.0)))
+          (assign ((stack -1 z float) (float32 0.0)))
+          (stack_adjust 3)
+          (assign ((stack 0) (stack -4 player_char int)))
+          (stack_adjust 1)
+          (gosub function_my_stack_function)
+          (stack_adjust -1)
+          (stack_adjust -3)
+          (assign ((stack -3 x float) (stack 0 return_0)))
+          (assign ((stack -2 y float) (stack 1 return_1)))
+          (assign ((stack -1 z float) (stack 2 return_2)))
+          (labeldef end_script)
+        LISP
+      }
+    end
   end
 
   # ===
@@ -1519,7 +1559,8 @@ describe GtaScm::RubyToScmCompiler do
       compiler.scm = @scm
       scm = compiler.transform_code(parsed)
       # debugger
-      compiler.functions
+      require 'pp'
+      pp compiler.functions
       f = scm.map do |node|
         puts node.inspect
         Elparser::encode(node)
