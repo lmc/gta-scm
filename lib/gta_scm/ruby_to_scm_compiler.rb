@@ -2123,6 +2123,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def transform_code(node)
     self.state = :scanning
     transform_node(node)
+    # transform_node(node)
     self.state = :generating
     transformed = transform_node(node)
     return transformed
@@ -2137,7 +2138,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       self.last_child_was_return = false
       node.each do |child|
         self.last_child_was_return = true if child.type == :return
-        transforms += transform_node(child)
+        tc = transform_node(child)
+        debugger if !tc
+        transforms += tc
       end
       transforms
 
@@ -2172,8 +2175,17 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     #     s(:arg, :arg2)),
     #   s(:begin,
     #     [body]
-    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return] )
+    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send] )
       on_function_block( node )
+    # when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send] )
+    #   debugger
+    #   on_function_block( node )
+
+    # when node.match( :send , [1] => :function )
+
+    # Generic block
+    when node.match( :block )
+      transform_node(node[0])
 
     # Assignment
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
@@ -2205,6 +2217,14 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     #     s(:lvar, :player_char)))
     when node.match( :masgn , [1] => :send ) && self.opcode_names[ node[1][1] ]
       on_opcode_call(node)
+
+    # Function call
+    # 
+    # my_function()
+    #
+    # 
+    when node.match( :send ) && self.functions[ node[1] ]
+      on_function_call(node)
 
     # Function call with single return value
     #
@@ -2241,6 +2261,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     #     s(:lvar, :player_char)))
     when node.match( :return , [0] => :send ) && self.opcode_names[ node[0][1] ]
       raise "FIXME: handle return directly from opcode call"
+
+    when node.match( :send ) || node.match( :lvasgn , [1] => :send)
+      [[:unknown_call, node[1] ]]
 
     # Return
     when node.match( :return )
@@ -2279,12 +2302,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     lhs = on_lvar_use(node)
 
     if scanning?
-      if lhs[0] == :lvar && rhs
-        if rhs == :int
-          debugger
-        end
+      if lhs[0] == :lvar && !self.functions[self.current_function][:arguments].andand[ lhs[1] ]
         self.functions[self.current_function][:locals][ lhs[1] ] ||= []
-        self.functions[self.current_function][:locals][ lhs[1] ] << rhs
+        if rhs
+          self.functions[self.current_function][:locals][ lhs[1] ] << rhs
+        end
       end
     end
 
@@ -2305,6 +2327,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     if index = slots.index(lvar_name)
       (slots.size - index) * -1
     else
+      debugger
       raise "no resolved stack offset for #{lvar_name} in #{self.current_function}"
     end
   end
@@ -2330,28 +2353,24 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def resolved_lvar_type(lvar_name, function_name)
     if self.functions[function_name].andand[:arguments].andand.key?(lvar_name)
 
-      if self.functions[function_name][:arguments][lvar_name]
-        return self.functions[function_name][:arguments][lvar_name]
-      else
-        argument_index = self.functions[function_name][:arguments].keys.index(lvar_name)
-        invoked_with = self.functions[function_name][:invokes].map do |invoke|
-          [ invoke[:caller] , invoke[:arguments][argument_index] ]
-        end
-        resolved_types = invoked_with.map do |(caller,var_or_val)|
-          resolve_var_type(var_or_val,caller)
-        end
-        if resolved_types.uniq.size != 1
-          raise "multiple resolved types for #{lvar_name}: #{resolved_types.inspect}"
-        end
-        self.functions[function_name][:arguments][lvar_name] = resolved_types[0]
-        return resolved_types[0]
+      argument_index = self.functions[function_name][:arguments].keys.index(lvar_name)
+      invoked_with = self.functions[function_name][:invokes].map do |invoke|
+        [ invoke[:caller] , invoke[:arguments][argument_index] ]
       end
+      resolved_types = invoked_with.map do |(caller,var_or_val)|
+        resolve_var_type(var_or_val,caller)
+      end
+      if resolved_types.uniq.size > 1
+        raise "multiple resolved types for #{lvar_name}: #{resolved_types.inspect}"
+      end
+      self.functions[function_name][:arguments][lvar_name] = resolved_types[0]
+      return resolved_types[0]
 
     elsif self.functions[function_name].andand[:locals].andand.key?(lvar_name)
       resolved_types = self.functions[function_name][:locals][lvar_name].map do |var_or_val|
         resolve_var_type(var_or_val,function_name)
       end
-      if resolved_types.uniq.size != 1
+      if resolved_types.uniq.size > 1
         raise "multiple resolved types for #{lvar_name}: #{resolved_types.inspect}"
       end
       return resolved_types[0]
@@ -2424,6 +2443,19 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
   end
 
+  def on_var_assign(node,rhs)
+    case node.type
+    when :lvar, :lvasgn
+      on_lvar_assign(node,rhs)
+    when :ivar, :ivasgn
+      on_ivar_assign(node,rhs)
+    when :gvar, :gvasgn
+      on_gvar_assign(node,rhs)
+    else
+      raise "unknown var assign #{node.inspect}"
+    end
+  end
+
   # CONST
   def on_const_use(*)
   end
@@ -2475,14 +2507,14 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     self.current_function = node[0][2][0]
 
     if scanning?
-      self.functions[self.current_function] = {
+      self.functions[self.current_function] ||= {
         returns:   {},
         arguments: {},
         locals:    {},
         invokes:   []
       }
       node[1].each do |arg|
-        self.functions[self.current_function][:arguments][ arg[0] ] = nil
+        self.functions[self.current_function][:arguments][ arg[0] ] ||= []
       end
     end
 
@@ -2522,14 +2554,28 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       lvar_type = resolve_lvar_type(lvar_name,function_name)
       # prologue << [ :stack_push , lvar_name ]
     end
-    prologue << [ :stack_adjust , self.functions[function_name][:locals].size ]
+    stack_adjust = function_stack_size(function_name)
+    if stack_adjust != 0
+      prologue << [ :stack_adjust , stack_adjust ]
+    end
     prologue
   end
 
   def function_epilogue(function_name)
     epilogue = []
-    epilogue << [ :stack_adjust , self.functions[function_name][:locals].size * -1 ]
+    stack_adjust = function_stack_size(function_name)
+    if stack_adjust != 0
+      epilogue << [ :stack_adjust , stack_adjust * -1 ]
+    end
     epilogue
+  end
+
+  def function_stack_size(function_name)
+    stack_size = 0
+    stack_size += self.functions[function_name][:returns].size   if self.functions[function_name][:returns]
+    stack_size += self.functions[function_name][:arguments].size if self.functions[function_name][:arguments]
+    stack_size += self.functions[function_name][:locals].size    if self.functions[function_name][:locals]
+    stack_size
   end
 
   def assignment_lhs(node,rhs)
@@ -2598,9 +2644,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   #     s(:ivar, :@local_var),
   #     s(:lvar, :temp_var)))
   def on_function_call(node)
-    function_name = node[1][1]
+    function_name = function_call_name(node)
 
     if scanning?
+      # debugger
       self.functions[function_name][:invokes] << {
         caller: self.current_function,
         arguments: function_call_arguments(node).map{|a| transform_node(a)}
@@ -2608,23 +2655,33 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
 
     [
-      *stack_adjust_up_return_vars(node,function_name),
+      # *stack_adjust_up_return_vars(node,function_name),
       *stack_adjust_up_arguments(node,function_name),
       [:gosub, :"function_#{function_name}"],
-      *stack_adjust_down_arguments(node,function_name),
+      # *stack_adjust_down_arguments(node,function_name),
       *stack_adjust_down_return_vars(node,function_name),
     ]
   end
 
-  def stack_adjust_up_return_vars(node,function_name)
-    [
-      [:stack_adjust, self.functions[function_name][:returns].size]
-    ]
+  def function_call_name(node)
+    if node.match(:send)
+      node[1]
+    elsif node.match([:lvasgn,:ivasgn,:gvasgn])
+      node[1][1]
+    else
+      raise "unknown function call name #{node.inspect}"
+    end
   end
+
+  # def stack_adjust_up_return_vars(node,function_name)
+  #   [
+  #     [:stack_adjust, self.functions[function_name][:returns].size]
+  #   ]
+  # end
 
 
   def stack_adjust_down_return_vars(node,function_name)
-    return_vars = function_call_return_vars(node)
+    return_vars = function_call_return_vars(node,function_name)
     
     if return_vars.size != self.functions[function_name][:returns].size
       raise "wrong number of return args (function returns #{self.functions[function_name][:returns].size}, invoked with #{return_vars.size})"
@@ -2633,35 +2690,42 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     return_var_assigns = []
     return_vars.each_with_index do |return_var,return_index|
       # stack_offset = ((return_vars.size - 1) - return_index) * -1
+      # TODO: tag return value with type
       return_var_assigns << [:assign,[return_var,[:stack,return_index,:"return_#{return_index}"]]]
     end
 
     [
-      [:stack_adjust, self.functions[function_name][:returns].size * -1],
+      # [:stack_adjust, (self.functions[function_name][:returns].size + self.functions[function_name][:arguments].size) * -1],
       *return_var_assigns,
     ]
   end
 
   def function_call_arguments(node)
     case
-    when node.match( [:masgn,:ivasgn] , [1] => :send )
+    when node.match( [:masgn,:lvasgn,:ivasgn,:gvasgn] , [1] => :send )
       node[1][2..-1]
+    when node.match( :send )
+      node[2..-1]
     else
       raise "unknown function call arguments #{node.inspect}"
     end
   end
 
-  def function_call_return_vars(node)
+  def function_call_return_vars(node,function_name)
     case
     # single var assignment
     when node.match( [:lvasgn,:ivasgn,:gvasgn] )
       [
-        assignment_lhs(node,nil) # FIXME: will we know the type here?
+        # assignment_lhs(node,nil) # FIXME: will we know the type here?
+        on_var_assign(node,nil)
       ]
     when node.match( :masgn , [0] => :mlhs , [1] => :send )
       node[0].map do |var|
-        assignment_lhs(var,nil)
+        # assignment_lhs(var,nil)
+        on_var_assign(node,nil)
       end
+    when node.match( :send )
+      []
     else
       debugger
       raise "unknown opcode return vars #{node.inspect}"
@@ -2677,20 +2741,21 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     argument_assigns = []
     arguments.each_with_index do |argument,argument_index|
-      argument_assigns << [:assign, [ [:stack,argument_index] , transform_node(argument) ]]
+      stack_index = self.functions[function_name][:returns].size + argument_index
+      argument_assigns << [:assign, [ [:stack,stack_index] , transform_node(argument) ]]
     end
     
     [
       *argument_assigns,
-      [:stack_adjust, self.functions[function_name][:arguments].size]
+      # [:stack_adjust, (self.functions[function_name][:returns].size + self.functions[function_name][:arguments].size)]
     ]
   end
 
-  def stack_adjust_down_arguments(node,function_name)
-    [
-      [:stack_adjust, self.functions[function_name][:arguments].size * -1]
-    ]
-  end
+  # def stack_adjust_down_arguments(node,function_name)
+  #   [
+  #     [:stack_adjust, (self.functions[function_name][:arguments].size + self.functions[function_name][:arguments].size) * -1]
+  #   ]
+  # end
 
 
   # Opcode call with return values
@@ -2786,6 +2851,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def return_assignments(node)
     assignments = []
     node.each_with_index do |return_value,return_index|
+      # TODO: tag return value with type
       assignments << [:assign,[ [:stack,resolved_lvar_stack_offset(return_index),:"return_#{return_index}"], [transform_node(return_value)] ]]
     end
     assignments

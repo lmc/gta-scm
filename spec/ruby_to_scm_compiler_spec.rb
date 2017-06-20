@@ -1531,6 +1531,28 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+    describe "test 3" do
+      let(:ruby){ <<-RUBY
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+          function(:f2) do
+            tx = get_game_timer()
+            return tx
+          end
+          function(:f1) do |input|
+            timer = f2()
+            input += timer
+            return input
+          end
+          @b = 1000
+          @a = f1(@b)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
   end
 
   # ===
