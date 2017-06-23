@@ -1553,7 +1553,83 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+
+    describe "test 4" do
+      let(:ruby){ <<-RUBY
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+
+          respawn_at = 0
+
+          function(:timeout_time) do |ms_to_add|
+            timer = get_game_timer()
+            ms_to_add += timer
+            return ms_to_add
+          end
+
+          respawn_time = 1000
+          respawn_at = timeout_time(respawn_time)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
+
+    describe "test 5" do
+      let(:ruby){ <<-RUBY
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+
+          # 20 % 6 == 2
+          function(:modulo) do |lhs,rhs|
+            loop do
+              break if lhs < rhs
+              lhs -= rhs
+            end
+            return lhs
+          end
+
+          var = modulo(20,6)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
+
+    describe "test 6" do
+      let(:ruby){ <<-RUBY
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+          
+          loop do
+            wait(100)
+            waiting_for = 0
+            if is_player_playing($_8)
+              x,y,z = get_char_coordinates($_12)
+              current_time = get_game_timer()
+              if current_time > 5000
+                add_one_off_sound(x,y,z,1056)
+                terminate_this_script()
+              else
+                waiting_for += 100
+              end
+            end
+          end
+
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
   end
+
+
 
   # ===
 
