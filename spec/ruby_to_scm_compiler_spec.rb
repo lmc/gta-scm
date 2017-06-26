@@ -1610,8 +1610,10 @@ describe GtaScm::RubyToScmCompiler do
             if is_player_playing($_8)
               x,y,z = get_char_coordinates($_12)
               current_time = get_game_timer()
-              if current_time > 5000
+              if current_time > 5000 && current_time < 10000
                 add_one_off_sound(x,y,z,1056)
+                terminate_this_script()
+              elsif x < y || y < z
                 terminate_this_script()
               else
                 waiting_for += 100
@@ -1623,7 +1625,38 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-
+          (labeldef start_script)
+          (stack_adjust 5)
+          (labeldef label_loop_start_8)
+          (wait ((int32 100)))
+          (assign ((stack -5 waiting_for int) (int32 0)))
+          (andif ((int8 0)))
+          (is_player_playing ((gvar _8)))
+          (goto_if_false ((label label_if_14)))
+          (get_char_coordinates ((gvar _12) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float))))
+          (get_game_timer ((stack -1 current_time int)))
+          (andif ((int8 1)))
+          (compare ((stack -1 current_time int) > (int32 5000)))
+          (compare ((stack -1 current_time int) < (int32 10000)))
+          (goto_if_false ((label label_if_13)))
+          (add_one_off_sound ((stack -4 x float) (stack -3 y float) (stack -2 z float) (int32 1056)))
+          (terminate_this_script nil)
+          (goto ((label label_if_12)))
+          (labeldef label_if_13)
+          (andif ((int8 21)))
+          (compare ((stack -4 x float) < (stack -3 y float)))
+          (compare ((stack -3 y float) < (stack -2 z float)))
+          (goto_if_false ((label label_if_11)))
+          (terminate_this_script nil)
+          (goto ((label label_if_10)))
+          (labeldef label_if_11)
+          (assign_operator ((stack -5 waiting_for int) + (int32 100)))
+          (labeldef label_if_10)
+          (labeldef label_if_12)
+          (labeldef label_if_14)
+          (goto ((label label_loop_start_8)))
+          (labeldef label_loop_end_9)
+          (labeldef end_script)
         LISP
       }
     end

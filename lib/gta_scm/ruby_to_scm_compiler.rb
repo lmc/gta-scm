@@ -2727,13 +2727,12 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def on_if(node)
-    conditions = transform_node(node[0])
+    andor_value,conditions = transform_conditions(node[0])
     body = transform_node(node[1])
 
     false_label = generate_label!(:if)
-    andor = if_andor_value(node[0])
     [
-      [:andif,[[:int8,andor]]],
+      [:andif,[[:int8,andor_value]]],
       *conditions,
       [:goto_if_false,[[self.label_type,false_label]]],
       *body,
@@ -2742,15 +2741,15 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def on_if_else(node)
-    conditions = transform_node(node[0])
+    andor_value,conditions = transform_conditions(node[0])
+
     true_body = transform_node(node[1])
     false_body = transform_node(node[2])
 
     end_label = generate_label!(:if)
     false_label = generate_label!(:if)
-    andor = if_andor_value(node[0])
     [
-      [:andif,[[:int8,andor]]],
+      [:andif,[[:int8,andor_value]]],
       *conditions,
       [:goto_if_false,[[self.label_type,false_label]]],
       *true_body,
@@ -2761,8 +2760,40 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     ]
   end
 
-  def if_andor_value(node)
-    -1
+  def transform_conditions(node,parent_logical_operator = nil)
+    case node.type
+
+    # if with single condition
+    when :send
+      return [0, transform_node(node)]
+    # if with multiple conditions
+    when :and, :or
+      if parent_logical_operator && node.type != parent_logical_operator
+        raise "cannot mix AND/OR in one IF statement"
+      end
+
+      conditions = node.map do |condition_node|
+        case condition_node.type
+        when :and, :or
+          transform_conditions(condition_node,node.type)
+        when :send
+          transform_node(condition_node)[0]
+        else
+          raise "unknown condition node #{condition_node.inspect}"
+        end
+      end
+
+      if parent_logical_operator
+        return conditions
+      else
+        andor_id = node.type == :and ? 0 : 20
+        andor_id += (conditions.size - 1)
+        return [andor_id,conditions]
+      end
+
+    else
+      raise "unknown andor value #{node.inspect}"
+    end
   end
 
   def on_break(node)
