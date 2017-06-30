@@ -1,6 +1,7 @@
 require_relative 'spec_helper'
 
 require 'gta_scm/ruby_to_scm_compiler'
+require 'gta_scm/ruby_to_scm_compiler_2'
 require 'parser/current'
 
 describe GtaScm::RubyToScmCompiler do
@@ -1657,6 +1658,25 @@ describe GtaScm::RubyToScmCompiler do
           (goto ((label label_loop_start_8)))
           (labeldef label_loop_end_9)
           (labeldef end_script)
+        LISP
+      }
+    end
+
+
+    describe "expressions" do
+      let(:ruby){ <<-RUBY
+        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+
+          x = 6
+          y = 1000
+
+          z = y - ((x + 1) * 10)
+
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
         LISP
       }
     end
