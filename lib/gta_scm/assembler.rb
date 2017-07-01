@@ -2,6 +2,7 @@ module GtaScm::Assembler
 end
 
 require 'gta_scm/ruby_to_scm_compiler'
+require 'gta_scm/ruby_to_scm_compiler_2'
 require 'parser/current'
 
 
@@ -330,18 +331,26 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iscm.logger.level = self.logger.level
           iscm.load_opcode_definitions!
 
-          # compiler = GtaScm::RubyToScmCompiler.new(GtaScm::RubyToScmCompiler.default_builder())
-          compiler = GtaScm::RubyToScmCompiler.new()
-          compiler.metadata = {filename: filename}
-          compiler.constants_to_values.merge!(self.constants_to_values)
-          compiler.compiler_data = self.compiler_data if self.compiler_data
+          if args[:v2]
+            compiler = GtaScm::RubyToScmCompiler2.new()
+            ruby = compiler.transform_source(ruby)
+            parsed = Parser::CurrentRuby.parse(ruby)
+            compiler.scm = @scm
+            instructions = compiler.transform_code(parsed)
+          else
+            # compiler = GtaScm::RubyToScmCompiler.new(GtaScm::RubyToScmCompiler.default_builder())
+            compiler = GtaScm::RubyToScmCompiler.new()
+            compiler.metadata = {filename: filename}
+            compiler.constants_to_values.merge!(self.constants_to_values)
+            compiler.compiler_data = self.compiler_data if self.compiler_data
 
-          parsed = compiler.parse_ruby(ruby)
+            parsed = compiler.parse_ruby(ruby)
 
-          compiler.scm = iscm
-          compiler.label_prefix = "l_#{file}_"
-          compiler.external = !!args[:external]
-          instructions = compiler.transform_node(parsed)
+            compiler.scm = iscm
+            compiler.label_prefix = "l_#{file}_"
+            compiler.external = !!args[:external]
+            instructions = compiler.transform_node(parsed)
+          end
 
           lines = instructions.map { |node| Elparser::encode(node) }
 

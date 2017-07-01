@@ -48,7 +48,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     self.stack_locations = {
       stack: :"_stack",
       sc: :"_sc",
-      size: 0
+      size: 32
     }
   end
 
@@ -128,7 +128,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     # when node.match( :send , [1] => :function )
 
-    when node.match( :block, [0] => :send, [0,1] => :loop, [2] => [:begin])
+    when node.match( :block, [0] => :send, [0,1] => :loop, [2] => [:begin,:send])
       on_loop( node )
 
     when node.match( :if ) && node[2]
@@ -350,7 +350,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       resolved_types = invoked_with.map do |(caller,var_or_val)|
         resolve_var_type(var_or_val,caller)
       end
-      if resolved_types.uniq.size > 1
+      if resolved_types.compact.uniq.size > 1
         raise "multiple resolved types for #{lvar_name}: #{resolved_types.inspect}"
       end
       # debugger
@@ -361,7 +361,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       resolved_types = self.functions[function_name][:locals][lvar_name].map do |var_or_val|
         resolve_var_type(var_or_val,function_name)
       end
-      if resolved_types.uniq.size > 1
+      if resolved_types.compact.uniq.size > 1
         raise "multiple resolved types for #{lvar_name}: #{resolved_types.inspect}"
       end
       return resolved_types[0]
@@ -374,7 +374,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     resolved_types = self.functions[nil][:instances][ivar_name(name)].map do |(caller,var_or_val)|
       resolve_var_type(var_or_val,nil)
     end
-    if resolved_types.uniq.size > 1
+    if resolved_types.compact.uniq.size > 1
       raise "multiple resolved types for ivar #{name}: #{resolved_types.inspect}"
     end
     resolved_types[0]
@@ -402,12 +402,28 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     name.to_s.gsub(/^@/,'').to_sym
   end
 
+  def ivar_lvar_id(name)
+    @ivar_lvar_ids ||= {}
+    @ivar_lvar_id_counter ||= -1
+    if @ivar_lvar_ids[name]
+      return @ivar_lvar_ids[name]
+    else
+      @ivar_lvar_id_counter += 1
+      if @ivar_lvar_id_counter >= 32
+        raise "ran out of lvar ids"
+      end
+      @ivar_lvar_ids[name] = @ivar_lvar_id_counter
+      return @ivar_lvar_ids[name]
+    end
+  end
+
   # @ivar
   def on_ivar_use(node)
     case node.type
     when :ivar, :ivasgn
       if generating?
-        [:ivar,ivar_name(node[0]),resolved_ivar_type(node[0])]
+        # [:ivar,ivar_name(node[0]),resolved_ivar_type(node[0])]
+        [:lvar,ivar_lvar_id(ivar_name(node[0])),ivar_name(node[0]),resolved_ivar_type(node[0])]
       else
         [:ivar,ivar_name(node[0])]
       end
@@ -800,7 +816,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     [
       *function_call_argument_assignments(node,function_name),
-      [:gosub, :"function_#{function_name}"],
+      [:gosub, [[self.label_type,:"function_#{function_name}"]]],
       *function_call_return_assignments(node,function_name),
     ]
   end
@@ -916,7 +932,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     case
     when node.match(:send)
       node[1]
-    when node.match([:masgn,:lvasgn],[1] => :send)
+    when node.match([:masgn,:lvasgn,:ivasgn,:gvasgn],[1] => :send)
       node[1][1]
     else
       raise "unknown opcode name #{node.inspect}"
@@ -1119,6 +1135,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
 
   def eval_hash_node(node)
+    return {} if node.nil?
     hash = node.location.expression.source
     hash = "{#{hash}}" if hash[0] != "{"
     eval(hash)
@@ -1214,8 +1231,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
           :var_array,
           :"#{self.stack_locations[:stack]}#{arg[1]>0 ? :+ : :-}#{arg[1].abs*4}",
           self.stack_locations[:sc],
-          -1 || self.stack_locations[:size],
-          [:var,arg[3] == :float ? :float32 : :int32]
+          self.stack_locations[:size],
+          [arg[3] == :float ? :float32 : :int32,:var]
         ]
       else
         arg
@@ -1233,6 +1250,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       tokens[3][1] == :float32 ? :float : :int
     when :stack
       tokens[3] == :float32 ? :float : :int
+    when :lvar
+      tokens[3]
     else
       # return [:unknown] if generating?
       debugger

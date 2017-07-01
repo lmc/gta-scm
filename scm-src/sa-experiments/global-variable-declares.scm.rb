@@ -53,11 +53,14 @@ if emit(false)
   PICKUP_TYPE_NO_RESPAWN = 3
 
 
-  STACK_SIZE = 64
-  $_sc = 0
+  STACK_SIZE = 8
   $_stack = IntegerArray.new(STACK_SIZE)
-
 end
+$_sc = 0
+$_sc_guard1 = -1
+$_sc_guard2 = -1
+$_sc_guard3 = -1
+
 
 SPATIAL_ENTRIES = 8
 $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)

@@ -157,7 +157,14 @@
 % (start_new_script ((label interior_teleporter) (int8 -1) (end_var_args)))
 % (start_new_script ((label test) (int8 -1) (end_var_args)))
 % (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
+(start_new_script ((label helper_v2) (end_var_args)))
 (IncludeRuby "helper")
+
+(labeldef helper_v2)
+(script_name ((string8 "xhelpv2")))
+% (wait ((int16 5000)))
+% (terminate_this_script)
+(IncludeRuby "helper_v2" (v2 true))
 % =====================================
 
 

@@ -108,7 +108,7 @@ class GtaScm::Panel::Gvars < GtaScm::Panel::Base
       ["#{gvar}",label,value]
     end.compact
 
-    data = data[48..-1]
+    data = data[24..-1]
 
     data = self.panel_list(data,self.height - 3,[["","",""]])
 
