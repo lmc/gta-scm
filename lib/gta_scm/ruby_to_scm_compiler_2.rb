@@ -293,6 +293,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       slots += self.functions[self.current_function][:returns].map{|k,v| k }
       slots += self.functions[self.current_function][:arguments].map{|k,v| k }
     end
+    # slots += [:__why]
     slots += self.functions[self.current_function][:locals].map{|k,v| k}
   end
 
@@ -542,8 +543,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     prologue = []
     epilogue = []
+    # transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1])]) )
     if generating?
-      prologue = function_prologue(self.current_function)
+      prologue += function_prologue(self.current_function)
+      # debugger
+      # prologue += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1])]) )
       if !self.last_child_was_return
         epilogue += function_epilogue(self.current_function)
         epilogue += [[:return]]
@@ -1295,6 +1299,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       :<=  => ["not_","greater_than"],
       :<  => ["not_","greater_or_equal_to"]
     }[operator]
+  end
+
+  def sexp(type,children = [])
+    Parser::AST::Node.new(type,children)
   end
 
 end
