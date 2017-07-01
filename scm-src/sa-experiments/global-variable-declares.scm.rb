@@ -52,6 +52,11 @@ if emit(false)
   PICKUP_TYPE_LONG_RESPAWN = 15
   PICKUP_TYPE_NO_RESPAWN = 3
 
+
+  STACK_SIZE = 64
+  $_sc = 0
+  $_stack = IntegerArray.new(STACK_SIZE)
+
 end
 
 SPATIAL_ENTRIES = 8

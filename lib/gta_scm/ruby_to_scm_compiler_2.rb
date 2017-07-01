@@ -25,6 +25,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   attr_accessor :last_child_was_return
   attr_accessor :label_type
   attr_accessor :loop_labels
+  attr_accessor :stack_locations
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -44,6 +45,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     self.current_function = nil
     self.label_type = :label
     self.loop_labels = []
+    self.stack_locations = {
+      stack: :"_stack",
+      sc: :"_sc",
+      size: 0
+    }
   end
 
   def opcode(name)
@@ -54,12 +60,17 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     self.opcode(name).arguments.select{|a| a[:var]}.map{|a| a[:type]}
   end
 
-  def transform_code(node)
+  def transform_code(node,generate_v1_tokens = true)
     self.state = :scanning
     transform_node(node)
     # transform_node(node)
     self.state = :generating
     transformed = transform_node(node)
+
+    if generate_v1_tokens
+      transformed = transform_to_v1_tokens(transformed)
+    end
+
     return transformed
   end
 
@@ -469,6 +480,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   # end
   #
   def on_script_block(node)
+    hash = eval_hash_node(node[0][2])
+    self.stack_locations[:stack] = hash[:stack]         if hash[:stack]
+    self.stack_locations[:sc]    = hash[:stack_counter] if hash[:stack_counter]
+    self.stack_locations[:size]  = hash[:stack_size]    if hash[:stack_size]
+
     [
       [:labeldef,:start_script],
       *function_prologue(nil),
@@ -990,7 +1006,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def return_assignments(node)
     assignments = []
     node.each_with_index do |return_value,return_index|
-      rhs = [transform_node(return_value)]
+      rhs = transform_node(return_value)
       lhs = [:stack,resolved_lvar_stack_offset(return_index),:"return_#{return_index}",nil]
       if generating? && rhs[0][0] == :stack
         lhs[3] = rhs[0][3]
@@ -1101,6 +1117,166 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   end
 
+
+  def eval_hash_node(node)
+    hash = node.location.expression.source
+    hash = "{#{hash}}" if hash[0] != "{"
+    eval(hash)
+  end
+
+  def transform_to_v1_tokens(tokens)
+    tokens.map do |line|
+      line[1] = transform_args_to_v1_tokens(line[1]) if line[1].is_a?(Array)
+      case line[0]
+      when :stack_adjust
+        [:add_val_to_int_var,[ [:var,self.stack_locations[:sc]] , [:int8,line[1]] ]]
+      when :assign
+        lhs_type = transform_v1_assign_type(line[1][0])
+        lhs_scope = transform_v1_assign_scope(line[1][0])
+
+        rhs_type = transform_v1_assign_type(line[1][1])
+        rhs_scope = transform_v1_assign_scope(line[1][1])
+
+        opcode_name = "set_#{lhs_scope}_#{lhs_type}"
+        
+        if rhs_scope
+          opcode_name << "_to_#{rhs_scope}_#{rhs_type}"
+        end
+
+        [
+          :"#{opcode_name}",
+          line[1]
+        ]
+      when :assign_operator
+        lhs_type = transform_v1_assign_type(line[1][0])
+        lhs_scope = transform_v1_assign_scope(line[1][0])
+
+        rhs_type = transform_v1_assign_type(line[1][2])
+        rhs_scope = transform_v1_assign_scope(line[1][2])
+
+        opcode_parts = transform_v1_assign_operator_words(line[1][1])
+
+        opcode_name = "#{opcode_parts[0]}_"
+
+        if rhs_scope
+          opcode_name << "#{rhs_type}_#{rhs_scope}"
+        else
+          opcode_name << "val"
+        end
+
+        opcode_name << "_#{opcode_parts[1]}_"
+        opcode_name << "#{lhs_type}_#{lhs_scope}"
+
+        [
+          :"#{opcode_name}",
+          [ line[1][0] , line[1][2] ]
+        ]
+      when :compare
+        lhs_type = transform_v1_assign_type(line[1][0])
+        lhs_scope = transform_v1_assign_scope(line[1][0])
+
+        rhs_type = transform_v1_assign_type(line[1][2])
+        rhs_scope = transform_v1_assign_scope(line[1][2])
+
+        opcode_parts = transform_v1_compare_operator_words(line[1][1])
+
+        opcode_name = "#{opcode_parts[0]}is_"
+        
+        if lhs_scope
+          opcode_name << "#{lhs_type}_#{lhs_scope}_"
+        else
+          opcode_name << "number_"
+        end
+
+        opcode_name << opcode_parts[1]
+
+        if rhs_scope
+          opcode_name << "_#{rhs_type}_#{rhs_scope}"
+        else
+          opcode_name << "_number"
+        end
+
+        [
+          :"#{opcode_name}",
+          [line[1][0],line[1][2]]
+        ]
+      else
+        line
+      end
+
+    end
+  end
+
+  def transform_args_to_v1_tokens(args)
+    args.map do |arg|
+      if arg[0] == :stack
+        [
+          :var_array,
+          :"#{self.stack_locations[:stack]}#{arg[1]>0 ? :+ : :-}#{arg[1].abs*4}",
+          self.stack_locations[:sc],
+          -1 || self.stack_locations[:size],
+          [:var,arg[3] == :float ? :float32 : :int32]
+        ]
+      else
+        arg
+      end
+    end
+  end
+
+  def transform_v1_assign_type(tokens)
+    case tokens[0]
+    when :float,:float32
+      :float
+    when :int,:int8,:int16,:int32
+      :int
+    when :var_array
+      tokens[3][1] == :float32 ? :float : :int
+    when :stack
+      tokens[3] == :float32 ? :float : :int
+    else
+      # return [:unknown] if generating?
+      debugger
+      tokens
+    end
+  end
+
+  def transform_v1_assign_scope(tokens)
+    case tokens[0]
+    when :var,:var_array
+      :var
+    when :lvar,:lvar_array
+      :lvar
+    when :int,:int8,:int16,:int32
+      nil
+    when :float,:float32
+      nil
+    else
+      # return [:unknown] if generating?
+      debugger
+      tokens
+    end
+
+  end
+
+  def transform_v1_assign_operator_words(operator)
+    {
+      :+ => ["add","to"],
+      :- => ["sub","from"],
+      :* => ["mult","by"],
+      :/ => ["div","by"],
+    }[operator]
+  end
+
+  def transform_v1_compare_operator_words(operator)
+    {
+      :"==" => [nil,"equal_to"],
+      :"!=" => ["not_","equal_to"],
+      :>=  => [nil,"greater_or_equal_to"],
+      :>  => [nil,"greater_than"],
+      :<=  => ["not_","greater_than"],
+      :<  => ["not_","greater_or_equal_to"]
+    }[operator]
+  end
 
 end
 

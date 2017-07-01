@@ -1398,7 +1398,7 @@ describe GtaScm::RubyToScmCompiler do
       let(:ruby){ <<-RUBY
         # STATIC_STACK_OFFSET = 198_976
         # STATIC_STACK_SIZE = 1024
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(name: "test") do
           # @_sb = STATIC_STACK_OFFSET
           # @_sb /= 4
           # @_sp = @_sb
@@ -1487,7 +1487,7 @@ describe GtaScm::RubyToScmCompiler do
     end
     describe "test 2" do
       let(:ruby){ <<-RUBY
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(name: "test") do
 
           function(:my_stack_function) do |player_char|
             tx,ty,tz = get_char_coordinates(player_char)
@@ -1534,7 +1534,7 @@ describe GtaScm::RubyToScmCompiler do
     end
     describe "test 3" do
       let(:ruby){ <<-RUBY
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(name: "test") do
           function(:f2) do
             tx = get_game_timer()
             return tx
@@ -1557,7 +1557,7 @@ describe GtaScm::RubyToScmCompiler do
 
     describe "test 4" do
       let(:ruby){ <<-RUBY
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(name: "test") do
 
           respawn_at = 0
 
@@ -1580,7 +1580,7 @@ describe GtaScm::RubyToScmCompiler do
 
     describe "test 5" do
       let(:ruby){ <<-RUBY
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(name: "test") do
 
           # 20 % 6 == 2
           function(:modulo) do |lhs,rhs|
@@ -1596,14 +1596,36 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-
+          (labeldef start_script)
+          (stack_adjust 1)
+          (goto ((label function_end_modulo)))
+          (labeldef function_modulo)
+          (stack_adjust 3)
+          (labeldef modulo_loop_start_4)
+          (andif ((int8 0)))
+          (compare ((stack -2 lhs int) < (stack -1 rhs int)))
+          (goto_if_false ((label modulo_if_6)))
+          (goto ((label modulo_loop_end_5)))
+          (labeldef modulo_if_6)
+          (assign_operator ((stack -2 lhs int) - (stack -1 rhs int)))
+          (goto ((label modulo_loop_start_4)))
+          (labeldef modulo_loop_end_5)
+          (assign ((stack -3 return_0 int) ((stack -2 lhs int))))
+          (stack_adjust -3)
+          (return)
+          (labeldef function_end_modulo)
+          (assign ((stack 1 argument_0 int) (int32 20)))
+          (assign ((stack 2 argument_1 int) (int32 6)))
+          (gosub function_modulo)
+          (assign ((stack -1 var int) (stack 0 return_0 int)))
+          (labeldef end_script)
         LISP
       }
     end
 
     describe "test 6" do
       let(:ruby){ <<-RUBY
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(stack_counter: 10236, stack: 10240, stack_size: 256, name: "test") do
           
           loop do
             wait(100)
@@ -1665,12 +1687,18 @@ describe GtaScm::RubyToScmCompiler do
 
     describe "expressions" do
       let(:ruby){ <<-RUBY
-        script(static_stack: STATIC_STACK_OFFSET, stack_size: STATIC_STACK_SIZE, name: "test") do
+        script(name: "test") do
 
           x = 6
           y = 1000
 
           z = y - ((x + 1) * 10)
+
+          # 1 = x
+          # 2 = 1 + 1
+          # 3 = 2 * 10
+          # 4 = y
+          # 5 = 4 - 3
 
         end
       RUBY

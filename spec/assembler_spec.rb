@@ -105,10 +105,10 @@ describe GtaScm::Assembler do
 
       context "var_array with var index/offset" do
         it "should assemble" do
-          line = '(set_var_int ((var_array stack-4 3000 32 (int32 var)) (var_array stack 3000 32 (int32 var))))'
+          line = '(set_var_int ((var_array stack-4 stack_counter 255 (int32 var)) (var_array stack 3000 32 (int32 var))))'
           assembler.read_line(scm,line,"test",0)
 
-          # assembler.define_touchup(:stack_counter,3000)
+          assembler.define_touchup(:stack_counter,3000)
           assembler.define_touchup(:stack,10000)
           assembler.install_touchup_values!
 
