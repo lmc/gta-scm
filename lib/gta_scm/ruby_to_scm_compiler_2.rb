@@ -61,6 +61,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def transform_code(node,generate_v1_tokens = true)
+    # node = self.transform_source(node)
+
     self.state = :scanning
     transform_node(node)
     # transform_node(node)
@@ -72,6 +74,15 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
 
     return transformed
+  end
+
+  DIRECT_GLOBAL_VAR_REGEX = %r{(\$\d+)}
+  DIRECT_LOCAL_VAR_REGEX  = %r{(\@\d+)}
+  def transform_source(code)
+    code = code.dup
+    code.gsub!( %r{\$(\d+)} , "\$_\\1")
+    code.gsub!( %r{\@(\d+)} , "\@_\\1")
+    code
   end
 
   def transform_node(node)
@@ -262,7 +273,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
         if node[1] == :timer
           debugger
         end
-
+        # debugger
         [:stack,resolved_lvar_stack_offset(node[0]),node[0],resolved_lvar_type(node[0],current_function)]
       else
         [:lvar,node[0]]
@@ -326,7 +337,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     when :ivar
       resolved_ivar_type(var_or_val[1])
     when :gvar
-      :TODO_resolve_gvar_type
+      # :TODO_resolve_gvar_type
+      resolved_gvar_type(var_or_val[1])
     when :lvar
       resolved_lvar_type(var_or_val[1],caller)
     when :int32,:int16,:int8,:int
@@ -389,14 +401,40 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def on_gvar_use(node)
     case node.type
     when :gvar, :gvasgn
-      [:gvar,gvar_name(node[0])]
+      if generating?
+        [:var,gvar_name(node[0]),resolved_gvar_type(node[0])]
+      else
+        [:var,gvar_name(node[0])]
+      end
     else
       raise "unknown gvar #{node.inspect}"
     end
   end
   # $gvar = 1
+  # def on_gvar_assign(node,rhs)
+  #   on_gvar_use(node)
+  # end
   def on_gvar_assign(node,rhs)
-    on_gvar_use(node)
+    lhs = on_gvar_use(node)
+
+    if scanning?
+      self.functions[nil][:globals][ lhs[1] ] ||= []
+      if rhs
+        self.functions[nil][:globals][ lhs[1] ] << rhs
+      end
+    end
+
+    return lhs
+  end
+
+  def resolved_gvar_type(name)
+    resolved_types = self.functions[nil][:globals][gvar_name(name)].map do |var_or_val|
+      resolve_var_type(var_or_val,nil)
+    end
+    if resolved_types.compact.uniq.size > 1
+      raise "multiple resolved types for gvar #{name}: #{resolved_types.inspect}"
+    end
+    resolved_types[0]
   end
 
   def ivar_name(name)
@@ -502,10 +540,14 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     self.stack_locations[:sc]    = hash[:stack_counter] if hash[:stack_counter]
     self.stack_locations[:size]  = hash[:stack_size]    if hash[:stack_size]
 
+    body = []
+    # body += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1111])]) )
+    body += transform_node(node[2])
+
     [
       [:labeldef,:start_script],
       *function_prologue(nil),
-      *transform_node(node[2]),
+      *body,
       [:labeldef,:end_script],
     ]
   end
@@ -539,7 +581,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       end
     end
 
-    body = transform_node(node[2])
+    body = []
+    # body += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-2222])]) )
+    body += transform_node(node[2])
 
     prologue = []
     epilogue = []
@@ -1230,7 +1274,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   def transform_args_to_v1_tokens(args)
     args.map do |arg|
-      if arg[0] == :stack
+      case arg[0]
+      when :stack
         [
           :var_array,
           :"#{self.stack_locations[:stack]}#{arg[1]>0 ? :+ : :-}#{arg[1].abs*4}",
@@ -1238,6 +1283,27 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
           self.stack_locations[:size],
           [arg[3] == :float ? :float32 : :int32,:var]
         ]
+      when :var
+        if value = dma_var(arg[1])
+          [
+            :dmavar,
+            value,
+            arg[2]
+          ]
+        else
+          arg
+        end
+      when :lvar
+        if value = dma_var(arg[2])
+          [
+            :lvar,
+            value,
+            value,
+            arg[3],
+          ]
+        else
+          arg
+        end
       else
         arg
       end
@@ -1256,6 +1322,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       tokens[3] == :float32 ? :float : :int
     when :lvar
       tokens[3]
+    when :var, :dmavar
+      tokens[2]
     else
       # return [:unknown] if generating?
       debugger
@@ -1265,7 +1333,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   def transform_v1_assign_scope(tokens)
     case tokens[0]
-    when :var,:var_array
+    when :var,:var_array,:dmavar
       :var
     when :lvar,:lvar_array
       :lvar
@@ -1303,6 +1371,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   def sexp(type,children = [])
     Parser::AST::Node.new(type,children)
+  end
+
+  def dma_var(name)
+    return nil if !name || !name.to_s.match(/^_(\d+)$/)
+    $1.to_i
   end
 
 end

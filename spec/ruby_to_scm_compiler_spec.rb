@@ -1708,6 +1708,28 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+
+    describe "custom global/local accessors" do
+      let(:ruby){ <<-RUBY
+        script(name: "test") do
+          $500 = 1
+          wait($500)
+          @30 = 2
+          wait(@30)
+          # $4 = 1
+          # $0[$4] = 3
+          # wait($0[$4])
+          # @1 = 1
+          # @0[@1] = 4
+          # wait(@0[@1])
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+
+        LISP
+      }
+    end
   end
 
 

@@ -514,7 +514,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
   end
 
   def use_touchup(node_offset,array_keys,touchup_name,use_type = nil)
-    # debugger if touchup_name =~ /code_persist_version/
+    # debugger if touchup_name =~ /stack(\+|\-)/
     if self.emit_nodes
       self.touchup_uses[touchup_name] << [node_offset,array_keys]
     end
@@ -537,6 +537,15 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
   def install_touchup_values!
     self.touchup_uses.each_pair do |touchup_name,uses|
+
+      o_touchup_name = touchup_name
+
+      shim_value = 0
+      if matches = touchup_name.to_s.match(/(.+)(\+|\-)(\d+)$/)
+        touchup_name = matches[1].to_sym
+        shim_value = "#{matches[2]}#{matches[3]}".to_i
+      end
+
       uses.each do |(offset,array_keys)|
         # FIXME: optimise, O(n) -> O(1)
         node = self.nodes.detect{|node| node.offset == offset}
@@ -563,14 +572,6 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             array_keys.each do |array_key|
               # logger.error " arr: #{array_key} #{arr.inspect}"
               arr = arr[array_key]
-            end
-
-            o_touchup_name = touchup_name
-
-            shim_value = 0
-            if touchup_name.match(/(.+)(\+|\-)(\d+)$/)
-              touchup_name = $1.to_sym
-              shim_value = "#{$2}#{$3}".to_i
             end
 
             if touchup_value = self.touchup_defines[touchup_name]
@@ -603,6 +604,11 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
               touchup_value = GtaScm::Types.value2bin( touchup_value , :int16 ).bytes
             else
               raise "dunno how to replace value of size #{arr.size}"
+            end
+
+            if offset == 199622
+              # debugger
+              'df'
             end
 
             touchup_value = touchup_value[0...arr.size]

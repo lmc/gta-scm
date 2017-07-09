@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+# sudo bundle exec ./bin/rpc_bridge
+
+if ENV["PWD"].split(/\//)[-1] == "gta-scm"
+  $: << "./lib"
+  require 'gta_scm'
+end
+
+require 'gta_scm/process'
+require 'gta_scm/thread'
+
+require 'rutui'
+require 'gta_scm/rutui_ext'
+
+require 'gta_scm/panel'
+require 'gta_scm/panel_manager'
+
+PLAYER_CHAR = 1
+
+process = GtaScm::Process.new
+process.load_symbols!
+process.detect_pid_and_attach!
+
+raise "omg" if !process.attached?
+
+last_id = -1
+loop do
+  sleep 1.0
+  start_at = process.scm_var_offset_for(:_stack)
+  start_at -= 8
+
+  vars = []
+  16.times do |i|
+    vars << process.read_scm_var( start_at + (i*4) , :int )
+  end
+
+  if vars[0] != last_id
+    last_id = vars[0]
+    puts "test: #{vars[0]} counter: #{vars[14]}, stack: #{vars[2..13].inspect}, canaries: #{vars[1]},#{vars[15]}"
+  end
+end
