@@ -269,7 +269,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       if raw_symbols
         tokens = line
       else
-        tokens = self.parser.parse1(line).to_ruby
+        begin
+          tokens = self.parser.parse1(line).to_ruby
+        rescue
+          puts line
+          raise
+        end
       end
       self.on_read_line(tokens,file_name,line_idx)
       logger.debug "#{file_name}:#{line_idx}".ljust(LOG_LEFT_WIDTH," ")+" - #{tokens.inspect}"

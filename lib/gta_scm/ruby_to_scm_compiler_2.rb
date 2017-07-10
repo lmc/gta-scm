@@ -3,18 +3,14 @@ require 'gta_scm/ruby_to_scm_compiler'
 
 # TODO:
 # multi-assigns x3,y3,z3 = 0.0, 0.0, 0.0
-# negated opcode calls: !locate_player_3d(coords1,coords2)
 # while loops
 # next loop keyword
 # for i in 0..12
 # timer use/assign:  @timer_a / @timer_b = 0
-# arrays: @cars = IntegerArray.new(8)
-# structs: @coords = Vector3.new(100.0,200.0,300.0)
-#   allow defining new structs
-# syntax:
+# array/struct syntax:
 #   $cars = IntegerArray[8]
 #   @coords = Vector3[ 500.0 , 400.0 , 20.0 ]
-#   function(Vector3[],1000) => function(0.0,0.0,0.0,1000)
+#   foo(Vector3[],1000) => foo(0.0,0.0,0.0,1000)
 # cast: 123.to_f
 # functions returning true/false when used in if statements (use temp vars on stack?)
 # constants
@@ -23,18 +19,10 @@ require 'gta_scm/ruby_to_scm_compiler'
 # handle nested math operators with three-address-code
 # allow calling routines with goto(&f1) / gosub(&f2)
 # allowed to get var address with &$test ? need to compile as block_pass($test)
-# detect when function returns local vars, operate on return vars on stack directly (don't allocate local vars)
 # declare function as using stack or static vars for returns/params
 #   stack: recursion permitted, doesn't consume globals
 #   static: consumes globals vars, smaller calls, no stack adjustment, no recursion permitted
 #   use static for common calls
-
-# FIXME: this does not work correctly:
-# def add_to_d(d)
-#   d += 0.25
-#   return d
-# end
-# need to detect if we can use an argument name directly as a return value too
 
 class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   using RefinedParserNodes
@@ -75,6 +63,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def opcode(name)
+    if name.match(/^not_/)
+      name = name[4..-1].to_sym
+    end
     self.opcodes[ self.opcode_names[name] ]
   end
 
@@ -213,6 +204,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     when node.match( :masgn , [1] => :send ) && self.opcode_names[ node[1][1] ]
       on_opcode_call(node)
 
+    # Negated opcode call
+    when node.match( :send , [0] => :send , [1] => :! ) && self.opcode_names[ node[0][1] ]
+      on_opcode_call(node[0],true)
+
     # Function call
     # 
     # my_function()
@@ -220,6 +215,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     # 
     when node.match( :send ) && self.functions[ node[1] ]
       on_function_call(node)
+
 
     # Function call with single return value
     #
@@ -267,6 +263,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     # unknown function call, complain later when generating instructions
     when node.match( :send ) || node.match( :lvasgn , [1] => :send)
+      debugger
       [[:unknown_call, node[1] ]]
 
     # Return
@@ -1037,8 +1034,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   #   s(:send, nil, :get_game_timer))
   #
   # when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && !!(self.opcode_names[ node[1][1] ])
-  def on_opcode_call(node)
-    opcode_name = opcode_call_name(node)
+  def on_opcode_call(node,negated = false)
+    opcode_name = opcode_call_name(node,negated)
     return_types = opcode_return_types(opcode_name)
     return_vars = opcode_return_vars(node,return_types)
 
@@ -1049,8 +1046,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     ]
   end
 
-  def opcode_call_name(node)
-    case
+  def opcode_call_name(node,negated = false)
+    name = case
     when node.match(:send)
       node[1]
     when node.match([:masgn,:lvasgn,:ivasgn,:gvasgn],[1] => :send)
@@ -1058,6 +1055,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     else
       raise "unknown opcode name #{node.inspect}"
     end
+    name = :"not_#{name}" if negated
+    name
   end
 
   def opcode_return_vars(node,return_types)

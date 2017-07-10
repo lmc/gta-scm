@@ -140,6 +140,10 @@ script() do
     return timer
   end
 
+  if !is_player_playing(0)
+    $_test_id = -2
+  end
+
   $_test_id = 1
   wait(2000)
 
