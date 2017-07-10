@@ -1,4 +1,81 @@
 
+# script() do
+
+#   # declare do
+#   #   float @input_arg
+#   # end
+
+#   def add_to_d(d)
+#     d += 0.25
+#     return d
+#   end
+
+#   # function(:linear_interpolate) do |x1,y1,z1,x2,y2,z2,d|
+#   def linear_interpolate(x1,y1,z1,x2,y2,z2,d)
+
+#     d = add_to_d(d)
+
+#     if x2 > x1
+#       x3  = x2
+#       x3 -= x1
+#       x3 *= d
+#       x3 += x1
+#     else
+#       x3  = x1
+#       x3 -= x2
+#       x3 *= d
+#       x3 += x2
+#     end
+
+#     if y2 > y1
+#       y3  = y2
+#       y3 -= y1
+#       y3 *= d
+#       y3 += y1
+#     else
+#       y3  = y1
+#       y3 -= y2
+#       y3 *= d
+#       y3 += y2
+#     end
+
+#     if z2 > z1
+#       z3  = z2
+#       z3 -= z1
+#       z3 *= d
+#       z3 += z1
+#     else
+#       z3  = z1
+#       z3 -= z2
+#       z3 *= d
+#       z3 += z2
+#     end
+
+#     return x3,y3,z3
+
+#   end
+
+#   @x = 0.0
+#   @y = 0.0
+#   @z = 0.0
+#   # @t = @input_arg
+
+#   # float(@x)
+#   # float(@y)
+#   # float(@z)
+
+#   x = 1000.0
+#   y = 1500.0
+#   z = 2000.0
+
+#   @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,0.25)
+
+#   loop do
+#     wait(100)
+#   end
+
+# end
+
 script() do
   # FIXME: return values don't work properly unless there's at least one local var? lol
   aaa = -101

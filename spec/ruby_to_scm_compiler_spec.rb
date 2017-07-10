@@ -1722,6 +1722,9 @@ describe GtaScm::RubyToScmCompiler do
           # @1 = 1
           # @0[@1] = 4
           # wait(@0[@1])
+          $test = 1
+          # $loc = &$test
+          gosub(&$test)
         end
       RUBY
       }

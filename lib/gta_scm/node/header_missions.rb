@@ -59,6 +59,16 @@ class GtaScm::Node::Header::Missions < GtaScm::Node::Header
     end
   end
 
+  def mission_sizes(eof)
+    sizes = []
+    mission_count = GtaScm::Types.bin2value(self[1][3],:int16)
+    mission_count.times do |i|
+      eom = self[1][6][i + 1] ? GtaScm::Types.bin2value(self[1][6][i + 1],:int32) : eof
+      sizes << eom - GtaScm::Types.bin2value(self[1][6][i],:int32)
+    end
+    sizes
+  end
+
   def to_ir(scm,dis)
     if game_id == "san-andreas"
       [

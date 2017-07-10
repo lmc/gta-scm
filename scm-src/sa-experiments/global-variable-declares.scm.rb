@@ -54,7 +54,7 @@ if emit(false)
 
   $_test_id = -1
   $_canary = 42069
-  STACK_SIZE = 12
+  STACK_SIZE = 16
   $_stack = IntegerArray.new(STACK_SIZE)
 end
 $_sc = 0

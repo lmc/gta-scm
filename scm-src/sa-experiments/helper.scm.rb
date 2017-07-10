@@ -60,99 +60,99 @@ do_spawn = 0
 loop do
   wait 0
 
-  temp test = 0
+  # # temp test = 0
 
-  if is_player_playing(PLAYER)
-    playing = 1
-    # clear_wanted_level(PLAYER)
-    p_x,p_y,p_z = get_char_coordinates(PLAYER_CHAR)
-    p_heading = get_char_heading(PLAYER_CHAR)
-    p_height = get_char_height_above_ground(PLAYER_CHAR)
-    p_health = get_char_health(PLAYER_CHAR)
-    p_armour = get_char_armour(PLAYER_CHAR)
-    p_speed = get_char_speed(PLAYER_CHAR)
-    p_dx,p_dy,p_dz = get_char_velocity(PLAYER_CHAR)
+  # if is_player_playing(PLAYER)
+  #   playing = 1
+  #   # clear_wanted_level(PLAYER)
+  #   p_x,p_y,p_z = get_char_coordinates(PLAYER_CHAR)
+  #   p_heading = get_char_heading(PLAYER_CHAR)
+  #   p_height = get_char_height_above_ground(PLAYER_CHAR)
+  #   p_health = get_char_health(PLAYER_CHAR)
+  #   p_armour = get_char_armour(PLAYER_CHAR)
+  #   p_speed = get_char_speed(PLAYER_CHAR)
+  #   p_dx,p_dy,p_dz = get_char_velocity(PLAYER_CHAR)
 
-    vehicle = get_car_char_is_using(PLAYER_CHAR)
-    if vehicle > 0
-      in_vehicle = 1
-    else
-      in_vehicle = 0
-    end
-    p_weapon = get_current_char_weapon(PLAYER_CHAR)
+  #   vehicle = get_car_char_is_using(PLAYER_CHAR)
+  #   if vehicle > 0
+  #     in_vehicle = 1
+  #   else
+  #     in_vehicle = 0
+  #   end
+  #   p_weapon = get_current_char_weapon(PLAYER_CHAR)
 
-    # if TIMER_A > 5000 && TIMER_A < 6000
-    #   debugger
-    # end
-  else
-    playing = 0
-  end
+  #   # if TIMER_A > 5000 && TIMER_A < 6000
+  #   #   debugger
+  #   # end
+  # else
+  #   playing = 0
+  # end
+
+  # # if do_spawn == 0
+  # #   do_spawn = 1
+  # #   request_model(263)
+  # #   loop do
+  # #     wait(0)
+  # #     if has_model_loaded(263)
+  # #       break
+  # #     end
+  # #   end
+  # #   # t_y = p_y
+  # #   # t_y += 3.0
+  # #   # char = create_char(23,263,p_x,t_y,p_z)
+  # #   set_player_model(PLAYER,263)
+  # #   build_player_model(PLAYER)
+  # # end
+
+  # # stack_val_3 = 0
+  # # stack_val_2 = 0
+  # # stack_val_1 = 0
+
+  # # stackzzz = IntegerArray.new(3)
+  # # stack_counterzzz = 0
+  # # stackzzz[stack_counterzzz] = 1
+  # # stack_counterzzz += 1
+  # # stackzzz[stack_counterzzz] = 2
+  # # stack_counterzzz += 1
+  # # stackzzz[stack_counterzzz] = 3
+  # # # $stack_counterzzz += 1
+
+  # # wait(5000)
+
+  # # stack_val_3 = stackzzz[stack_counterzzz]
+  # # stack_val_2 = stackzzz[stack_counterzzz - 1]
+  # # stack_val_1 = stackzzz[stack_counterzzz - 2]
+
+  # # # $stackzzz[$stack_counterzzz]     = 4
+  # # # $stackzzz[$stack_counterzzz - 1] = 5
+  # # # $stackzzz[$stack_counterzzz - 2] = 6
 
   # if do_spawn == 0
   #   do_spawn = 1
-  #   request_model(263)
+  #   request_model(420)
   #   loop do
   #     wait(0)
-  #     if has_model_loaded(263)
-  #       break
-  #     end
+  #     break if has_model_loaded(420)
   #   end
-  #   # t_y = p_y
-  #   # t_y += 3.0
-  #   # char = create_char(23,263,p_x,t_y,p_z)
-  #   set_player_model(PLAYER,263)
-  #   build_player_model(PLAYER)
+  #   t_y = p_y
+  #   t_y += 5.0
+  #   car = create_car(420,p_x,t_y,p_z)
+  #   char = create_random_char_as_driver(car)
+  #   wait(100)
+  #   set_car_mission(car,11)
+  #   wait(3000)
+  #   mark_car_as_no_longer_needed(car)
+  #   mark_model_as_no_longer_needed(420)
+  #   mark_char_as_no_longer_needed(char)
   # end
 
-  stack_val_3 = 0
-  stack_val_2 = 0
-  stack_val_1 = 0
-
-  stackzzz = IntegerArray.new(3)
-  stack_counterzzz = 0
-  stackzzz[stack_counterzzz] = 1
-  stack_counterzzz += 1
-  stackzzz[stack_counterzzz] = 2
-  stack_counterzzz += 1
-  stackzzz[stack_counterzzz] = 3
-  # $stack_counterzzz += 1
-
-  wait(5000)
-
-  stack_val_3 = stackzzz[stack_counterzzz]
-  stack_val_2 = stackzzz[stack_counterzzz - 1]
-  stack_val_1 = stackzzz[stack_counterzzz - 2]
-
-  # $stackzzz[$stack_counterzzz]     = 4
-  # $stackzzz[$stack_counterzzz - 1] = 5
-  # $stackzzz[$stack_counterzzz - 2] = 6
-
-  if do_spawn == 0
-    do_spawn = 1
-    request_model(420)
-    loop do
-      wait(0)
-      break if has_model_loaded(420)
-    end
-    t_y = p_y
-    t_y += 5.0
-    car = create_car(420,p_x,t_y,p_z)
-    char = create_random_char_as_driver(car)
-    wait(100)
-    set_car_mission(car,11)
-    wait(3000)
-    mark_car_as_no_longer_needed(car)
-    mark_model_as_no_longer_needed(420)
-    mark_char_as_no_longer_needed(char)
-  end
-
-  use_text_commands(1)
-  set_text_right_justify(1)
-  set_text_colour(255,255,255,255)
-  set_text_scale(0.48,2.2)
-  set_text_edge(2,0,0,0,255)
-  set_text_font(3)
-  set_text_proportional(1)
-  display_text_with_number(600.0,420.0,"GSCM101",0)
+  # use_text_commands(1)
+  # set_text_right_justify(1)
+  # set_text_colour(255,255,255,255)
+  # set_text_scale(0.48,2.2)
+  # set_text_edge(2,0,0,0,255)
+  # set_text_font(3)
+  # set_text_proportional(1)
+  # display_text_with_number(600.0,420.0,"GSCM101",0)
 
 end

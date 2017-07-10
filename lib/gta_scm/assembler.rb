@@ -206,6 +206,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       logger.info "Padding: #{self.paddings.inspect}"
       logger.info "External offsets: #{self.external_offsets.inspect}"
       logger.info "Compiled size breakdowns: #{self.include_sizes.inspect}"
+
+      # mission_sizes = missions_header.mission_sizes(File.size(out_path))
+      # largest_mission_size = mission_sizes.sort.last
+      # largest_mission_idx  = mission_sizes.index(largest_mission_size)
+      # logger.info "Largest mission: #{largest_mission_idx}, size: #{missions_header.mission_sizes(File.size(out_path)).sort.last}"
+
       # if out_path.is_a?(String)
       #   logger.info "total size: #{File.size(out_path)}"
       # end
