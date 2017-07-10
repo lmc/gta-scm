@@ -65,6 +65,7 @@ begin
 ty = 0
 console_lines = 16
 console_at_top = false
+bl = 82
 if console_at_top
   ty = 23
   # $panel_manager.add_panel :repl, GtaScm::Panel::Repl.new($panel_manager,0,0,125,ty)
@@ -74,15 +75,18 @@ end
 
 $panel_manager.add_panel :process, GtaScm::Panel::Process.new($panel_manager,63,ty+0,62,7)
 $panel_manager.add_panel :thread_selector, GtaScm::Panel::ThreadSelector.new($panel_manager,0,ty+0,62,1)
-$panel_manager.add_panel :thread_info, GtaScm::Panel::ThreadInfo.new($panel_manager,10+4,ty+1,48,10 + 8 + 2 + 2)
+$panel_manager.add_panel :thread_info, GtaScm::Panel::ThreadInfo2.new($panel_manager,10+4,ty+1,48,22)
 $panel_manager.panels[:thread_info].controller = $panel_manager.panels[:thread_selector]
-$panel_manager.add_panel :thread_list, GtaScm::Panel::ThreadList.new($panel_manager,0,ty+1,14,60-1)
+$panel_manager.add_panel :thread_list, GtaScm::Panel::ThreadList.new($panel_manager,0,ty+1,14,bl)
 $panel_manager.panels[:thread_list].controller = $panel_manager.panels[:thread_selector]
-$panel_manager.add_panel :lvars, GtaScm::Panel::Lvars.new($panel_manager,10+4,ty+23,48,37)
+$panel_manager.add_panel :lvars, GtaScm::Panel::Lvars2.new($panel_manager,14,ty+6,48,37)
 $panel_manager.panels[:lvars].controller = $panel_manager.panels[:thread_selector]
-$panel_manager.add_panel :breakpoint, GtaScm::Panel::Breakpoint.new($panel_manager,63,ty+7,62,4)
-$panel_manager.add_panel :code_injector, GtaScm::Panel::CodeInjector.new($panel_manager,63,ty+11,62,12)
-$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars.new($panel_manager,63,ty+23,62,37)
+$panel_manager.add_panel :stack, GtaScm::Panel::Stack2.new($panel_manager,14,ty+43,48,37)
+$panel_manager.panels[:stack].controller = $panel_manager.panels[:thread_selector]
+$panel_manager.add_panel :breakpoint, GtaScm::Panel::Breakpoint2.new($panel_manager,63,43,62,9)
+$panel_manager.panels[:breakpoint].controller = $panel_manager.panels[:thread_selector]
+# $panel_manager.add_panel :code_injector, GtaScm::Panel::CodeInjector.new($panel_manager,63,ty+11,62,12)
+$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars2.new($panel_manager,63,6,62,37)
 # $panel_manager.add_panel :mission_skipper, GtaScm::Panel::MissionSkipper.new($panel_manager,63,ty+15,28,32)
 
 
@@ -96,7 +100,8 @@ RuTui::ScreenManager.add :default, screen
 RuTui::ScreenManager.set_current :default
 
 $panel_manager.panels.values.each(&:on_blur)
-$panel_manager.focused_panel = :repl
+# $panel_manager.focused_panel = :repl
+$panel_manager.focused_panel = :process
 $panel_manager.on_init
 
 def dump_persist_json

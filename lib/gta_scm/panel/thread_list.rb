@@ -37,6 +37,9 @@ class GtaScm::Panel::ThreadList < GtaScm::Panel::Base
         self.elements[:table].add_highlight_line(idx)
       end
       if thread.active? && !thread.prev_opcode_is_wait?(process)
+        self.elements[:table].add_highlight_line(idx,1)
+      end
+      if thread.active? && self.controller && self.controller.settings[:breakpoint_thread] == thread.thread_id
         self.elements[:table].add_highlight_line(idx,5)
       end
       [

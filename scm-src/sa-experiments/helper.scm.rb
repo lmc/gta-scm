@@ -29,6 +29,8 @@ do_fade(100,1)
 
 city = 0
 
+# gosub(57228)
+
 # task_jetpack(-1)
 # goto(1)
 

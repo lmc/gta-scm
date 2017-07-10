@@ -640,9 +640,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     hash[:loop] = true if hash[:loop].nil?
     hash[:wait] = 0 if hash[:wait].nil?
 
+    body = []
     begin
       self.main_block_hash = hash
-      body = []
       if hash[:loop]
         loop_label = :"#{self.script_block_hash[:name]}_main_loop"
         body << [:labeldef,loop_label]
@@ -659,6 +659,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     ensure
       self.main_block_hash = nil
     end
+
+    body
   end
 
   # Function declare
