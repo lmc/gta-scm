@@ -2,7 +2,6 @@
 require 'gta_scm/ruby_to_scm_compiler'
 
 # TODO:
-# multi-assigns x3,y3,z3 = 0.0, 0.0, 0.0
 # while loops
 # next loop keyword
 # for i in 0..12
@@ -172,6 +171,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     # Assignment
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_assign( node )
+
+    # Multi-assignment
+    when node.match( :masgn , [0] => :mlhs , [1] => :array )
+      on_multi_assign( node )
 
     # Operator Assign
     when node.match( [:op_asgn] , [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/] )
@@ -737,6 +740,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       on_immediate_use(node[2])
     when node.match( :send, [1] => [:+,:-,:*,:/], [2] => [:int,:float])
       on_immediate_use(node[2])
+    when node.match([:lvar,:gvar,:ivar])
+      on_var_use(node)
+    when node.match([:float,:int])
+      on_immediate_use(node)
     else
       debugger
       raise "unknown assignment_rhs #{node.inspect}"
@@ -883,6 +890,21 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     [
       [:assign,[lhs,rhs]]
     ]
+  end
+
+  def on_multi_assign(node)
+    if node[0].size != node[1].size
+      raise "mismatched number of multi assigns (#{node[0].size} vs. #{node[1].size})"
+    end
+
+    instructions = []
+    node[0].each_with_index do |left,index|
+      right = node[1][index]
+      rhs = self.assignment_rhs(right)
+      lhs = self.assignment_lhs(left,rhs)
+      instructions << [:assign,[lhs,rhs]]
+    end
+    instructions
   end
 
   # Operator Assign
@@ -1478,6 +1500,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def safe_lvar_return_var(lvar_name,function_name)
+    # return nil
     return nil if !self.functions[function_name][:returns]
     resolved_lvars = self.functions[function_name][:returns].map do |k,v|
       v = v.map{|vv| vv[0] == :lvar ? vv[1] : nil}

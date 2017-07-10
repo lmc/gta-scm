@@ -53,13 +53,17 @@ if emit(false)
   PICKUP_TYPE_NO_RESPAWN = 3
 
   $_test_id = -1
-  $_canary = 42069
-  STACK_SIZE = 16
+  $_canary1 = 42069
+  STACK_SIZE = 20
   $_stack = IntegerArray.new(STACK_SIZE)
+  $_canary2 = 42069
+  $_sc = 0
+  $_canary3 = 42069
 end
+$_canary1 = 42069
+$_canary2 = 42069
+$_canary3 = 42069
 $_sc = 0
-$_sc_guard = 42069
-$_canary = 42069
 
 SPATIAL_ENTRIES = 8
 $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)

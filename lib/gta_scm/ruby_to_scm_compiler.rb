@@ -41,6 +41,10 @@ class GtaScm::RubyToScmCompiler
         children[index]
       end
 
+      def size
+        children.size
+      end
+
       def each(&block)
         self.children.each(&block)
       end
