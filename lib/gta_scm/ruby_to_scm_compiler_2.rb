@@ -23,6 +23,36 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   static: consumes globals vars, smaller calls, no stack adjustment, no recursion permitted
 #   use static for common calls
 
+=begin
+helper methods:
+
+def stack_verify_limit(next_up)
+  next_up += $_sc
+  if next_up >= $_stack_limit
+  goto_if_false(:error_stack_overflow) 
+  return
+
+stack[+0] = next_up
+gosub(stack_verify_limit)
+stack[+0] = args as normal
+gosub(function_as_normal)
+
+def stack_verify_empty
+  if $_sc == 0
+  goto_if_false(:error_stack_populated_on_yield)
+  return
+
+script do
+  main(wait: 0) do
+    stack_adjust(-1)
+    wait(0)
+    stack_adjust(+1)
+
+    code()
+  end
+end
+=end
+
 class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   using RefinedParserNodes
 
@@ -35,6 +65,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   attr_accessor :label_type
   attr_accessor :loop_labels
   attr_accessor :stack_locations
+  attr_accessor :script_block_hash
+  attr_accessor :main_block_hash
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -94,6 +126,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     code = code.dup
     code.gsub!( %r{\$(\d+)} , "\$_\\1")
     code.gsub!( %r{\@(\d+)} , "\@_\\1")
+    code.gsub!( %r{\&((\@|\$)?(\w+))} , "block_pass(\\1)")
     code
   end
 
@@ -120,6 +153,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     #
     when node.match( :block , [0] => :send , [0,1] => :script , [1] => :args , [2] => [:begin,:block] )
       on_script_block( node )
+
+    when node.match( :block , [0] => :send , [0,1] => :main , [1] => :args , [2] => [:begin,:block] )
+      on_main_block( node )
 
     # Function declare
     # 
@@ -175,6 +211,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     # Multi-assignment
     when node.match( :masgn , [0] => :mlhs , [1] => :array )
       on_multi_assign( node )
+
+    when node.match( [:ivasgn,:gvasgn,:lvasgn] , [1] => :send , [1,1] => :block_pass)
+      on_dereference_assign( node )
 
     # Operator Assign
     when node.match( [:op_asgn] , [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/] )
@@ -421,6 +460,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     resolved_types = self.functions[nil][:instances][ivar_name(name)].map do |(caller,var_or_val)|
       resolve_var_type(var_or_val,nil)
     end
+    # if name == :input_arg
+    #   debugger
+    # end
     if resolved_types.compact.uniq.size > 1
       raise "multiple resolved types for ivar #{name}: #{resolved_types.inspect}"
     end
@@ -570,14 +612,19 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   # end
   #
   def on_script_block(node)
-    hash = eval_hash_node(node[0][2])
+    hash = eval_hash_node(node[0][2]) || {}
     self.stack_locations[:stack] = hash[:stack]         if hash[:stack]
     self.stack_locations[:sc]    = hash[:stack_counter] if hash[:stack_counter]
     self.stack_locations[:size]  = hash[:stack_size]    if hash[:stack_size]
 
-    body = []
-    # body += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1111])]) )
-    body += transform_node(node[2])
+    begin
+      self.script_block_hash = hash
+      body = []
+      # body += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1111])]) )
+      body += transform_node(node[2])
+    ensure
+      self.script_block_hash = nil
+    end
 
     [
       [:labeldef,:start_script],
@@ -585,6 +632,33 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       *body,
       [:labeldef,:end_script],
     ]
+  end
+
+
+  def on_main_block(node)
+    hash = eval_hash_node(node[0][2]) || {}
+    hash[:loop] = true if hash[:loop].nil?
+    hash[:wait] = 0 if hash[:wait].nil?
+
+    begin
+      self.main_block_hash = hash
+      body = []
+      if hash[:loop]
+        loop_label = :"#{self.script_block_hash[:name]}_main_loop"
+        body << [:labeldef,loop_label]
+      end
+      if hash[:wait]
+        body += function_epilogue(nil)
+        body << [:wait,[[:int32,hash[:wait]]]]
+        body += function_prologue(nil)
+      end
+      body += transform_node(node[2])
+      if hash[:loop]
+        body << [:goto,[[:label,loop_label]]]
+      end
+    ensure
+      self.main_block_hash = nil
+    end
   end
 
   # Function declare
@@ -905,6 +979,14 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       instructions << [:assign,[lhs,rhs]]
     end
     instructions
+  end
+
+  def on_dereference_assign(node)
+    
+    # [
+    #   :assign,
+    #   [lhs,]
+    # ]
   end
 
   # Operator Assign
@@ -1319,15 +1401,20 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
         rhs_type = transform_v1_assign_type(line[1][1])
         rhs_scope = transform_v1_assign_scope(line[1][1])
 
+        if rhs_type != lhs_type
+          logger.warn "Types do not match!"
+          lhs_type = rhs_type
+        end
+
         opcode_name = "set_#{lhs_scope}_#{lhs_type}"
         
         if rhs_scope
           opcode_name << "_to_#{rhs_scope}_#{rhs_type}"
         end
 
-        # if opcode_name == "set_var_int_to_var_float"
-        #   debugger
-        # end
+        if opcode_name == "set_var_int_to_lvar_float"
+          debugger
+        end
 
         [
           :"#{opcode_name}",
@@ -1397,12 +1484,21 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     args.map do |arg|
       case arg[0]
       when :stack
+        type = case arg[3]
+        when :float32, :float
+          :float32
+        when :int32, :int
+          :int32
+        else
+          :int32
+        end
+
         [
           :var_array,
           :"#{self.stack_locations[:stack]}#{arg[1]>0 ? :+ : :-}#{arg[1].abs*4}",
           self.stack_locations[:sc],
           self.stack_locations[:size],
-          [arg[3] == :float ? :float32 : :int32,:var]
+          [type,:var]
         ]
       when :var
         if value = dma_var(arg[1])
@@ -1438,9 +1534,29 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     when :int,:int8,:int16,:int32
       :int
     when :var_array
-      tokens[4][0] == :float32 ? :float : :int
+      case tokens[4][0]
+      when :float32, :float
+        :float
+      when :int32, :int
+        :int
+      when nil
+        nil
+      else
+        debugger
+        raise "???"
+      end
     when :stack
-      tokens[3] == :float32 ? :float : :int
+      case tokens[3]
+      when :float32, :float
+        :float
+      when :int32, :int
+        :int
+      when nil
+        nil
+      else
+        debugger
+        raise "????"
+      end
     when :lvar
       tokens[3]
     when :var, :dmavar

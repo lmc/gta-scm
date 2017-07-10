@@ -1,25 +1,12 @@
 
-script() do
-
-  $_canary1 = 42069
-  $_canary2 = 42069
-  $_canary3 = 42069
-
-
-  # declare do
-  #   float @input_arg
-  # end
+script(name: "xhelpv2") do
 
   def add_to_d(d)
     d += 0.25
     return d
   end
 
-  # function(:linear_interpolate) do |x1,y1,z1,x2,y2,z2,d|
   def linear_interpolate(x1,y1,z1,x2,y2,z2,d)
-    x3,y3,z3 = 0.0,1.0,2.0
-    # x3,y3,z3 = x1,y1,z1
-
     d = add_to_d(d)
 
     if x2 > x1
@@ -59,28 +46,19 @@ script() do
     end
 
     return x3,y3,z3
-
   end
 
-  @x = 0.0
-  @y = 0.0
-  @z = 0.0
-  # @t = @input_arg
-
-  # float(@x)
-  # float(@y)
-  # float(@z)
-
-  x = 1000.0
-  y = 1500.0
-  z = 2000.0
-
-  @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,0.25)
-
-  loop do
-    wait(100)
+  declare do
+    @input_arg = 0.0
   end
 
+  main(wait: 250) do
+    x = 1000.0
+    y = 1500.0
+    z = 2000.0
+
+    @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,@input_arg)
+  end
 end
 
 # script() do
