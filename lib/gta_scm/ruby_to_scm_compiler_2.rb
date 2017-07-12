@@ -114,7 +114,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     transformed = transform_node(node)
 
     if generate_v1_tokens
-      transformed = transform_to_v1_tokens(transformed)
+      # transformed = transform_to_v1_tokens(transformed)
     end
 
     return transformed
@@ -1305,12 +1305,13 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       reset_tac_id!
     end
     @tac_id += 1
-    :"_tac_#{@tac_id}"
+    [:var,:"_tac_#{@tac_id}"]
   end
 
   def reset_tac_id!
     @tac_id = 0
     @tac_instructions = []
+    @tac_nodes_to_ids = {}
   end
 
   def on_math_expression(node,level = 0)
@@ -1318,10 +1319,14 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       reset_tac_id!
     end
 
-    # debugger
-
-    if node.match( [:lvasgn,:ivasgn,:gvasgn] )
-      on_math_expression( node[1] , level + 1 )
+    nnn = if node.match( [:lvasgn,:ivasgn,:gvasgn] )
+      rhc = on_math_expression( node[1] , level + 1 )
+      rhc_tac_id = @tac_nodes_to_ids[node[1]]
+      lhs = assignment_lhs(node,nil)
+      [
+        *rhc,
+        [:assign, [lhs, rhc_tac_id]]
+      ]
     # elsif node.match( :send , [0] => :begin , [0,0] => :send )
     #   on_math_expression(node[0])
     elsif node.match( :send , [0] => [:lvar,:ivar,:gvar] , [1] => [:+,:-,:*,:/] , [2] => [:lvar,:ivar,:gvar,:int,:float] )
@@ -1330,55 +1335,71 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       lhs = assignment_lhs(node,nil)
       operator = assignment_operator(node)
       var = self.tac_id
-      debugger
-      @tac_instructions += [
-        [:assign, var, lhs],
-        [:assign_operator, var, operator, rhs]
+      @tac_nodes_to_ids[node] = var
+      [
+        [:assign, [var, lhs]],
+        [:assign_operator, [var, operator, rhs]]
       ]
     elsif node.match( :send , [0] => [:lvar,:ivar,:gvar,:begin] , [1] => [:+,:-,:*,:/] , [2] => [:begin,:lvar,:ivar,:gvar,:int,:float] )
 
-      # FIXME: handle unresolved left/right hand sides
-      # FIXME: can you even generate this thing recursively or do you need a stack?
-
       lhs,rhs = nil,nil
+      operator = assignment_operator(node)
 
       if node[2].match([:send,:begin])
-        on_math_expression( node[2] , level + 1 )
+        rhc = on_math_expression( node[2] , level + 1 )
       else
         rhs = assignment_rhs( node )
-        # debugger
-        # node
       end
 
       if node[0].match([:send,:begin])
-        on_math_expression( node[0] , level + 1 )
+        lhc = on_math_expression( node[0] , level + 1 )
       else
-        lhs = assignment_rhs(lhs)
-        # debugger
-        # node
+        lhs = assignment_lhs(node,nil)
       end
 
-      if lhs || rhs
+      case
+      when lhc && rhs
+        lhc_tac_id = @tac_nodes_to_ids[node[0]]
+        rhc_tac_id = self.tac_id
+        @tac_nodes_to_ids[node] = rhc_tac_id
+        [
+          *lhc,
+          [:assign, [rhc_tac_id, lhc_tac_id]],
+          [:assign_operator, [rhc_tac_id, operator, rhs]],
+        ]
+      when rhc && lhs
+        lhc_tac_id = self.tac_id
+        rhc_tac_id = @tac_nodes_to_ids[node[2]]
+        @tac_nodes_to_ids[node] = lhc_tac_id
+        [
+          *rhc,
+          [:assign, [lhc_tac_id, lhs]],
+          [:assign_operator, [lhc_tac_id, operator, rhc_tac_id]],
+        ]
+      else
+
         debugger
-        node
+        "foo"
+        # node
+
+      end
+    elsif node.match( :begin )
+      child = on_math_expression( node[0] , level + 1 )
+
+      # copy single-child IDs up
+      # debugger
+      if @tac_nodes_to_ids[node[0]] && node.size == 1
+        @tac_nodes_to_ids[node] = @tac_nodes_to_ids[node[0]]
       end
 
-      # debugger
-      # "foo"
-      # node
-
-    elsif node.match( :begin )
-      on_math_expression( node[0] , level + 1 )
+      child
     else
       debugger
       raise "???"
     end
 
-    debugger
-
-    # instructions
-
-    @tac_instructions
+    # debugger
+    nnn
 
   end
 

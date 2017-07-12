@@ -1692,6 +1692,16 @@ describe GtaScm::RubyToScmCompiler do
           x = 6
           y = 1000
 
+          # s(:lvasgn, :z,
+          #   s(:send,
+          #     s(:lvar, :y), :-,
+          #     s(:begin,
+          #       s(:send,
+          #         s(:begin,
+          #           s(:send,
+          #             s(:lvar, :x), :+,
+          #             s(:int, 1))), :*,
+          #         s(:int, 10)))))
           z = y - ((x + 1) * 10)
 
           # 1 = x
