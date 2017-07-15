@@ -5,7 +5,6 @@ require 'gta_scm/ruby_to_scm_compiler'
 # while loops
 # next loop keyword
 # for i in 0..12
-# timer use/assign:  @timer_a / @timer_b = 0
 # array/struct syntax:
 #   $cars = IntegerArray[8]
 #   @coords = Vector3[ 500.0 , 400.0 , 20.0 ]
@@ -295,6 +294,12 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     when node.match( :return , [0] => :send ) && self.opcode_names[ node[0][1] ]
       raise "FIXME: handle return directly from opcode call"
 
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,1] => [:FloatArray,:IntegerArray])
+      on_array_declare(node)
+
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,0,1] => [:FloatArray,:IntegerArray], [1,1] => :new)
+      on_array_declare(node)
+
     # Compare
     when node.match( :send , [1] => [:>,:<,:>=,:<=,:==,:!=] )
       on_compare(node)
@@ -521,6 +526,12 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def ivar_lvar_id(name)
+    if name =~ /timer_a/i
+      return 32
+    elsif name =~ /timer_b/i
+      return 33
+    end
+
     @ivar_lvar_ids ||= {}
     @ivar_lvar_id_counter ||= -1
     if @ivar_lvar_ids[name]
@@ -537,13 +548,15 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   # @ivar
   def on_ivar_use(node)
+    name = ivar_name(node[0])
     case node.type
     when :ivar, :ivasgn
       if generating?
+        ivar_id = ivar_lvar_id(name)
         # [:ivar,ivar_name(node[0]),resolved_ivar_type(node[0])]
-        [:lvar,ivar_lvar_id(ivar_name(node[0])),ivar_name(node[0]),resolved_ivar_type(node[0])]
+        [:lvar,ivar_id,name,resolved_ivar_type(node[0])]
       else
-        [:ivar,ivar_name(node[0])]
+        [:ivar,name]
       end
     else
       raise "unknown ivar #{node.inspect}"
@@ -1211,6 +1224,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
         on_var_use(argument)
       end
     end
+  end
+
+  def on_array_declare(node)
+    []
   end
 
   def on_compare(node)

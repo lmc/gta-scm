@@ -65,6 +65,18 @@ script(name: "xhelpv2") do
     @a = 1000
     @b = 3
     @c = (@a + 5) * (@b * 10)
+
+    @coords = FloatArray(3)
+    $cars = IntegerArray.new(8)
+    $cd = 0
+    $cars[$cd] = 0
+    $cars[$cd + 1] = 1
+    $cars[$cd + 2] = 2
+    wait($cars[$cd])
+    wait($cars[$cd + 1])
+
+    ZERO = 0
+    FZERO = 0.0
   end
 end
 

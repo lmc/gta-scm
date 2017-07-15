@@ -1714,6 +1714,9 @@ describe GtaScm::RubyToScmCompiler do
           @b = 3
           @c = (@a + 5) * (@b * 10)
 
+          @timer_a = 100
+          wait(@timer_a)
+
         end
       RUBY
       }
