@@ -1710,6 +1710,10 @@ describe GtaScm::RubyToScmCompiler do
           # 4 = y
           # 5 = 4 - 3
 
+          @a = 1000
+          @b = 3
+          @c = (@a + 5) * (@b * 10)
+
         end
       RUBY
       }

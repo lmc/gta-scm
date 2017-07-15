@@ -60,6 +60,11 @@ script(name: "xhelpv2") do
     z = 2000.0
 
     @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,@input_arg)
+
+    @c = 0
+    @a = 1000
+    @b = 3
+    @c = (@a + 5) * (@b * 10)
   end
 end
 

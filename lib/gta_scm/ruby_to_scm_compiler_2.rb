@@ -114,7 +114,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     transformed = transform_node(node)
 
     if generate_v1_tokens
-      # transformed = transform_to_v1_tokens(transformed)
+      transformed = transform_to_v1_tokens(transformed)
     end
 
     return transformed
@@ -457,6 +457,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def resolved_ivar_type(name)
+    if !self.functions[nil][:instances][ivar_name(name)]
+      debugger
+    end
     resolved_types = self.functions[nil][:instances][ivar_name(name)].map do |(caller,var_or_val)|
       resolve_var_type(var_or_val,nil)
     end
@@ -797,6 +800,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       on_lvar_assign(node[0],nil)
     when node.match( :send , [0] => [:lvar] )
       on_lvar_assign(node[0],nil)
+    when node.match( :send , [0] => [:ivar] )
+      on_ivar_assign(node[0],nil)
     else
       raise "unknown assignment_lhs #{node.inspect}"
     end
@@ -1291,7 +1296,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def compilable_math_expression?(node, level = 0)
     if node.match( [:lvasgn,:ivasgn,:gvasgn] )
       return compilable_math_expression?( node[1] , level + 1 )
-    elsif node.match( :send , [0] => [:lvar,:ivar,:gvar] , [1] => [:+,:-,:*,:/] , [2] => [:lvar,:ivar,:gvar,:int,:float,:begin] )
+    elsif node.match( :send , [0] => [:lvar,:ivar,:gvar,:begin] , [1] => [:+,:-,:*,:/] , [2] => [:lvar,:ivar,:gvar,:int,:float,:begin] )
       return true
     elsif node.match( :begin )
       return compilable_math_expression?( node[0] , level + 1 )
@@ -1300,18 +1305,20 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
   end
 
-  def tac_id
+  def tac_id(rhs = nil)
     if !@tac_id
       reset_tac_id!
     end
     @tac_id += 1
-    [:var,:"_tac_#{@tac_id}"]
+    # [:tac,@tac_id]
+    on_lvar_assign( sexp(:lvar,[:"_tac_#{@tac_id}"]) , rhs )
   end
 
   def reset_tac_id!
     @tac_id = 0
     @tac_instructions = []
     @tac_nodes_to_ids = {}
+    @tac_type = nil
   end
 
   def on_math_expression(node,level = 0)
@@ -1322,7 +1329,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     nnn = if node.match( [:lvasgn,:ivasgn,:gvasgn] )
       rhc = on_math_expression( node[1] , level + 1 )
       rhc_tac_id = @tac_nodes_to_ids[node[1]]
-      lhs = assignment_lhs(node,nil)
+      lhs = assignment_lhs(node,rhc_tac_id)
       [
         *rhc,
         [:assign, [lhs, rhc_tac_id]]
@@ -1334,7 +1341,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       rhs = assignment_rhs(node)
       lhs = assignment_lhs(node,nil)
       operator = assignment_operator(node)
-      var = self.tac_id
+      var = self.tac_id(rhs)
       @tac_nodes_to_ids[node] = var
       [
         [:assign, [var, lhs]],
@@ -1376,6 +1383,15 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
           [:assign, [lhc_tac_id, lhs]],
           [:assign_operator, [lhc_tac_id, operator, rhc_tac_id]],
         ]
+      when lhc && rhc
+        lhc_tac_id = @tac_nodes_to_ids[node[0]]
+        rhc_tac_id = @tac_nodes_to_ids[node[2]]
+        @tac_nodes_to_ids[node] = lhc_tac_id
+        [
+          *lhc,
+          *rhc,
+          [:assign_operator, [lhc_tac_id, operator, rhc_tac_id]]
+        ]
       else
 
         debugger
@@ -1399,6 +1415,13 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
 
     # debugger
+    # nnn.each do |instructions|
+    #   instructions[1].each do |arg|
+    #     if arg[0] == :tac
+    #       arg[2] = @tac_type
+    #     end
+    #   end
+    # end
     nnn
 
   end
@@ -1454,14 +1477,20 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
         opcode_name = "#{opcode_parts[0]}_"
 
-        if rhs_scope
-          opcode_name << "#{rhs_type}_#{rhs_scope}"
+        if line[1][1] == :* || line[1][1] == :/
+          # debugger
+          opcode_name << "#{lhs_type}_#{lhs_scope}"
+          opcode_name << "_#{opcode_parts[1]}_"
+          opcode_name << (rhs_scope ? "#{rhs_type}_#{rhs_scope}" : "val")
         else
-          opcode_name << "val"
+          opcode_name << (rhs_scope ? "#{rhs_type}_#{rhs_scope}" : "val")
+          opcode_name << "_#{opcode_parts[1]}_"
+          opcode_name << "#{lhs_type}_#{lhs_scope}"
         end
 
-        opcode_name << "_#{opcode_parts[1]}_"
-        opcode_name << "#{lhs_type}_#{lhs_scope}"
+        if opcode_name == "mult_val_by_int_var"
+          debugger
+        end
 
         [
           :"#{opcode_name}",
