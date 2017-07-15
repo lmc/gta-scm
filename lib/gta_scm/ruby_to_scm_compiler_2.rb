@@ -11,10 +11,8 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   foo(Vector3[],1000) => foo(0.0,0.0,0.0,1000)
 # cast: 123.to_f
 # functions returning true/false when used in if statements (use temp vars on stack?)
-# constants
 # switch statements
 # syntax for raw global/local vars (GLOBALS[12]/LOCALS[2]) ($123 / @12)
-# handle nested math operators with three-address-code
 # allow calling routines with goto(&f1) / gosub(&f2)
 # allowed to get var address with &$test ? need to compile as block_pass($test)
 # declare function as using stack or static vars for returns/params
@@ -66,6 +64,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   attr_accessor :stack_locations
   attr_accessor :script_block_hash
   attr_accessor :main_block_hash
+  attr_accessor :constants
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -89,6 +88,10 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       stack: :"_stack",
       sc: :"_sc",
       size: 32
+    }
+    self.constants = {
+      PLAYER: [:var,:_4],
+      PLAYER_CHAR: [:var,:_8],
     }
   end
 
@@ -299,6 +302,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,0,1] => [:FloatArray,:IntegerArray], [1,1] => :new)
       on_array_declare(node)
+
+    when node.match( :casgn )
+      on_constant_declare(node)
 
     # Compare
     when node.match( :send , [1] => [:>,:<,:>=,:<=,:==,:!=] )
@@ -584,6 +590,8 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       on_ivar_use(node)
     when :gvar
       on_gvar_use(node)
+    when :const
+      on_const_use(node)
     else
       raise "unknown var use #{node.inspect}"
     end
@@ -604,7 +612,12 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   # CONST
-  def on_const_use(*)
+  def on_const_use(node)
+    if value = self.constants[node[1]]
+      return value
+    else
+      raise "unknown constant #{node[1]}"
+    end
   end
   # CONST = 1
   def on_const_assign(*)
@@ -709,16 +722,12 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end
 
     body = []
-    # body += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-2222])]) )
     body += transform_node(node[2])
 
     prologue = []
     epilogue = []
-    # transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1])]) )
     if generating?
       prologue += function_prologue(self.current_function)
-      # debugger
-      # prologue += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1])]) )
       if !self.last_child_was_return
         epilogue += function_epilogue(self.current_function)
         epilogue += [[:return]]
@@ -897,12 +906,13 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def on_if(node)
-    andor_value,conditions = transform_conditions(node[0])
+    andor_value, conditions = transform_conditions(node[0])
     body = transform_node(node[1])
 
     false_label = generate_label!(:if)
+
     [
-      [:andor,[[:int8,andor_value]]],
+      *andor_instruction(andor_value),
       *conditions,
       [:goto_if_false,[[self.label_type,false_label]]],
       *body,
@@ -911,7 +921,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   end
 
   def on_if_else(node)
-    andor_value,conditions = transform_conditions(node[0])
+    andor_value, conditions = transform_conditions(node[0])
 
     true_body = transform_node(node[1])
     false_body = transform_node(node[2])
@@ -919,7 +929,7 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     end_label = generate_label!(:if)
     false_label = generate_label!(:if)
     [
-      [:andor,[[:int8,andor_value]]],
+      *andor_instruction(andor_value),
       *conditions,
       [:goto_if_false,[[self.label_type,false_label]]],
       *true_body,
@@ -928,6 +938,14 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
       *false_body,
       [:labeldef,end_label]
     ]
+  end
+
+  def andor_instruction(andor_value)
+    if andor_value > 0
+      [:andor,[[:int8,andor_value]]] 
+    else
+      []
+    end
   end
 
   def transform_conditions(node,parent_logical_operator = nil)
@@ -1228,6 +1246,11 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
   def on_array_declare(node)
     []
+  end
+
+  def on_constant_declare(node)
+    self.constants[ node[1] ] = transform_node(node[2])
+    return []
   end
 
   def on_compare(node)
