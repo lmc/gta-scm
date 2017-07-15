@@ -1717,6 +1717,9 @@ describe GtaScm::RubyToScmCompiler do
           WAIT = 100
           wait(WAIT)
 
+          @d = @a.to_f
+          @d += 10.0
+
         end
       RUBY
       }
@@ -1777,7 +1780,7 @@ describe GtaScm::RubyToScmCompiler do
       compiler = GtaScm::RubyToScmCompiler2.new()
       ruby = compiler.transform_source(ruby)
       parsed = Parser::CurrentRuby.parse(ruby)
-      compiler.scm = @scm
+      # compiler.scm = @scm
       scm = compiler.transform_code(parsed)
       # debugger
       require 'pp'

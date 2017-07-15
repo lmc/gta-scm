@@ -50,8 +50,8 @@ script do
 end
 =end
 
-class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
-  using RefinedParserNodes
+class GtaScm::RubyToScmCompiler2
+  using GtaScm::RubyToScmCompiler::RefinedParserNodes
 
   attr_accessor :state
   attr_accessor :opcodes
@@ -69,7 +69,6 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
   def compile_lvars_as_temp_vars?; true; end
 
   def initialize(*args)
-    super
     self.functions = {
       # top-level stack frame for local vars
       nil => {
@@ -305,6 +304,9 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
 
     when node.match( :casgn )
       on_constant_declare(node)
+
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,1] => [:to_i,:to_f] )
+      on_type_cast(node)
 
     # Compare
     when node.match( :send , [1] => [:>,:<,:>=,:<=,:==,:!=] )
@@ -819,11 +821,13 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     when node.match(:gvasgn)
       on_gvar_assign(node,rhs)
     when node.match( :op_asgn , [0] => [:lvasgn] )
-      on_lvar_assign(node[0],nil)
+      on_lvar_assign(node[0],rhs)
     when node.match( :send , [0] => [:lvar] )
-      on_lvar_assign(node[0],nil)
+      on_lvar_assign(node[0],rhs)
+    when node.match( :op_asgn , [0] => [:ivasgn] )
+      on_ivar_assign(node[0],rhs)
     when node.match( :send , [0] => [:ivar] )
-      on_ivar_assign(node[0],nil)
+      on_ivar_assign(node[0],rhs)
     else
       raise "unknown assignment_lhs #{node.inspect}"
     end
@@ -1253,6 +1257,26 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
     return []
   end
 
+  def on_type_cast(node)
+    lhs_type,rhs_type = cast_types(node[1][1])
+    rhs = assignment_rhs(node[1][0])
+    lhs = assignment_lhs(node,[lhs_type,nil])
+    [
+      [:assign_cast,[lhs,node[1][1],rhs]]
+    ]
+  end
+
+  def cast_types(operator)
+    case operator
+    when :to_f
+      [:float,:int]
+    when :to_i
+      [:int,:float]
+    else
+      raise "unknown cast type #{node[1][1]}"
+    end
+  end
+
   def on_compare(node)
     rhs = self.compare_rhs(node)
     lhs = self.compare_lhs(node)
@@ -1536,6 +1560,22 @@ class GtaScm::RubyToScmCompiler2 < GtaScm::RubyToScmCompiler
           :"#{opcode_name}",
           [ line[1][0] , line[1][2] ]
         ]
+      when :assign_cast
+        lhs_type = transform_v1_assign_type(line[1][0])
+        lhs_scope = transform_v1_assign_scope(line[1][0])
+
+        rhs_type = transform_v1_assign_type(line[1][2])
+        rhs_scope = transform_v1_assign_scope(line[1][2])
+
+        lhs_type,rhs_type = cast_types(line[1][1])
+
+        opcode_name = "cset_#{lhs_scope}_#{lhs_type}_to_#{rhs_scope}_#{rhs_type}"
+
+        [
+          :"#{opcode_name}",
+          [ line[1][0] , line[1][2] ]
+        ]
+
       when :compare
         lhs_type = transform_v1_assign_type(line[1][0])
         lhs_scope = transform_v1_assign_scope(line[1][0])
