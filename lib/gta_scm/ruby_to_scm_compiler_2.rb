@@ -216,6 +216,8 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :send , [0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1] => :[]=, [3] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_assign( node )
 
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_assign( node )
 
     # Multi-assignment
     when node.match( :masgn , [0] => :mlhs , [1] => :array )
@@ -451,6 +453,8 @@ class GtaScm::RubyToScmCompiler2
       :float
     when :stack
       var_or_val[3]
+    when :var_array
+      resolve_var_type(var_or_val[4],nil)
     else
       debugger
       raise "unknown var type #{var_or_val.inspect}"
@@ -928,6 +932,8 @@ class GtaScm::RubyToScmCompiler2
       on_immediate_use(node)
     when node.match( :send, [1] => :[]= )
       assignment_rhs(node[3])
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_global_array_use(node[1])
     else
       debugger
       raise "unknown assignment_rhs #{node.inspect}"

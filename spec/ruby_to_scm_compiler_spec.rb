@@ -1796,6 +1796,8 @@ describe GtaScm::RubyToScmCompiler do
           # wait($cars[2])
           $cars[$index] = get_game_timer()
           $coords[$index],$coords[$index+1],$coords[$index+2] = get_char_coordinates(PLAYER_CHAR)
+          $cars[$index] = $index
+          $index = $cars[$index]
         end
       RUBY
       }
