@@ -47,12 +47,25 @@ script(name: "xhelpv2") do
       z3 += z2
     end
 
+    # debugger
+
     return x3,y3,z3
   end
 
   declare do
     @input_arg = 0.0
+    @d = 0
   end
+
+  $tmpcars = IntegerArray.new(8)
+  $cd = 0
+  $tmpcars[$cd] = 111
+  $tmpcars[$cd + 1] = 1
+  $tmpcars[$cd + 2] = 2
+  $tmplast = 42069
+
+  # @d = $tmpcars[$cd + 2]
+  set_lvar_int(@d,$tmpcars[$cd + 2])
 
   main(wait: 250) do
     x = 1000.0
@@ -66,17 +79,12 @@ script(name: "xhelpv2") do
     @b = 3
     @c = (@a + 5) * (@b * 10)
 
-    @coords = FloatArray(3)
-    $cars = IntegerArray.new(8)
-    $cd = 0
-    $cars[$cd] = 0
-    $cars[$cd + 1] = 1
-    $cars[$cd + 2] = 2
-    wait($cars[$cd])
-    wait($cars[$cd + 1])
+    # @coords = FloatArray(3)
+    # wait($cars[$cd])
+    # wait($cars[$cd + 1])
 
-    ZERO = 0
-    FZERO = 0.0
+    # ZERO = 0
+    # FZERO = 0.0
   end
 end
 

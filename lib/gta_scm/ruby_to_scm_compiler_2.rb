@@ -9,7 +9,6 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   $cars = IntegerArray[8]
 #   @coords = Vector3[ 500.0 , 400.0 , 20.0 ]
 #   foo(Vector3[],1000) => foo(0.0,0.0,0.0,1000)
-# cast: 123.to_f
 # functions returning true/false when used in if statements (use temp vars on stack?)
 # switch statements
 # syntax for raw global/local vars (GLOBALS[12]/LOCALS[2]) ($123 / @12)
@@ -65,6 +64,7 @@ class GtaScm::RubyToScmCompiler2
   attr_accessor :script_block_hash
   attr_accessor :main_block_hash
   attr_accessor :constants
+  attr_accessor :scripts
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -74,7 +74,9 @@ class GtaScm::RubyToScmCompiler2
       nil => {
         locals: {},
         instances: {},
-        globals: {}
+        globals: {},
+        instance_arrays: {},
+        global_arrays: {},
       }
     }
     self.opcodes = GtaScm::OpcodeDefinitions.new
@@ -89,9 +91,11 @@ class GtaScm::RubyToScmCompiler2
       size: 32
     }
     self.constants = {
-      PLAYER: [:var,:_4],
-      PLAYER_CHAR: [:var,:_8],
+      PLAYER: [:var,:_8],
+      PLAYER_CHAR: [:var,:_12],
+      DEBUGGER_ADDR: [:label,:debug_breakpoint_entry]
     }
+    self.scripts = {}
   end
 
   def opcode(name)
@@ -209,6 +213,10 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_assign( node )
 
+    when node.match( :send , [0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1] => :[]=, [3] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_assign( node )
+
+
     # Multi-assignment
     when node.match( :masgn , [0] => :mlhs , [1] => :array )
       on_multi_assign( node )
@@ -231,6 +239,9 @@ class GtaScm::RubyToScmCompiler2
     # s(:lvasgn, :func_tmp2,
     #   s(:send, nil, :get_game_timer))
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && self.opcode_names[ node[1][1] ]
+      on_opcode_call(node)
+
+    when node.match( :send , [1] => :[]= ) && self.opcode_names[ node[3][1] ]
       on_opcode_call(node)
 
     # Opcode call with multiple return values
@@ -299,7 +310,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,1] => [:FloatArray,:IntegerArray])
       on_array_declare(node)
 
-    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,0,1] => [:FloatArray,:IntegerArray], [1,1] => :new)
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,0,1] => [:FloatArray,:IntegerArray], [1,1] => [:new,:[]])
       on_array_declare(node)
 
     when node.match( :casgn )
@@ -316,10 +327,17 @@ class GtaScm::RubyToScmCompiler2
     when compilable_math_expression?(node)
       on_math_expression(node)
 
+    when node.match( :send , [1] => [:debugger])
+      on_debugger(node)
+
     # unknown function call, complain later when generating instructions
     when node.match( :send ) || node.match( :lvasgn , [1] => :send)
-      debugger
-      [[:unknown_call, node[1] ]]
+      if generating?
+        debugger
+        raise "unknown call #{node.inspect}"
+      else
+        [[:unknown_call, node[1] ]]
+      end
 
     # Return
     when node.match( :return )
@@ -379,23 +397,23 @@ class GtaScm::RubyToScmCompiler2
     return lhs
   end
 
-  def current_stack_vars
+  def current_stack_vars(function_name)
     slots = []
-    if self.current_function
-      slots += self.functions[self.current_function][:returns].map{|k,v| k }
-      slots += self.functions[self.current_function][:arguments].map{|k,v|
+    if function_name
+      slots += self.functions[function_name][:returns].map{|k,v| k }
+      slots += self.functions[function_name][:arguments].map{|k,v|
         # k
-        safe_lvar_return_var(k,self.current_function) ? nil : k
+        safe_lvar_return_var(k,function_name) ? nil : k
       }.compact
     end
     # slots += [:__why]
-    slots += self.functions[self.current_function][:locals].map{|k,v|
-      safe_lvar_return_var(k,self.current_function) ? nil : k
+    slots += self.functions[function_name][:locals].map{|k,v|
+      safe_lvar_return_var(k,function_name) ? nil : k
     }.compact
   end
 
-  def resolved_lvar_stack_offset(lvar_name)
-    slots = current_stack_vars
+  def resolved_lvar_stack_offset(lvar_name,function_name = self.current_function)
+    slots = current_stack_vars(function_name)
     if index = slots.index(lvar_name)
       (slots.size - index) * -1
     else
@@ -520,7 +538,9 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def resolved_gvar_type(name)
-    resolved_types = self.functions[nil][:globals][gvar_name(name)].map do |var_or_val|
+    uses = self.functions[nil][:globals][gvar_name(name)]
+    raise "unknown gvar #{name}" if !uses
+    resolved_types = uses.map do |var_or_val|
       resolve_var_type(var_or_val,nil)
     end
     if resolved_types.compact.uniq.size > 1
@@ -594,7 +614,10 @@ class GtaScm::RubyToScmCompiler2
       on_gvar_use(node)
     when :const
       on_const_use(node)
+    when node[0].type == :gvar && self.functions[nil][:global_arrays][gvar_name(node[0][0])] && :send
+      on_global_array_use(node)
     else
+      debugger
       raise "unknown var use #{node.inspect}"
     end
   end
@@ -636,6 +659,52 @@ class GtaScm::RubyToScmCompiler2
     end
   end
 
+  def on_global_array_use(node)
+    array = self.functions[nil][:global_arrays][gvar_name(node[0][0])]
+
+    array_var = gvar_name(node[0][0])
+    index_var,index_var_type,array_offset = array_index_var_type_offset(node[2])
+
+    if !array_offset.nil?
+      sign = array_offset > 0 ? :+ : :-
+      array_offset *= 4
+      array_var = :"#{array_var}#{sign}#{array_offset.abs}"
+    end
+
+    array_size = array[1]
+    array_type = array_type_token(array[0])
+
+    [:var_array,array_var,index_var,array_size,[array_type,index_var_type]]
+  end
+
+  def array_type_token(type)
+    type = {
+      int: :int32,
+      float: :float32,
+    }[type]
+    raise "unknown array_type_token #{type}" if !type
+    return type
+  end
+
+  def array_index_var_type_offset(index_var)
+    case index_var.type
+    when :gvar
+      [gvar_name(index_var[0]),:var,nil]
+    when :send
+      case index_var[0].type
+      when :gvar
+        offset = index_var[2][0]
+        offset *= -1 if index_var[1] == :-
+        [gvar_name(index_var[0][0]),:var,offset]
+      else
+        raise "unknown array_index_var_type_offset #{index_var.inspect}"
+      end
+    else
+      debugger
+      raise "unknown array_index_var_type_offset #{index_var.inspect}"
+    end
+  end
+
   # Script declare
   # 
   # script(name: "foo") do
@@ -648,7 +717,10 @@ class GtaScm::RubyToScmCompiler2
     self.stack_locations[:sc]    = hash[:stack_counter] if hash[:stack_counter]
     self.stack_locations[:size]  = hash[:stack_size]    if hash[:stack_size]
 
+    script_name = hash[:name] || "noname"
+
     begin
+      self.scripts[script_name] = hash
       self.script_block_hash = hash
       body = []
       # body += transform_node( sexp(:lvasgn,[sexp(:lvar,[:"__#{self.current_function||"nil"}"]),sexp(:int,[-1111])]) )
@@ -828,7 +900,10 @@ class GtaScm::RubyToScmCompiler2
       on_ivar_assign(node[0],rhs)
     when node.match( :send , [0] => [:ivar] )
       on_ivar_assign(node[0],rhs)
+    when node.match( :send, [0] => [:gvar,:ivar], [1] => :[]=)
+      on_global_array_use(node)
     else
+      debugger
       raise "unknown assignment_lhs #{node.inspect}"
     end
   end
@@ -851,6 +926,8 @@ class GtaScm::RubyToScmCompiler2
       on_var_use(node)
     when node.match([:float,:int])
       on_immediate_use(node)
+    when node.match( :send, [1] => :[]= )
+      assignment_rhs(node[3])
     else
       debugger
       raise "unknown assignment_rhs #{node.inspect}"
@@ -946,7 +1023,7 @@ class GtaScm::RubyToScmCompiler2
 
   def andor_instruction(andor_value)
     if andor_value > 0
-      [:andor,[[:int8,andor_value]]] 
+      [ [:andor,[[:int8,andor_value]]] ]
     else
       []
     end
@@ -1186,14 +1263,19 @@ class GtaScm::RubyToScmCompiler2
     return_vars = opcode_return_vars(node,return_types)
 
     arguments = opcode_call_arguments(node)
+    arguments += return_vars
 
-    [
-      [opcode_name,arguments + return_vars]
-    ]
+    if arguments.size == 0
+      [ [opcode_name] ]
+    else
+      [ [opcode_name,arguments] ]
+    end
   end
 
   def opcode_call_name(node,negated = false)
     name = case
+    when node.match(:send, [1] => :[]=, [3] => :send)
+      node[3][1]
     when node.match(:send)
       node[1]
     when node.match([:masgn,:lvasgn,:ivasgn,:gvasgn],[1] => :send)
@@ -1207,6 +1289,8 @@ class GtaScm::RubyToScmCompiler2
 
   def opcode_return_vars(node,return_types)
     case
+    when node.match(:send, [1] => :[]=, [3] => :send)
+      on_global_array_use(node)
     # no return vars
     when node.match(:send)
       []
@@ -1230,6 +1314,8 @@ class GtaScm::RubyToScmCompiler2
 
   def opcode_call_arguments(node)
     arguments = case
+    when node.match(:send, [1] => :[]=, [3] => :send)
+      node[3][2..-1]
     when node.match(:send)
       node[2..-1]
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send )
@@ -1249,7 +1335,41 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def on_array_declare(node)
-    []
+    array_name = 
+    array_size = node[1][2][0]
+    array_type = array_class_type(node[1][0][1])
+
+    instructions = []
+    instructions << [:EmitNodes,false]
+
+    case node.type
+    when :gvasgn
+      name = gvar_name(node[0])
+      opcode_name = :"set_var_#{array_type}"
+      default_value = array_type == :float ? [:float32,0.0] : [:int8,0]
+      self.functions[nil][:global_arrays][name] = [array_type,array_size]
+      array_size.times do |index|
+        var_name = "#{name}"
+        var_name << "_#{index}" if index > 0
+        instructions << [opcode_name,[ [:var,:"#{var_name}"] , default_value ]]
+      end
+    when :ivasgn
+      self.functions[nil][:instance_arrays][ivar_name(node[0])] = [array_type,array_size]
+    when :lvasgn
+      raise "cannot use local vars as arrays"
+    end
+
+    instructions << [:EmitNodes,true]
+    return instructions
+  end
+
+  def array_class_type(array_class)
+    type = {
+      IntegerArray: :int,
+      FloatArray: :float,
+    }[array_class]
+    return type if type
+    raise "unknown array_class_type #{array_class}"
   end
 
   def on_constant_declare(node)
@@ -1488,6 +1608,12 @@ class GtaScm::RubyToScmCompiler2
     # end
     nnn
 
+  end
+
+  def on_debugger(node)
+    [
+      [:gosub,[self.constants[:DEBUGGER_ADDR]]]
+    ]
   end
 
 
@@ -1756,6 +1882,39 @@ class GtaScm::RubyToScmCompiler2
       [v,k]
     end
     Hash[resolved_lvars][lvar_name]
+  end
+
+  # FIXME: harmonize returns/args/locals for symbol export
+  def export_symbols
+    if self.scripts.size > 1
+      raise "multiple scripts detected, confused about symbol export"
+    end
+
+    instance_vars_to_types = Hash[ self.functions[nil][:instances].map{|k,v| [k,resolved_ivar_type(k)]} ]
+    functions = {}
+    self.functions.each_pair do |name,variables|
+      locals = variables[:locals].each_pair.map {|k,v|
+
+        unless stack_offset = safe_lvar_return_var(k,name)
+          stack_offset = resolved_lvar_stack_offset(k,name)
+        end
+
+        [stack_offset,k,resolved_lvar_type(k,name)]
+      }
+      functions[name] = {
+        label: :"function_#{name}",
+        locals: locals,
+        stack: current_stack_vars(name)
+      }
+    end
+
+    {
+      scripts: {
+        (self.scripts.values.first[:name]) => {
+          functions: functions
+        }
+      }
+    }
   end
 
 end

@@ -38,6 +38,7 @@ class GtaScm::Assembler::Base
 
   attr_accessor :constants_to_values
   attr_accessor :compiler_data
+  attr_accessor :symbols_data
 
 
   def initialize(input_dir)
@@ -58,6 +59,7 @@ class GtaScm::Assembler::Base
 
     self.constants_to_values ||= {}
     self.compiler_data = nil
+    self.symbols_data = []
   end
 
   def assemble(scm,out_path)
@@ -346,7 +348,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             compiler = GtaScm::RubyToScmCompiler2.new()
             ruby = compiler.transform_source(ruby)
             parsed = Parser::CurrentRuby.parse(ruby)
-            compiler.scm = @scm
+            # compiler.scm = @scm
             instructions = compiler.transform_code(parsed)
           else
             # compiler = GtaScm::RubyToScmCompiler.new(GtaScm::RubyToScmCompiler.default_builder())
@@ -370,8 +372,12 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           end
 
           # self.touchup_defines.merge!(compiler.)
-          self.constants_to_values.merge!(compiler.constants_to_values)
-          self.compiler_data = compiler.compiler_data
+          if args[:v2]
+            self.symbols_data << compiler.export_symbols()
+          else
+            self.constants_to_values.merge!(compiler.constants_to_values)
+            self.compiler_data = compiler.compiler_data
+          end
 
           end_offset = self.nodes.last.offset + self.nodes.last.size
           self.on_include(start_offset,end_offset,tokens)

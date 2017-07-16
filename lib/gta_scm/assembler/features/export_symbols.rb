@@ -194,6 +194,8 @@ module GtaScm::Assembler::Feature::ExportSymbols
         data[:external_threads] = self.external_threads
         data[:symbols_metadata] = self.symbols_metadata
 
+        data[:symbols] = self.symbols_data
+
         self.symbols_data = data
         f << JSON.pretty_generate(data)
       end

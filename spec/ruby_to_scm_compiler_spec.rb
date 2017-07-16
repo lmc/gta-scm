@@ -1597,27 +1597,25 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script)
-          (stack_adjust 1)
+          (add_val_to_int_var ((var _sc) (int8 1)))
           (goto ((label function_end_modulo)))
           (labeldef function_modulo)
-          (stack_adjust 3)
+          (add_val_to_int_var ((var _sc) (int8 2)))
           (labeldef modulo_loop_start_4)
-          (andif ((int8 0)))
-          (compare ((stack -2 lhs int) < (stack -1 rhs int)))
+          (not_is_int_var_greater_or_equal_to_int_var ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
           (goto_if_false ((label modulo_if_6)))
           (goto ((label modulo_loop_end_5)))
           (labeldef modulo_if_6)
-          (assign_operator ((stack -2 lhs int) - (stack -1 rhs int)))
+          (sub_int_var_from_int_var ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
           (goto ((label modulo_loop_start_4)))
           (labeldef modulo_loop_end_5)
-          (assign ((stack -3 return_0 int) ((stack -2 lhs int))))
-          (stack_adjust -3)
+          (add_val_to_int_var ((var _sc) (int8 -2)))
           (return)
           (labeldef function_end_modulo)
-          (assign ((stack 1 argument_0 int) (int32 20)))
-          (assign ((stack 2 argument_1 int) (int32 6)))
-          (gosub function_modulo)
-          (assign ((stack -1 var int) (stack 0 return_0 int)))
+          (set_var_int ((var_array _stack+4 _sc 32 (int32 var)) (int32 20)))
+          (set_var_int ((var_array _stack+8 _sc 32 (int32 var)) (int32 6)))
+          (gosub ((label function_modulo)))
+          (set_var_int_to_var_int ((var_array _stack-4 _sc 32 (int32 var)) (var_array _stack-0 _sc 32 (int32 var))))
           (labeldef end_script)
         LISP
       }
@@ -1626,6 +1624,11 @@ describe GtaScm::RubyToScmCompiler do
     describe "test 6" do
       let(:ruby){ <<-RUBY
         script(stack_counter: 10236, stack: 10240, stack_size: 256, name: "test") do
+
+          declare do
+            int $_8
+            int $_12
+          end
           
           loop do
             wait(100)
@@ -1649,31 +1652,32 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script)
-          (stack_adjust 5)
+          (add_val_to_int_var ((var 10236) (int8 5)))
+          (EmitNodes nil)
+          (EmitNodes t)
           (labeldef label_loop_start_8)
           (wait ((int32 100)))
-          (assign ((stack -5 waiting_for int) (int32 0)))
-          (andif ((int8 0)))
-          (is_player_playing ((gvar _8)))
+          (set_var_int ((var_array 10240-20 10236 256 (int32 var)) (int32 0)))
+          (is_player_playing ((dmavar 8 int)))
           (goto_if_false ((label label_if_14)))
-          (get_char_coordinates ((gvar _12) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float))))
-          (get_game_timer ((stack -1 current_time int)))
-          (andif ((int8 1)))
-          (compare ((stack -1 current_time int) > (int32 5000)))
-          (compare ((stack -1 current_time int) < (int32 10000)))
+          (get_char_coordinates ((dmavar 12 int) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float)) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float))))
+          (get_game_timer ((var_array 10240-4 10236 256 (int32 var)) (var_array 10240-4 10236 256 (int32 var))))
+          (andor ((int8 1)))
+          (is_int_var_greater_than_number ((var_array 10240-4 10236 256 (int32 var)) (int32 5000)))
+          (not_is_int_var_greater_or_equal_to_number ((var_array 10240-4 10236 256 (int32 var)) (int32 10000)))
           (goto_if_false ((label label_if_13)))
-          (add_one_off_sound ((stack -4 x float) (stack -3 y float) (stack -2 z float) (int32 1056)))
-          (terminate_this_script nil)
+          (add_one_off_sound ((var_array 10240-16 10236 256 (float32 var)) (var_array 10240-12 10236 256 (float32 var)) (var_array 10240-8 10236 256 (float32 var)) (int32 1056)))
+          (terminate_this_script)
           (goto ((label label_if_12)))
           (labeldef label_if_13)
-          (andif ((int8 21)))
-          (compare ((stack -4 x float) < (stack -3 y float)))
-          (compare ((stack -3 y float) < (stack -2 z float)))
+          (andor ((int8 21)))
+          (not_is_float_var_greater_or_equal_to_float_var ((var_array 10240-16 10236 256 (float32 var)) (var_array 10240-12 10236 256 (float32 var))))
+          (not_is_float_var_greater_or_equal_to_float_var ((var_array 10240-12 10236 256 (float32 var)) (var_array 10240-8 10236 256 (float32 var))))
           (goto_if_false ((label label_if_11)))
-          (terminate_this_script nil)
+          (terminate_this_script)
           (goto ((label label_if_10)))
           (labeldef label_if_11)
-          (assign_operator ((stack -5 waiting_for int) + (int32 100)))
+          (add_val_to_int_var ((var_array 10240-20 10236 256 (int32 var)) (int32 100)))
           (labeldef label_if_10)
           (labeldef label_if_12)
           (labeldef label_if_14)
@@ -1724,7 +1728,29 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-
+          (labeldef start_script)
+          (add_val_to_int_var ((var _sc) (int8 6)))
+          (set_var_int ((var_array _stack-24 _sc 32 (int32 var)) (int32 6)))
+          (set_var_int ((var_array _stack-20 _sc 32 (int32 var)) (int32 1000)))
+          (set_var_int_to_var_int ((var_array _stack-16 _sc 32 (int32 var)) (var_array _stack-24 _sc 32 (int32 var))))
+          (add_val_to_int_var ((var_array _stack-16 _sc 32 (int32 var)) (int32 1)))
+          (set_var_int_to_var_int ((var_array _stack-12 _sc 32 (int32 var)) (var_array _stack-16 _sc 32 (int32 var))))
+          (mult_int_var_by_val ((var_array _stack-12 _sc 32 (int32 var)) (int32 10)))
+          (set_var_int_to_var_int ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-20 _sc 32 (int32 var))))
+          (sub_int_var_from_int_var ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-12 _sc 32 (int32 var))))
+          (set_var_int_to_var_int ((var_array _stack-4 _sc 32 (int32 var)) (var_array _stack-8 _sc 32 (int32 var))))
+          (set_lvar_int ((lvar 0 a int) (int32 1000)))
+          (set_lvar_int ((lvar 1 b int) (int32 3)))
+          (set_var_int_to_lvar_int ((var_array _stack-12 _sc 32 (int32 var)) (lvar 0 a int)))
+          (add_val_to_int_var ((var_array _stack-12 _sc 32 (int32 var)) (int32 5)))
+          (set_var_int_to_lvar_int ((var_array _stack-16 _sc 32 (int32 var)) (lvar 1 b int)))
+          (mult_int_var_by_val ((var_array _stack-16 _sc 32 (int32 var)) (int32 10)))
+          (mult_int_var_by_int_var ((var_array _stack-12 _sc 32 (int32 var)) (var_array _stack-16 _sc 32 (int32 var))))
+          (set_lvar_int_to_var_int ((lvar 2 c int) (var_array _stack-12 _sc 32 (int32 var))))
+          (wait ((int32 100)))
+          (cset_lvar_float_to_lvar_int ((lvar 3 d float) (lvar 0 a int)))
+          (add_val_to_float_lvar ((lvar 3 d float) (float32 10.0)))
+          (labeldef end_script)
         LISP
       }
     end
@@ -1742,9 +1768,34 @@ describe GtaScm::RubyToScmCompiler do
           # @1 = 1
           # @0[@1] = 4
           # wait(@0[@1])
-          $test = 1
-          # $loc = &$test
-          gosub(&$test)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (labeldef start_script)
+          (set_var_int ((dmavar 500 int) (int32 1)))
+          (wait ((dmavar 500 int)))
+          (set_lvar_int ((lvar 30 30 int) (int32 2)))
+          (wait ((lvar 30 30 int)))
+          (labeldef end_script)
+        LISP
+      }
+    end
+
+    describe "arrays" do
+      let(:ruby){ <<-RUBY
+        script(name: "test") do
+          $index = 0
+          $cars = IntegerArray[3]
+          $coords = FloatArray[3]
+          $cars[$index] = 0
+          $cars[$index + 1] = 1
+          # $cars[2] = 2
+          wait($cars[$index])
+          wait($cars[$index + 1])
+          # wait($cars[2])
+          $cars[$index] = get_game_timer()
+          $coords[$index],$coords[$index+1],$coords[$index+2] = get_char_coordinates(PLAYER_CHAR)
         end
       RUBY
       }

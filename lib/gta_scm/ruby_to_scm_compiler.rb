@@ -1307,7 +1307,7 @@ class GtaScm::RubyToScmCompiler
       opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
 
       if node.children[1] == :[]=
-        debugger
+        # debugger
         args = [ emit_value(node) ]
         opcode_name = node.children[3].children[1]
         opcode_def = self.scm.opcodes[ opcode_name.to_s.upcase ]
@@ -1343,7 +1343,7 @@ class GtaScm::RubyToScmCompiler
       end
 
       if !opcode_def
-        debugger
+        # debugger
         raise UnknownOpcodeError.new(node,name: opcode_name)
       end
 
