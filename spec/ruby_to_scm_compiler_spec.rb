@@ -1660,8 +1660,8 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_int ((var_array 10240-20 10236 256 (int32 var)) (int32 0)))
           (is_player_playing ((dmavar 8 int)))
           (goto_if_false ((label label_if_14)))
-          (get_char_coordinates ((dmavar 12 int) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float)) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float))))
-          (get_game_timer ((var_array 10240-4 10236 256 (int32 var)) (var_array 10240-4 10236 256 (int32 var))))
+          (get_char_coordinates ((dmavar 12 int) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float))))
+          (get_game_timer ((var_array 10240-4 10236 256 (int32 var))))
           (andor ((int8 1)))
           (is_int_var_greater_than_number ((var_array 10240-4 10236 256 (int32 var)) (int32 5000)))
           (not_is_int_var_greater_or_equal_to_number ((var_array 10240-4 10236 256 (int32 var)) (int32 10000)))
@@ -1786,7 +1786,8 @@ describe GtaScm::RubyToScmCompiler do
       let(:ruby){ <<-RUBY
         script(name: "test") do
           $index = 0
-          $cars = IntegerArray[3]
+          # $cars = IntegerArray[3]
+          $cars = IntegerArray(3)
           $coords = FloatArray[3]
           $cars[$index] = 0
           $cars[$index + 1] = 1
@@ -1802,10 +1803,57 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (labeldef start_script)
+          (set_var_int ((var index int) (int32 0)))
+          (EmitNodes nil)
+          (set_var_int ((var cars) (int8 0)))
+          (set_var_int ((var cars_1) (int8 0)))
+          (set_var_int ((var cars_2) (int8 0)))
+          (EmitNodes t)
+          (EmitNodes nil)
+          (set_var_float ((var coords) (float32 0.0)))
+          (set_var_float ((var coords_1) (float32 0.0)))
+          (set_var_float ((var coords_2) (float32 0.0)))
+          (EmitNodes t)
+          (set_var_int ((var_array cars index 3 (int32 var)) (int32 0)))
+          (set_var_int ((var_array cars+4 index 3 (int32 var)) (int32 1)))
+          (wait ((var_array cars index 3 (int32 var))))
+          (wait ((var_array cars+4 index 3 (int32 var))))
+          (get_game_timer (var_array cars index 3 (int32 var)))
+          (get_char_coordinates ((dmavar 12 nil) ((var_array coords index 3 (float32 var))) ((var_array coords+4 index 3 (float32 var))) ((var_array coords+8 index 3 (float32 var)))))
+          (set_var_int_to_var_int ((var_array cars index 3 (int32 var)) (var index int)))
+          (set_var_int_to_var_int ((var index int) (var_array cars index 3 (int32 var))))
+          (labeldef end_script)
+        LISP
+      }
+    end
+
+    describe "structs" do
+      let(:ruby){ <<-RUBY
+        script(name: "test") do
+          $coords = Vector3[123.4, 456.7, 89.0]
+          $car = create_car(123,$coords)
+          $car = create_car(123,$coords.x,$coords.y,$coords.z)
+          $coords = get_char_coordinates(123)
+
+          $coords.x = $coords.y
+
+          def vector_func(x1,y1,z1,x2,y2,z2)
+            x3,y3,z3 = 0.0,0.0,0.0
+            return x3,y3,z3
+          end
+
+          $returns = Vector3[0.0,0.0,0.0]
+          $returns = vector_func($coords,$returns)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
 
         LISP
       }
     end
+
   end
 
 

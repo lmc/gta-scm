@@ -65,6 +65,7 @@ class GtaScm::RubyToScmCompiler2
   attr_accessor :main_block_hash
   attr_accessor :constants
   attr_accessor :scripts
+  attr_accessor :struct_definitions
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -77,6 +78,9 @@ class GtaScm::RubyToScmCompiler2
         globals: {},
         instance_arrays: {},
         global_arrays: {},
+        instance_structs: {},
+        global_structs: {},
+        local_structs: {}
       }
     }
     self.opcodes = GtaScm::OpcodeDefinitions.new
@@ -96,6 +100,9 @@ class GtaScm::RubyToScmCompiler2
       DEBUGGER_ADDR: [:label,:debug_breakpoint_entry]
     }
     self.scripts = {}
+    self.struct_definitions = {
+      Vector3: { x: :float, y: :float, z: :float }
+    }
   end
 
   def opcode(name)
@@ -219,6 +226,9 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_assign( node )
 
+    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && node[1].match(/=$/)
+      on_assign( node )
+
     # Multi-assignment
     when node.match( :masgn , [0] => :mlhs , [1] => :array )
       on_multi_assign( node )
@@ -310,10 +320,13 @@ class GtaScm::RubyToScmCompiler2
       raise "FIXME: handle return directly from opcode call"
 
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,1] => [:FloatArray,:IntegerArray])
-      on_array_declare(node)
+      on_array_var_declare(node)
 
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,0,1] => [:FloatArray,:IntegerArray], [1,1] => [:new,:[]])
-      on_array_declare(node)
+      on_array_var_declare(node)
+
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send, [1,0,1] => self.struct_definitions.keys, [1,1] => [:new,:[]])
+      on_struct_var_declare(node)
 
     when node.match( :casgn )
       on_constant_declare(node)
@@ -455,6 +468,8 @@ class GtaScm::RubyToScmCompiler2
       var_or_val[3]
     when :var_array
       resolve_var_type(var_or_val[4],nil)
+    when :var
+      resolved_gvar_type(var_or_val[1])
     else
       debugger
       raise "unknown var type #{var_or_val.inspect}"
@@ -610,16 +625,19 @@ class GtaScm::RubyToScmCompiler2
 
   def on_var_use(node)
     case node.type
-    when :lvar
+    when :lvar, :lvasgn
       on_lvar_use(node)
-    when :ivar
+    when :ivar, :ivasgn
       on_ivar_use(node)
-    when :gvar
+    when :gvar, :gvasgn
       on_gvar_use(node)
     when :const
       on_const_use(node)
-    when node[0].type == :gvar && self.functions[nil][:global_arrays][gvar_name(node[0][0])] && :send
+    when sexp?(node[0]) && node[0].type == :gvar && self.functions[nil][:global_arrays][gvar_name(node[0][0])] && :send
       on_global_array_use(node)
+    when struct_var?(node[0]) && :send
+      var = sexp(node[0].type,[:"#{node[0][0]}_#{node[1]}"])
+      on_var_use(var)
     else
       debugger
       raise "unknown var use #{node.inspect}"
@@ -789,10 +807,11 @@ class GtaScm::RubyToScmCompiler2
 
     if scanning?
       self.functions[self.current_function] ||= {
-        returns:   {},
-        arguments: {},
-        locals:    {},
-        invokes:   []
+        returns:       {},
+        arguments:     {},
+        locals:        {},
+        local_structs: {},
+        invokes:       []
       }
       node[1].each do |arg|
         self.functions[self.current_function][:arguments][ arg[0] ] ||= []
@@ -890,11 +909,11 @@ class GtaScm::RubyToScmCompiler2
 
   def assignment_lhs(node,rhs)
     case
-    when node.match(:lvasgn)
+    when node.match([:lvasgn,:lvar])
       on_lvar_assign(node,rhs)
-    when node.match(:ivasgn)
+    when node.match([:ivasgn,:ivar])
       on_ivar_assign(node,rhs)
-    when node.match(:gvasgn)
+    when node.match([:gvasgn,:gvar])
       on_gvar_assign(node,rhs)
     when node.match( :op_asgn , [0] => [:lvasgn] )
       on_lvar_assign(node[0],rhs)
@@ -906,6 +925,9 @@ class GtaScm::RubyToScmCompiler2
       on_ivar_assign(node[0],rhs)
     when node.match( :send, [0] => [:gvar,:ivar], [1] => :[]=)
       on_global_array_use(node)
+    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && node[1].match(/=$/)
+      var = sexp(node[0].type,["#{node[0][0]}_#{node[1]}".gsub(/=/,'').to_sym])
+      assignment_lhs(var,nil)
     else
       debugger
       raise "unknown assignment_lhs #{node.inspect}"
@@ -934,6 +956,13 @@ class GtaScm::RubyToScmCompiler2
       assignment_rhs(node[3])
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_global_array_use(node[1])
+    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && struct_var?(node[0])
+      if node[2]
+        assignment_rhs(node[2])
+      else
+        var = sexp(node[0].type,["#{node[0][0]}_#{node[1]}".gsub(/=/,'').to_sym])
+        assignment_rhs(var)
+      end
     else
       debugger
       raise "unknown assignment_rhs #{node.inspect}"
@@ -1147,7 +1176,7 @@ class GtaScm::RubyToScmCompiler2
     if scanning?
       self.functions[function_name][:invokes] << {
         caller: self.current_function,
-        arguments: function_call_arguments(node).map{|a| transform_node(a)}
+        arguments: function_call_argument_assignments(node,function_name).map{ |inst| inst[1][1] }
       }
     end
 
@@ -1174,24 +1203,30 @@ class GtaScm::RubyToScmCompiler2
   def function_call_argument_assignments(node,function_name)
     arguments = function_call_arguments(node)
 
-    if arguments.size != self.functions[function_name][:arguments].size
-      raise "wrong number of arguments for #{function_name} (expected #{self.functions[function_name][:arguments].size}, invoked with #{arguments.size})"
+    argument_assigns = []
+    argument_index = 0
+    arguments.each do |argument|
+      if struct_class = struct_var?(argument)
+        vars = expand_struct_vars(argument)
+        vars.each_with_index do |rhs,idx|
+          rhs_type = self.struct_definitions[struct_class].values[idx]
+          stack_index = self.safe_lvar_return_var(argument[0],function_name) || self.functions[function_name][:returns].size + argument_index
+          lhs = [:stack,stack_index,:"argument_#{argument_index}",rhs_type]
+          argument_assigns << [:assign, [lhs,rhs]]
+          argument_index += 1
+        end
+      else
+        stack_index = self.safe_lvar_return_var(argument[0],function_name) || self.functions[function_name][:returns].size + argument_index
+        rhs = transform_node(argument)
+        rhs_type = resolve_var_type(rhs,self.current_function)
+        lhs = [:stack,stack_index,:"argument_#{argument_index}",rhs_type]
+        argument_assigns << [:assign, [ lhs , rhs ]]
+        argument_index += 1
+      end
     end
 
-    argument_assigns = []
-    arguments.each_with_index do |argument,argument_index|
-      # stack_index = self.functions[function_name][:returns].size + argument_index
-      # debugger
-      stack_index = if idx = self.safe_lvar_return_var(argument[0],function_name)
-        idx
-      else
-        self.functions[function_name][:returns].size + argument_index
-      end
-
-      rhs = transform_node(argument)
-      rhs_type = resolve_var_type(rhs,self.current_function)
-      lhs = [:stack,stack_index,:"argument_#{argument_index}",rhs_type]
-      argument_assigns << [:assign, [ lhs , rhs ]]
+    if argument_assigns.size != self.functions[function_name][:arguments].size
+      raise "wrong number of arguments for #{function_name} (expected #{self.functions[function_name][:arguments].size}, invoked with #{arguments.size})"
     end
     
     [
@@ -1203,15 +1238,30 @@ class GtaScm::RubyToScmCompiler2
   def function_call_return_assignments(node,function_name)
     return_vars = function_call_return_vars(node,function_name)
     
-    if return_vars.size != self.functions[function_name][:returns].size
-      raise "wrong number of return args (function returns #{self.functions[function_name][:returns].size}, invoked with #{return_vars.size})"
-    end
-
     return_var_types = resolve_function_return_types(function_name)
     return_var_assigns = []
-    return_vars.each_with_index do |return_var,return_index|
-      rhs = [:stack,return_index,:"return_#{return_index}",return_var_types[return_index]]
-      return_var_assigns << [:assign,[return_var,rhs]]
+    return_index = 0
+    return_vars.each_with_index do |return_var|
+      if struct_class = struct_var?(return_var)
+        self.struct_definitions[struct_class].each_pair do |def_name,def_type|
+          base = return_var.dup
+          case base[0]
+          when :var
+            base[1] = :"#{base[1]}_#{def_name}"
+          end
+          rhs = [:stack,return_index,:"return_#{return_index}",return_var_types[return_index]]
+          return_var_assigns << [:assign,[base,rhs]]
+          return_index += 1
+        end
+      else
+        rhs = [:stack,return_index,:"return_#{return_index}",return_var_types[return_index]]
+        return_var_assigns << [:assign,[return_var,rhs]]
+        return_index += 1
+      end
+    end
+
+    if return_var_assigns.size != self.functions[function_name][:returns].size
+      raise "wrong number of return args (function returns #{self.functions[function_name][:returns].size}, invoked with #{return_var_assigns.size})"
     end
 
     [
@@ -1294,7 +1344,9 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def opcode_return_vars(node,return_types)
-    case
+    out = []
+
+    return_vars = case
     when node.match(:send, [1] => :[]=, [3] => :send)
       on_global_array_use(node)
     # no return vars
@@ -1302,9 +1354,11 @@ class GtaScm::RubyToScmCompiler2
       []
     # single var assignment
     when node.match( [:lvasgn,:ivasgn,:gvasgn] )
-      [
-        assignment_lhs(node,[return_types[0],nil])
-      ]
+      if struct_var?(node)
+        expand_struct_vars(node)
+      else
+        [ assignment_lhs(node,[return_types[0],nil]) ]
+      end
     # multiple var assignment
     when node.match( :masgn )
       vars = []
@@ -1316,6 +1370,8 @@ class GtaScm::RubyToScmCompiler2
       debugger
       raise "unknown opcode return vars #{node.inspect} #{return_types.inspect}"
     end
+
+    return_vars
   end
 
   def opcode_call_arguments(node)
@@ -1331,19 +1387,73 @@ class GtaScm::RubyToScmCompiler2
     else
       raise "unknown opcode call arguments #{node.inspect}"
     end
-    arguments.map do |argument|
+
+    out = []
+
+    arguments.each do |argument|
       if argument.immediate_value?
-        transform_node(argument)
+        out += [ transform_node(argument) ]
+      elsif struct_var?(argument)
+        out += expand_struct_vars(argument)
       else
-        on_var_use(argument)
+        out += [ on_var_use(argument) ]
+      end
+    end
+
+    out
+  end
+
+  def struct_var?(node)
+    if sexp?(node)
+      if node.match([:gvasgn,:gvar]) && self.functions[nil][:global_structs][gvar_name(node[0])]
+        self.functions[nil][:global_structs][gvar_name(node[0])]
+      elsif node.match([:ivasgn,:ivar]) && self.functions[nil][:instance_structs][ivar_name(node[0])]
+        self.functions[nil][:instance_structs][ivar_name(node[0])]
+      elsif node.match([:lvasgn,:lvar]) && self.functions[self.current_function][:local_structs][node[0]]
+        self.functions[self.current_function][:local_structs][node[0]]
+      else
+        false
+      end
+    else
+      if node[0] == :var && self.functions[nil][:global_structs][node[1]]
+        self.functions[nil][:global_structs][node[1]]
+      elsif node[0] == :lvar && self.functions[nil][:instance_structs][node[1]]
+        self.functions[nil][:instance_structs][node[1]]
+      elsif node[0] == :var_array && self.functions[self.current_function][:local_structs][node[1]]
+        self.functions[self.current_function][:local_structs][node[1]]
+      else
+        false
       end
     end
   end
 
-  def on_array_declare(node)
-    array_name = 
-    array_size = node[1][2][0]
-    array_type = array_class_type(node[1][0][1])
+  def expand_struct_vars(node)
+
+    struct_class = case node.type
+    when :gvar, :gvasgn, :var
+      self.functions[nil][:global_structs][gvar_name(node[0])]
+    when :ivar, :ivasgn
+      self.functions[nil][:instance_structs][ivar_name(node[0])]
+    when :lvar, :lvasgn
+      self.functions[self.current_function][node[0]]
+    end
+
+    definition = self.struct_definitions[struct_class]
+    definition.map do |def_name,def_type|
+      base = sexp(node.type,[:"#{node[0]}_#{def_name}"])
+      var = on_var_use(base)
+      # case var[0]
+      # when :var
+      #   var[2] = def_type
+      # end
+      var
+    end
+
+  end
+
+  def on_array_var_declare(node)
+    array_size = array_declare_size(node)
+    array_type = array_class_type(node)
 
     instructions = []
     instructions << [:EmitNodes,false]
@@ -1369,13 +1479,60 @@ class GtaScm::RubyToScmCompiler2
     return instructions
   end
 
-  def array_class_type(array_class)
-    type = {
+  def array_declare_size(node)
+    node[1][2][0]
+  end
+
+  def array_class_type(node)
+    types = {
       IntegerArray: :int,
       FloatArray: :float,
-    }[array_class]
+    }
+    type = if types.keys.include?(node[1][1])
+      node[1][1]
+    else
+      node[1][0][1]
+    end
+
+    type = types[type]
     return type if type
-    raise "unknown array_class_type #{array_class}"
+    raise "unknown array_class_type #{type.inspect}"
+  end
+
+  def on_struct_var_declare(node)
+    var_name = node[0]
+
+    struct_class = node[1][0][1]
+    arguments = node[1][2..-1]
+    definition = self.struct_definitions[struct_class]
+
+    case node.type
+    when :gvasgn
+      self.functions[nil][:global_structs][gvar_name(var_name)] = struct_class
+    when :ivasgn
+      self.functions[nil][:instance_structs][ivar_name(var_name)] = struct_class
+    when :lvasgn
+      self.functions[self.current_function][var_name] = struct_class
+    else
+      raise "wtf"
+    end
+
+    if arguments.size != definition.size
+      raise "expected #{definition.size} elements for #{struct_class}, got #{arguments.size}"
+    end
+
+    instructions = []
+
+    arguments.each_with_index do |arg,idx|
+      def_name = definition.keys[idx]
+      def_type = definition.values[idx]
+      rhs = assignment_rhs(arg)
+      base = sexp(node.type,[:"#{node[0]}_#{def_name}"])
+      lhs = assignment_lhs(base,rhs)
+      instructions << [:assign,[lhs,rhs]]
+    end
+
+    return instructions
   end
 
   def on_constant_declare(node)
@@ -1872,6 +2029,10 @@ class GtaScm::RubyToScmCompiler2
 
   def sexp(type,children = [])
     Parser::AST::Node.new(type,children)
+  end
+
+  def sexp?(node)
+    node.is_a?(Parser::AST::Node)
   end
 
   def dma_var(name)
