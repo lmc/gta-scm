@@ -751,7 +751,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
         debugger
         arg.set_array(arg_tokens[1],arg_tokens[2],arg_tokens[3],arg_tokens[4])
       when :vlstring
-        arg.set( arg_tokens[0] , arg_tokens[2] )
+        arg.set( arg_tokens[0] , arg_tokens[1] )
       else
         arg.set( arg_tokens[0] , arg_tokens[1] )
       end

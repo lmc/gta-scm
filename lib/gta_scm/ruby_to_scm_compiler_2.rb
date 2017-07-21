@@ -1,6 +1,9 @@
 
 require 'gta_scm/ruby_to_scm_compiler'
 
+# NOTE: can use vlstring for text opcodes, possibly more?
+#   todo: find out if string var assigns will work
+
 # TODO:
 # while loops
 # next loop keyword
@@ -216,26 +219,6 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :block )
       transform_node(node[0])
 
-    # Assignment
-    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
-      on_assign( node )
-
-    when node.match( :send , [0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1] => :[]=, [3] => [:lvar,:ivar,:gvar,:int,:float,:string] )
-      on_assign( node )
-
-    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
-      on_assign( node )
-
-    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && node[1].match(/=$/)
-      on_assign( node )
-
-    # Multi-assignment
-    when node.match( :masgn , [0] => :mlhs , [1] => :array )
-      on_multi_assign( node )
-
-    when node.match( [:ivasgn,:gvasgn,:lvasgn] , [1] => :send , [1,1] => :block_pass)
-      on_dereference_assign( node )
-
     # Operator Assign
     when node.match( [:op_asgn] , [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/] )
       on_operator_assign( node )
@@ -253,7 +236,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => :send ) && self.opcode_names[ node[1][1] ]
       on_opcode_call(node)
 
-    when node.match( :send , [1] => :[]= ) && self.opcode_names[ node[3][1] ]
+    when node.match( :send , [1] => [:[],:[]=] ) && self.opcode_names[ node[3].andand[1] ]
       on_opcode_call(node)
 
     # Opcode call with multiple return values
@@ -309,6 +292,29 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :masgn , [0] => :mlhs , [1] => :send ) && self.functions[ node[1][1] ]
       on_function_call(node)
 
+
+    # Assignment
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_assign( node )
+
+    when node.match( :send , [0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1] => :[]=, [3] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_assign( node )
+
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_assign( node )
+
+    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && node[1].match(/=$/)
+      on_assign( node )
+
+    # Multi-assignment
+    when node.match( :masgn , [0] => :mlhs , [1] => :array )
+      on_multi_assign( node )
+
+    when node.match( [:ivasgn,:gvasgn,:lvasgn] , [1] => :send , [1,1] => :block_pass)
+      on_dereference_assign( node )
+
+
+
     # Return results of opcode call
     #
     # return get_char_coordinates(player_char)
@@ -345,15 +351,6 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :send , [1] => [:debugger])
       on_debugger(node)
 
-    # unknown function call, complain later when generating instructions
-    when node.match( :send ) || node.match( :lvasgn , [1] => :send)
-      if generating?
-        debugger
-        raise "unknown call #{node.inspect}"
-      else
-        [[:unknown_call, node[1] ]]
-      end
-
     # Return
     when node.match( :return )
       on_return( node )
@@ -362,8 +359,30 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvar,:ivar,:gvar] )
       on_var_use(node)
 
-    when node.match( [:int,:float,:string] )
+    when node.match( [:int,:float,:str] )
       on_immediate_use(node)
+
+    when node.match( :send, [0] => :gvar, [1] => :[] )
+      on_global_array_use(node)
+
+    when node.match( :send, [0] => :gvar ) && self.functions[nil][:global_structs][ gvar_name(node[0][0]) ]
+      on_var_use(node)
+
+    # unknown function call, complain later when generating instructions
+    when (node.match( :send ) || node.match( :lvasgn , [1] => :send)) && ![ :[], :[]= ].include?(node[1])
+      if generating?
+        debugger
+        raise "unknown call #{node.inspect}"
+      else
+        [[:unknown_call, node[1] ]]
+      end
+
+    # raw s-expression output (is this is a good idea or horrible?)
+    when node.match( :array , [0] => :sym )
+      [
+        eval(node.source_code)
+      ]
+
 
     # Default case
     else
@@ -676,6 +695,8 @@ class GtaScm::RubyToScmCompiler2
       [:int32,node[0]]
     when :float
       [:float32,node[0]]
+    when :str
+      [:vlstring,node[0]]
     else
       raise "unknown immediate #{node.inspect}"
     end
@@ -956,6 +977,8 @@ class GtaScm::RubyToScmCompiler2
       assignment_rhs(node[3])
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_global_array_use(node[1])
+    # when node.match( :send, [1] => :[] )
+    #   assignment_rhs(node[3])
     when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && struct_var?(node[0])
       if node[2]
         assignment_rhs(node[2])
@@ -981,7 +1004,9 @@ class GtaScm::RubyToScmCompiler2
   def compare_rhs(node)
     case
     when node.match( :send , [1] => [:>,:<,:>=,:<=,:==,:!=] )
+      # debugger
       transform_node(node[2])
+      # assignment_rhs(node[2])
     else
       raise "unknown compare lhs #{node.inspect}"
     end

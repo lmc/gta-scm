@@ -67,7 +67,7 @@ script(name: "xhelpv2") do
   # @d = $tmpcars[$cd + 2]
   set_lvar_int(@d,$tmpcars[$cd + 2])
 
-  main(wait: 250) do
+  main(wait: 0) do
     x = 1000.0
     y = 1500.0
     z = 2000.0

@@ -163,10 +163,13 @@
 (IncludeRuby "helper")
 
 (labeldef helper_v2)
-(script_name ((string8 "xhelpv2")))
-% (wait ((int16 5000)))
+(script_name ((vlstring "xhelpv2")))
+(wait ((int8 0)))
 % (terminate_this_script)
-(IncludeRuby "helper_v2" (v2 true))
+(use_text_commands ((int8 0)))
+(display_text ((float32 200.0) (float32 100.0) (vlstring "GSCM100")))
+(goto ((label helper_v2)))
+% (IncludeRuby "helper_v2" (v2 true))
 % =====================================
 
 

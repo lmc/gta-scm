@@ -98,7 +98,7 @@ class GtaScm::RubyToScmCompiler
       end
 
       def immediate_value?
-        [:int,:float].include?(self.type)
+        [:int,:float,:str].include?(self.type)
       end
 
       def variable?
@@ -106,6 +106,10 @@ class GtaScm::RubyToScmCompiler
           :lvar, :ivar, :gvar,
           :lvasgn, :ivasgn, :gvasgn
         ].include?(self.type)
+      end
+
+      def source_code
+        self.location.expression.source
       end
 
       def inspect_tree(tab = 2)

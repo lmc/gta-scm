@@ -51,8 +51,9 @@ class GtaScm::Node::Argument < GtaScm::Node::Base
       self[0] = GtaScm::ByteArray.new( [value[0].ord] )
       self[1] = GtaScm::ByteArray.new( value[1..7].ljust(7,0.chr).bytes )
     elsif type == :vlstring
-      self[0] = GtaScm::ByteArray.new( [value.size] )
-      self[1] = GtaScm::ByteArray.new( value.bytes )
+      self[0] = GtaScm::ByteArray.new( [0x0e] )
+      self[1] = GtaScm::ByteArray.new( [value.size] )
+      self[2] = GtaScm::ByteArray.new( value.bytes )
     elsif type == :end_var_args
       self[0] = GtaScm::ByteArray.new( [0] )
     else
