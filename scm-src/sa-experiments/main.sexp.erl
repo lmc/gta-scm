@@ -33,19 +33,6 @@
 % skip over 1217 bytes of jumped-over code (56728 - 57945)
 % =====================================
 
-% == Watchdog Thread ==================
-% Global vars used:
-% 4484 - watchdog timeout
-% 4488 - watchdog timer
-% 4492 - external 97 count
-% 4496 - code state: 0 = needs init, 1 = init'd
-% 3428 - code persist version ID
-% 3432 - save persist version ID
-% 3436 - save persist version string
-% 3440 - save persist version string
-% (Include "watchdog")
-% =====================================
-
 % == Debug RPC ==================
 % Global vars used:
 % 7036 - debug_rpc_int_arg_0
@@ -101,8 +88,14 @@
 (gosub ((label save_thread_ext)))
 (PadUntil (88027))
 
+(IncludeBin ("games/san-andreas/data/script/main.scm" 88027 88165))
+% replace gosub in save thread to our extension
+% (gosub ((int32 -1)))
+(gosub ((label save_thread_after_ext)))
+(PadUntil (88172))
+
 % Unused export debug code
-(IncludeBin ("games/san-andreas/data/script/main.scm" 88027 127559))
+(IncludeBin ("games/san-andreas/data/script/main.scm" 88172 127559))
 % (goto ((label label_127573)))
 (goto ((int32 129490)))
 (goto ((int32 129490)))

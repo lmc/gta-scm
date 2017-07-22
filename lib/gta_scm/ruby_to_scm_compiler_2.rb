@@ -22,6 +22,8 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   static: consumes globals vars, smaller calls, no stack adjustment, no recursion permitted
 #   use static for common calls
 
+# stack inspector for debugger
+
 =begin
 helper methods:
 
@@ -657,6 +659,8 @@ class GtaScm::RubyToScmCompiler2
     when struct_var?(node[0]) && :send
       var = sexp(node[0].type,[:"#{node[0][0]}_#{node[1]}"])
       on_var_use(var)
+    when node.match( :send , [1] => :block_pass )
+      raise "handle block_pass"
     else
       debugger
       raise "unknown var use #{node.inspect}"
@@ -1440,7 +1444,9 @@ class GtaScm::RubyToScmCompiler2
         false
       end
     else
-      if node[0] == :var && self.functions[nil][:global_structs][node[1]]
+      if node.nil?
+        false
+      elsif node[0] == :var && self.functions[nil][:global_structs][node[1]]
         self.functions[nil][:global_structs][node[1]]
       elsif node[0] == :lvar && self.functions[nil][:instance_structs][node[1]]
         self.functions[nil][:instance_structs][node[1]]

@@ -1,5 +1,3 @@
-% Global vars used:
-% 4492 - external 78 instance count
 
 % load external scripts from script.img
 (labeldef external_loader)
@@ -24,9 +22,10 @@
 (wait ((int8 0)))
 
 % if no scripts are running, spawn them
-(get_number_of_instances_of_streamed_script ((int8 78) (dmavar 4492)))
+(get_number_of_instances_of_streamed_script ((int8 78) (var ext78_count)))
+(get_number_of_instances_of_streamed_script ((int8 79) (var ext79_count)))
 % (andor ((int8 0)))
-  (is_int_var_equal_to_number ((dmavar 4492) (int8 0)))
+  (is_int_var_equal_to_number ((var ext78_count) (int8 0)))
 (goto_if_false ((label external_loader_idle_1)))
   % spawn scripts here
 
@@ -42,9 +41,6 @@
   % % collectables finder manager
   % (start_new_streamed_script ((int8 78) (int8 5) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
 
-  % 79
-  (start_new_streamed_script ((int8 79) (end_var_args)))
-
   % spatial
   (start_new_streamed_script ((int8 78) (int8 6) (end_var_args)))
 
@@ -53,5 +49,15 @@
 
   (wait ((int16 1000)))
 (labeldef external_loader_idle_1)
+
+
+% (andor ((int8 0)))
+  (is_int_var_equal_to_number ((var ext79_count) (int8 0)))
+(goto_if_false ((label external_loader_idle_2)))
+
+% 79
+(start_new_streamed_script ((int8 79) (end_var_args)))
+
+(labeldef external_loader_idle_2)
 
 (goto ((label external_loader_idle)))

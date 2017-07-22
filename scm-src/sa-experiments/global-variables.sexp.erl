@@ -3,3 +3,6 @@
 
 % CRAZY?!: re-use parts of the script bootstrapper code as global variables
 (UseGlobalVariables temp_vars 55976 60026)
+
+% 30 unused vars (zerod in intro, then never used)
+% (UseGlobalVariables temp_vars 7036 7156)

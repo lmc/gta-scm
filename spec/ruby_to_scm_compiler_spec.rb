@@ -1945,6 +1945,22 @@ describe GtaScm::RubyToScmCompiler do
       }
     end
 
+    describe "functions as arguments" do
+      let(:ruby){ <<-RUBY
+        script() do
+        def test
+        end
+        end
+        # gosub(test)
+        # gosub(&test)
+        # gosub([:label,:foo])
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        LISP
+      }
+    end
+
   end
 
 
