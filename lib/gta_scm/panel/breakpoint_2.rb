@@ -13,7 +13,7 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
         { title: "ID", length: 2 },
         { title: "Name", length: 7 },
         { title: "BP Addr", length: 10 },
-        { title: "", length: 30 },
+        { title: "", length: 27 },
       ],
       # header: true,
       header: false,
@@ -62,7 +62,7 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
         str = "Breakpoints #{str_enable_s} - #{str_enable}"
         str2 = "#{breakpoint_thread.thread_id} #{breakpoint_thread.name} #{breakpoint_gosub}"
         _set_text(str,str2)
-        self.elements[:table].set_table([["#{breakpoint_thread.thread_id}","#{breakpoint_thread.name}","#{breakpoint_gosub}","ctrl+g: resume, ctrl+h: delete"]])
+        self.elements[:table].set_table([["#{breakpoint_thread.thread_id}","#{breakpoint_thread.name}","#{breakpoint_gosub-7}","ctrl+g: resume, ctrl+h: delete"]])
       else
         self.settings[:breakpoint_thread] = nil
         self.controller.settings[:breakpoint_thread] = nil if controller

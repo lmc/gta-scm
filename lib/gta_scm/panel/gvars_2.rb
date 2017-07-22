@@ -10,8 +10,8 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
       cols: [
         { title: "", length: 5 },
         { title: "", length: 3 },
-        { title: "", length: self.width - 32 },
-        { title: "", length: 10 },
+        { title: "", length: self.width - 33 },
+        { title: "", length: 11 },
       ],
       header: false,
       hover: RuTui::Theme.get(:highlight),

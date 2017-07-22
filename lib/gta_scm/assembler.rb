@@ -138,6 +138,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.on_before_touchups()
     install_touchup_values!
     self.on_after_touchups()
+    self.complete_export_symbols()
 
     externals_code = {}
     if external_offsets.present?
@@ -795,6 +796,27 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.allocated_vars = self.parent.allocated_vars if self.respond_to?(:allocated_vars) && self.parent.respond_to?(:allocated_vars)
 
     # self.touchup_defines = self.parent.touchup_defines
+  end
+
+  def complete_export_symbols
+    self.symbols_data.each do |sd|
+      
+      # sd[:scripts].each_pair do |script_name,script|
+      #   script[:code_range] = [
+      #     self.label_map[:"start_script_#{script_name}"],
+      #     self.label_map[:"end_script_#{script_name}"]
+      #   ]
+      # end
+
+      sd[:frames].each do |frame|
+        # debugger
+        frame[:range_offsets] = [
+          self.label_map[ frame[:range_labels][0] ],
+          self.label_map[ frame[:range_labels][1] ],
+        ]
+      end
+
+    end
   end
 
   def logger

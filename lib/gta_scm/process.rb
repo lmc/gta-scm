@@ -13,6 +13,7 @@ class GtaScm::Process
   attr_accessor :symbols_var_types
   attr_accessor :symbols_label_offsets
   attr_accessor :symbols_metadata
+  attr_accessor :symbols
   attr_accessor :max_var_offset
 
   attr_accessor :regions
@@ -79,6 +80,7 @@ class GtaScm::Process
 
     self.thread_symbols = symbols["threads_lvars"]
     self.symbols_metadata = symbols["symbols_metadata"]
+    self.symbols = symbols["symbols"]
 
     # self.load_rpc_region!
   end
@@ -219,6 +221,8 @@ class GtaScm::Process
   # TODO: bulk-read with vm_read for performance?
   def read_scm_var(scm_var_offset,type = nil,size = nil)
     scm_var_offset = scm_var_offset_for(scm_var_offset) if !scm_var_offset.is_a?(Numeric)
+
+    return nil if !scm_var_offset
 
     offset = self.scm_offset + scm_var_offset
 

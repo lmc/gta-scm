@@ -3,13 +3,12 @@ script(name: "xhelpv2") do
 
   def add_to_d(d)
     d += 0.25
+    gosub(57228) # debug_breakpoint_entry
     return d
   end
 
   def linear_interpolate(x1,y1,z1,x2,y2,z2,d)
     d = add_to_d(d)
-
-    # gosub(57228) # debug_breakpoint_entry
 
     if x2 > x1
       x3  = x2

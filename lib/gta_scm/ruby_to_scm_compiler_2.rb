@@ -777,10 +777,10 @@ class GtaScm::RubyToScmCompiler2
     end
 
     [
-      [:labeldef,:start_script],
+      [:labeldef,:"start_script_#{script_name}"],
       *function_prologue(nil),
       *body,
-      [:labeldef,:end_script],
+      [:labeldef,:"end_script_#{script_name}"],
     ]
   end
 
@@ -881,14 +881,14 @@ class GtaScm::RubyToScmCompiler2
     end
   end
 
-  def resolve_lvar_type(lvar_name,function_name)
+  # def resolve_lvar_type(lvar_name,function_name)
     
-  end
+  # end
 
   def function_prologue(function_name)
     prologue = []
     self.functions[function_name][:locals].each_pair do |lvar_name,uses|
-      lvar_type = resolve_lvar_type(lvar_name,function_name)
+      lvar_type = resolved_lvar_type(lvar_name,function_name)
       # prologue << [ :stack_push , lvar_name ]
     end
     stack_adjust = function_stack_size(function_name)
@@ -2088,31 +2088,76 @@ class GtaScm::RubyToScmCompiler2
       raise "multiple scripts detected, confused about symbol export"
     end
 
+    script_name = self.scripts.keys.first
+
+    frames = []
+
+    frame = {
+      type: :script,
+      name: script_name,
+      range_labels: [:"start_script_#{script_name}",:"end_script_#{script_name}"],
+      range_offsets: [], # gets filled in later
+      stack: {}
+    }
+
+    current_stack_vars(nil).each do |var_name|
+      frame[:stack][ resolved_lvar_stack_offset(var_name,nil) ] = [var_name,resolved_lvar_type(var_name,nil)]
+    end
+
+    frames << frame
+
     instance_vars_to_types = Hash[ self.functions[nil][:instances].map{|k,v| [k,resolved_ivar_type(k)]} ]
     functions = {}
-    self.functions.each_pair do |name,variables|
-      locals = variables[:locals].each_pair.map {|k,v|
+    self.functions.each_pair do |function_name,variables|
+      next if function_name.nil?
 
-        unless stack_offset = safe_lvar_return_var(k,name)
-          stack_offset = resolved_lvar_stack_offset(k,name)
+      frame = {
+        type: :function,
+        name: function_name,
+        range_labels: [:"function_#{function_name}",:"function_end_#{function_name}"],
+        range_offsets: [], # gets filled in later
+        stack: {}
+      }
+
+      current_stack_vars(function_name).each do |var_name|
+        unless stack_offset = safe_lvar_return_var(var_name,function_name)
+          stack_offset = resolved_lvar_stack_offset(var_name,function_name)
         end
+        type = resolved_lvar_type(var_name,function_name)
+        if var_name.is_a?(Numeric)
+          type = resolve_function_return_types(function_name)[var_name]
+        end
+        frame[:stack][ stack_offset ] = [var_name,type]
+      end
 
-        [stack_offset,k,resolved_lvar_type(k,name)]
-      }
-      functions[name] = {
-        label: :"function_#{name}",
-        locals: locals,
-        stack: current_stack_vars(name)
-      }
+      frames << frame
+
+      # locals = variables[:locals].each_pair.map {|k,v|
+
+      #   unless stack_offset = safe_lvar_return_var(k,name)
+      #     stack_offset = resolved_lvar_stack_offset(k,name)
+      #   end
+
+      #   [stack_offset,k,resolved_lvar_type(k,name)]
+      # }
+      # functions[name] = {
+      #   label: :"function_#{name}",
+      #   end_label: :"function_#{name}",
+      #   locals: locals,
+      #   stack: current_stack_vars(name)
+      # }
     end
 
     {
-      scripts: {
-        (self.scripts.values.first[:name]) => {
-          functions: functions
-        }
-      }
+      frames: frames
     }
+
+    # frames
+    # script: foo
+    # range: 1000,2000
+    # -3: x float
+    # -2: y float
+    # -1: z float
   end
 
 end
