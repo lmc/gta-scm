@@ -98,6 +98,11 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
     self.settings[:breakpoint_thread] = self.controller.settings[:breakpoint_thread] if self.controller
 
 
+    stack_counter = process.read_scm_var(:_sc,:int)
+    stack_check1  = process.read_scm_var(:_canary1,:int)
+    stack_check2  = process.read_scm_var(:_canary2,:int)
+    stack_check3  = process.read_scm_var(:_canary3,:int)
+
     data = []
     if thread_id = self.settings[:breakpoint_thread]
 
@@ -125,19 +130,14 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
       #   end
       # end
 
-      stack_counter = process.read_scm_var(:_sc,:int)
-      stack_check1  = process.read_scm_var(:_canary1,:int)
-      stack_check2  = process.read_scm_var(:_canary2,:int)
-      stack_check3  = process.read_scm_var(:_canary3,:int)
-
       return_stack = thread.scm_return_stack + [thread.scm_pc]
 
       variable_stack_index = 0
       return_stack.each_with_index do |return_offset,idx|
-        frame = get_frame_for_offset(frames,return_offset)
+        frame = get_frame_for_offset(frames,return_offset,process)
         if frame
           calls_text = ""
-          if next_frame = get_frame_for_offset(frames,return_stack[idx+1])
+          if next_frame = get_frame_for_offset(frames,return_stack[idx+1],process)
             calls_text = "calls #{next_frame["name"]}"
           end
           data << ["#{return_offset - 7} - #{frame["type"]} #{frame["name"]} +#{return_offset - frame["range_offsets"][0] - 7} #{calls_text}"]
@@ -149,16 +149,21 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
             rescue
               nil
             end
+            if sv_name.to_s.match(/^\d+$/)
+              sv_name = "_ret_#{sv_name}"
+            end
             # value = nil
-            data << ["  #{variable_stack_index} #{sv_i} #{sv_type} #{sv_name} = #{value.inspect}"]
+            data << ["  Abs:#{variable_stack_index.to_s.rjust(3," ")}  Rel:#{sv_i.to_s.rjust(3," ")}  #{sv_type.to_s.ljust(6," ")}  #{sv_name.to_s.ljust(8," ")} = #{value.inspect}"]
             variable_stack_index += 1
           end
         else
+          # data << ["#{return_offset} - debug_breakpoint"]
           data << ["unknown #{return_offset}"]
         end
       end
     end
 
+    data << [""]
     data << ["stack counter: #{stack_counter}"]
 
     if stack_check1 == stack_check2 && stack_check2 == stack_check3
@@ -172,7 +177,13 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
 
   end
 
-  def get_frame_for_offset(frames,offset)
+  def get_frame_for_offset(frames,offset,process = nil)
+    breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)# rescue 0
+    range_offsets = [(breakpoint_offset-16),(breakpoint_offset+160)]
+    if (range_offsets[0]..range_offsets[1]).include?(offset)
+      return { "name"=>"debug_breakpoint", "type"=>"routine", "range_offsets"=>range_offsets, "stack"=>[] }
+    end
+
     frames.select { |frame|
       Range.new(frame["range_offsets"][0],frame["range_offsets"][1]).include?(offset)
     }.sort_by { |frame|

@@ -3,7 +3,7 @@ script(name: "xhelpv2") do
 
   def add_to_d(d)
     d += 0.25
-    gosub(57228) # debug_breakpoint_entry
+    # debugger
     return d
   end
 
@@ -45,8 +45,6 @@ script(name: "xhelpv2") do
       z3 *= d
       z3 += z2
     end
-
-    # debugger
 
     return x3,y3,z3
   end

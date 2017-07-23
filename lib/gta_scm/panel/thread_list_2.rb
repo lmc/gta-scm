@@ -18,7 +18,7 @@ class GtaScm::Panel::ThreadList2 < GtaScm::Panel::Base
 
   def update(process,is_attached,focused = false)
     if !is_attached
-      data = self.panel_list( [], self.height - 2, [""])
+      data = self.panel_list( [], self.height+1, ["#{self.height+1}"])
       self.elements[:table].set_table(data)
       return
     end

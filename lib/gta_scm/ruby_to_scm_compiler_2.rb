@@ -22,7 +22,9 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   static: consumes globals vars, smaller calls, no stack adjustment, no recursion permitted
 #   use static for common calls
 
-# stack inspector for debugger
+# DONE: stack inspector for debugger
+# put breakpoint code to eval on stack? should have at least 32 bytes free on stack due to stackless gosub to breakpoint
+# should debugger actually generate `stack[sc+0] = pc; goto(breakpoint)` for gosub-free breakpoint?
 
 =begin
 helper methods:

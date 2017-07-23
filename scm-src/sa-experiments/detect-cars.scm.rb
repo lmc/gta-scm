@@ -29,6 +29,7 @@ if emit(false)
   touching_car = 0
   speed = 0.0
   cars = IntegerArray.new(10)
+  driver_event = 0
   # cars_00 = 0
   # cars_01 = 0
   # cars_02 = 0
@@ -98,6 +99,8 @@ check_driver_shitty = routine do
   driver_shitty = 0
   player_car = get_car_char_is_using(PLAYER_CHAR)
 
+  # driver_event = get_char_highest_priority_event(driver)
+
   if player_car > 0
 
     if touching_car > 0
@@ -143,7 +146,8 @@ loop do
 
     current_car = get_random_car_in_sphere_no_save(tmp_x,tmp_y,tmp_z,SEARCH_BOUNDS_RADIUS,-1)
 
-    if current_car == last_car || current_car == -1
+    # if current_car == last_car || current_car == -1
+    if current_car == -1
       wait(30)
     else
 

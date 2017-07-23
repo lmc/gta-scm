@@ -21,6 +21,7 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
       hover_fg: RuTui::Theme.get(:highlight_fg),
     })
     self.elements[:table].clear_highlight!
+    _set_text("Breakpoints","")
   end
 
   def set_text(process = nil)

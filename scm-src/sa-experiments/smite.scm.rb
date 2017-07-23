@@ -21,5 +21,9 @@ loop do
   end
   if blip == 0
     blip = add_blip_for_car(this_car)
+    driver = get_driver_of_car(this_car)
+    if driver > 0
+      fire = start_char_fire(driver)
+    end
   end
 end
