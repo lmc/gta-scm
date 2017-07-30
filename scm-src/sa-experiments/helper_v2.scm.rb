@@ -54,21 +54,22 @@ script(name: "xhelpv2") do
     @d = 0
   end
 
-  $tmpcars = IntegerArray.new(8)
-  $cd = 0
-  $tmpcars[$cd] = 111
-  $tmpcars[$cd + 1] = 1
-  $tmpcars[$cd + 2] = 2
-  $tmplast = 42069
+  # $tmpcars = IntegerArray.new(8)
+  # $cd = 0
+  # $tmpcars[$cd] = 111
+  # $tmpcars[$cd + 1] = 1
+  # $tmpcars[$cd + 2] = 2
+  # $tmplast = 42069
 
   # @d = $tmpcars[$cd + 2]
-  set_lvar_int(@d,$tmpcars[$cd + 2])
+  # set_lvar_int(@d,$tmpcars[$cd + 2])
 
   main(wait: 0) do
     x = 1000.0
     y = 1500.0
     z = 2000.0
 
+    # FIXME: symbols exporter does not correctly detect multi-assign instance vars
     @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,@input_arg)
 
     @c = 0
@@ -77,6 +78,12 @@ script(name: "xhelpv2") do
     @c = (@a + 5) * (@b * 10)
 
     # @coords = FloatArray(3)
+    # $intarray = IntegerArray[3]
+    # $intarray_i = 0
+    # @intarray_ii = 1
+    # $intarray[$intarray_i] = 100
+    # $intarray[@intarray_ii] = 200
+    # $intarray[@intarray_ii+1] = 300
     # wait($cars[$cd])
     # wait($cars[$cd + 1])
 

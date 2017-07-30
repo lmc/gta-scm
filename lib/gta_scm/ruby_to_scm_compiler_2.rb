@@ -369,6 +369,9 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :send, [0] => :gvar, [1] => :[] )
       on_global_array_use(node)
 
+    when node.match( :send, [0] => :ivar, [1] => :[] )
+      on_instance_array_use(node)
+
     when node.match( :send, [0] => :gvar ) && self.functions[nil][:global_structs][ gvar_name(node[0][0]) ]
       on_var_use(node)
 
@@ -490,6 +493,8 @@ class GtaScm::RubyToScmCompiler2
     when :stack
       var_or_val[3]
     when :var_array
+      resolve_var_type(var_or_val[4],nil)
+    when :lvar_array
       resolve_var_type(var_or_val[4],nil)
     when :var
       resolved_gvar_type(var_or_val[1])
@@ -658,6 +663,8 @@ class GtaScm::RubyToScmCompiler2
       on_const_use(node)
     when sexp?(node[0]) && node[0].type == :gvar && self.functions[nil][:global_arrays][gvar_name(node[0][0])] && :send
       on_global_array_use(node)
+    when sexp?(node[0]) && node[0].type == :ivar && self.functions[nil][:instance_arrays][ivar_name(node[0][0])] && :send
+      on_instance_array_use(node)
     when struct_var?(node[0]) && :send
       var = sexp(node[0].type,[:"#{node[0][0]}_#{node[1]}"])
       on_var_use(var)
@@ -720,10 +727,48 @@ class GtaScm::RubyToScmCompiler2
       array_var = :"#{array_var}#{sign}#{array_offset.abs}"
     end
 
+    if !array
+      debugger
+    end
+
     array_size = array[1]
     array_type = array_type_token(array[0])
 
+    if generating? && index_var_type == :lvar
+      index_var = ivar_lvar_id(index_var)
+    end
+
     [:var_array,array_var,index_var,array_size,[array_type,index_var_type]]
+  end
+
+  def on_instance_array_use(node)
+    array = self.functions[nil][:instance_arrays][ivar_name(node[0][0])]
+
+    array_var = ivar_name(node[0][0])
+    index_var,index_var_type,array_offset = array_index_var_type_offset(node[2])
+
+    if generating?
+      array_var = ivar_lvar_id(array_var)
+    end
+
+    if !array_offset.nil?
+      sign = array_offset > 0 ? :+ : :-
+      # array_offset *= 4
+      if generating?
+        array_var = array_var.send(sign,array_offset.abs)
+      else
+        array_var = :"#{array_var}#{sign}#{array_offset.abs}"
+      end
+    end
+
+    array_size = array[1]
+    array_type = array_type_token(array[0])
+
+    if generating? && index_var_type == :lvar
+      index_var = ivar_lvar_id(index_var)
+    end
+
+    [:lvar_array,array_var,index_var,array_size,[array_type,index_var_type]]
   end
 
   def array_type_token(type)
@@ -739,12 +784,18 @@ class GtaScm::RubyToScmCompiler2
     case index_var.type
     when :gvar
       [gvar_name(index_var[0]),:var,nil]
+    when :ivar
+      [ivar_name(index_var[0]),:lvar,nil]
     when :send
       case index_var[0].type
       when :gvar
         offset = index_var[2][0]
         offset *= -1 if index_var[1] == :-
         [gvar_name(index_var[0][0]),:var,offset]
+      when :ivar
+        offset = index_var[2][0]
+        offset *= -1 if index_var[1] == :-
+        [ivar_name(index_var[0][0]),:lvar,offset]
       else
         raise "unknown array_index_var_type_offset #{index_var.inspect}"
       end
@@ -981,8 +1032,11 @@ class GtaScm::RubyToScmCompiler2
       on_immediate_use(node)
     when node.match( :send, [1] => :[]= )
       assignment_rhs(node[3])
-    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+    # when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:gvar] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_global_array_use(node[1])
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:ivar] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+      on_instance_array_use(node[1])
     # when node.match( :send, [1] => :[] )
     #   assignment_rhs(node[3])
     when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && struct_var?(node[0])
@@ -1378,8 +1432,10 @@ class GtaScm::RubyToScmCompiler2
     out = []
 
     return_vars = case
-    when node.match(:send, [1] => :[]=, [3] => :send)
+    when node.match(:send, [0] => :gvar, [1] => :[]=, [3] => :send)
       on_global_array_use(node)
+    when node.match(:send, [0] => :ivar, [1] => :[]=, [3] => :send)
+      on_instance_array_use(node)
     # no return vars
     when node.match(:send)
       []
@@ -1987,7 +2043,7 @@ class GtaScm::RubyToScmCompiler2
       :float
     when :int,:int8,:int16,:int32
       :int
-    when :var_array
+    when :var_array, :lvar_array
       case tokens[4][0]
       when :float32, :float
         :float

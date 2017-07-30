@@ -1859,6 +1859,62 @@ describe GtaScm::RubyToScmCompiler do
       }
     end
 
+    describe "instance arrays" do
+      let(:ruby){ <<-RUBY
+        script(name: "test") do
+          $index = 0
+          @index = 0
+          @cars = IntegerArray(3)
+          @coords = FloatArray[3]
+          @cars[@index] = 0
+          @cars[@index + 1] = 1
+          # @cars[2] = 2
+          wait(@cars[@index])
+          wait(@cars[@index + 1])
+          # wait(@cars[2])
+          @cars[@index] = get_game_timer()
+          @coords[@index],@coords[@index+1],@coords[@index+2] = get_char_coordinates(PLAYER_CHAR)
+          @cars[@index] = @index
+          @index = @cars[@index]
+          if @cars[@index] >= @cars[@index - 1]
+            wait(0)
+          end
+          if @cars[$index] >= @cars[$index - 1]
+            wait(0)
+          end
+        end
+      RUBY
+      }
+      # FIXME: we expect lvar_array args to be integer lvar ids ?
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (labeldef start_script_test)
+          (set_var_int ((var index int) (int32 0)))
+          (set_lvar_int ((lvar 0 index int) (int32 0)))
+          (EmitNodes nil)
+          (EmitNodes t)
+          (EmitNodes nil)
+          (EmitNodes t)
+          (set_lvar_int ((lvar 1 cars int) (int32 0)))
+          (set_lvar_int ((lvar 1 cars int) (int32 1)))
+          (wait ((lvar_array 1 0 3 (int32 lvar))))
+          (wait ((lvar_array 2 0 3 (int32 lvar))))
+          (get_game_timer (lvar_array 1 0 3 (int32 lvar)))
+          (get_char_coordinates ((dmavar 12 nil) ((lvar 2 coords float)) ((lvar 2 coords float)) ((lvar 2 coords float))))
+          (set_lvar_int_to_lvar_int ((lvar 1 cars int) (lvar 0 index int)))
+          (set_lvar_int_to_lvar_int ((lvar 0 index int) (lvar_array 1 0 3 (int32 lvar))))
+          (is_int_lvar_greater_or_equal_to_int_lvar ((lvar_array 1 0 3 (int32 lvar)) (lvar_array 0 0 3 (int32 lvar))))
+          (goto_if_false ((label label_if_3)))
+          (wait ((int32 0)))
+          (labeldef label_if_3)
+          (is_int_lvar_greater_or_equal_to_int_lvar ((lvar_array 1 index 3 (int32 var)) (lvar_array 0 index 3 (int32 var))))
+          (goto_if_false ((label label_if_4)))
+          (wait ((int32 0)))
+          (labeldef label_if_4)
+          (labeldef end_script_test)
+        LISP
+      }
+    end
+
     describe "structs" do
       let(:ruby){ <<-RUBY
         script(name: "test") do
@@ -1944,6 +2000,27 @@ describe GtaScm::RubyToScmCompiler do
         LISP
       }
     end
+
+
+    describe "not opcodes" do
+      let(:ruby){ <<-RUBY
+        if !is_car_stuck(0) && is_car_stuck(1) && !is_car_stuck(2)
+          wait(0)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+          (andor ((int8 2)))
+          (not_is_car_stuck ((int32 0)))
+          (is_car_stuck ((int32 1)))
+          (not_is_car_stuck ((int32 2)))
+          (goto_if_false ((label label_if_2)))
+          (wait ((int32 0)))
+          (labeldef label_if_2)
+        LISP
+      }
+    end
+
 
     describe "functions as arguments" do
       let(:ruby){ <<-RUBY
