@@ -57,11 +57,11 @@ module GtaScm::Assembler::Feature::ExportSymbols
     when :script_name
       # debugger
       self.threads[ tokens[1][0][1] ] = nil
-    when :set_lvar_int
+    when :set_lvar_int, :set_lvar_int_to_var_int, :set_lvar_int_to_lvar_int
       if self.threads.size > 0
         self.threads_lvars[ threads.keys.last ][ tokens[1][0][1] ] = [tokens[1][0][2],:int]
       end
-    when :set_lvar_float
+    when :set_lvar_float, :set_lvar_float_to_var_float, :set_lvar_float_to_lvar_float
       if self.threads.size > 0
         self.threads_lvars[ threads.keys.last ][ tokens[1][0][1] ] = [tokens[1][0][2],:float]
       end
