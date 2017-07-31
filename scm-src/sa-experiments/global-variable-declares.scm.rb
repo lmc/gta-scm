@@ -57,12 +57,14 @@ if emit(false)
   STACK_SIZE = 20
   $_stack = IntegerArray.new(STACK_SIZE)
   $_canary2 = 42069
+  $_ss = STACK_SIZE
   $_sc = 0
   $_canary3 = 42069
 end
 $_canary1 = 42069
 $_canary2 = 42069
 $_canary3 = 42069
+$_ss = STACK_SIZE
 $_sc = 0
 
 SPATIAL_ENTRIES = 8

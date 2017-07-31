@@ -46,24 +46,30 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
     # self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , :int32 )
     self.settings[:breakpoint_enabled] = process.read_scm_var( :breakpoint_enabled , :int32 )
     self.settings[:breakpoint_resumed] = process.read_scm_var( :breakpoint_resumed , :int32 )
-    str_enable = self.settings[:breakpoint_enabled] == 1 ? "ctrl+j: disable" : "ctrl+j: enable"
+    str_enable = self.settings[:breakpoint_enabled] == 1 ? "ctrl+h: disable" : "ctrl+h: enable"
     str_enable_s = self.settings[:breakpoint_enabled] == 1 ? "Enabled" : "Disabled"
 
     if self.settings[:breakpoint_resumed] == 0
       breakpoint_handler = process.scm_label_offset_for(:debug_breakpoint)
 
       breakpoint_thread = process.cached_threads.detect{|t|
-        ((breakpoint_handler-16)..(breakpoint_handler+128)).include?(t.scm_pc)
+        ((breakpoint_handler-64)..(breakpoint_handler+256)).include?(t.scm_pc)
       }
 
       if breakpoint_thread
         self.settings[:breakpoint_thread] = breakpoint_thread.thread_id
         self.controller.settings[:breakpoint_thread] = breakpoint_thread.thread_id if controller
+
+        self.controller.settings[:thread_id] = breakpoint_thread.thread_id if controller && !self.settings[:has_set_thread_id]
+        self.settings[:has_set_thread_id] = true
+
+
         breakpoint_gosub = breakpoint_thread.scm_return_stack.last
         str = "Breakpoints #{str_enable_s} - #{str_enable}"
         str2 = "#{breakpoint_thread.thread_id} #{breakpoint_thread.name} #{breakpoint_gosub}"
         _set_text(str,str2)
-        self.elements[:table].set_table([["#{breakpoint_thread.thread_id}","#{breakpoint_thread.name}","#{breakpoint_gosub-7}","ctrl+g: resume, ctrl+h: delete"]])
+        # self.elements[:table].set_table([["#{breakpoint_thread.thread_id}","#{breakpoint_thread.name}","#{breakpoint_gosub-7}","ctrl+g: resume, ctrl+h: delete"]])
+        self.elements[:table].set_table([["#{breakpoint_thread.thread_id}","#{breakpoint_thread.name}","#{breakpoint_gosub-7}","ctrl+g: resume"]])
       else
         self.settings[:breakpoint_thread] = nil
         self.controller.settings[:breakpoint_thread] = nil if controller
@@ -73,6 +79,7 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
         self.elements[:table].set_table([["?","???","???",""]])
       end
     else
+      self.settings[:has_set_thread_id] = false
       self.settings[:breakpoint_thread] = nil
       self.controller.settings[:breakpoint_thread] = nil if controller
       str = "Breakpoints #{str_enable_s} - #{str_enable}"
@@ -87,14 +94,14 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
     if key == :ctrl_g
       process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
     end
-    if key == :ctrl_j
+    if key == :ctrl_h
       if self.settings[:breakpoint_enabled] == 1
         self.settings[:breakpoint_enabled] = 0
         process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
       else
         self.settings[:breakpoint_enabled] = 1
         process.write_scm_var( :breakpoint_enabled , 1 , :int32 )
-        end
+      end
     end
   end
 end

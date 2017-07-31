@@ -98,13 +98,31 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
     self.settings[:breakpoint_thread] = self.controller.settings[:breakpoint_thread] if self.controller
 
 
+    stack_size = process.read_scm_var(:_ss,:int)
     stack_counter = process.read_scm_var(:_sc,:int)
     stack_check1  = process.read_scm_var(:_canary1,:int)
     stack_check2  = process.read_scm_var(:_canary2,:int)
     stack_check3  = process.read_scm_var(:_canary3,:int)
 
     data = []
+
+
+    data << ["stack size: #{stack_size}"]
+    data << ["stack counter: #{stack_counter}"]
+    if stack_check1 == stack_check2 && stack_check2 == stack_check3
+      data << ["stack integrity intact"]
+    else
+      data << ["!!!! STACK INTEGRITY COMPROMISED !!!"]
+      data << ["1: #{stack_check1}, 2: #{stack_check2}, 3: #{stack_check3}"]
+    end
+
+
     if thread_id = self.settings[:breakpoint_thread]
+
+      if self.settings[:generated_dump] == 1
+        return
+      end
+      self.settings[:generated_dump] = 1
 
       frames = []
       process.symbols.each do |s|
@@ -130,6 +148,7 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
       #   end
       # end
 
+
       return_stack = thread.scm_return_stack + [thread.scm_pc]
 
       variable_stack_index = 0
@@ -140,9 +159,13 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
           if next_frame = get_frame_for_offset(frames,return_stack[idx+1],process)
             calls_text = "calls #{next_frame["name"]}"
           end
+          # if idx != 0
+            data << ["-"*(self.width-4)]
+          # end
           data << ["#{return_offset - 7} - #{frame["type"]} #{frame["name"]} +#{return_offset - frame["range_offsets"][0] - 7} #{calls_text}"]
+          data << ["-"*(self.width-4)]
           # data << ["  stack #{frame["stack"].size}"]
-          frame["stack"].each do |(sv_i,(sv_name,sv_type))|
+          frame["stack"].each do |(sv_i,(sv_name,sv_type,sv_bucket))|
             name = variable_stack_index == 0 ? :_stack : :"_stack_#{variable_stack_index}"
             value = begin
               process.read_scm_var(name,sv_type.to_sym)
@@ -153,25 +176,30 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
               sv_name = "_ret_#{sv_name}"
             end
             # value = nil
-            data << ["  Abs:#{variable_stack_index.to_s.rjust(3," ")}  Rel:#{sv_i.to_s.rjust(3," ")}  #{sv_type.to_s.ljust(6," ")}  #{sv_name.to_s.ljust(8," ")} = #{value.inspect}"]
+            data << ["#{variable_stack_index.to_s.rjust(2," ")} | -#{sv_i.to_i.abs.to_s.ljust(2," ")} | #{sv_bucket.to_s[0...3]} | #{sv_type.to_s[0...3]} | #{sv_name.to_s.ljust(17," ")} | #{value.inspect.ljust(12," ")}"]
             variable_stack_index += 1
           end
+          # data << [""]
         else
+          data << ["-"*(self.width-4)]
           # data << ["#{return_offset} - debug_breakpoint"]
           data << ["unknown #{return_offset}"]
+          data << ["-"*(self.width-4)]
         end
       end
-    end
-
-    data << [""]
-    data << ["stack counter: #{stack_counter}"]
-
-    if stack_check1 == stack_check2 && stack_check2 == stack_check3
-      data << ["stack integrity intact"]
     else
-      data << ["!!!! STACK INTEGRITY COMPROMISED !!!"]
-      data << ["1: #{stack_check1}, 2: #{stack_check2}, 3: #{stack_check3}"]
+      self.settings[:generated_dump] = 0
     end
+
+    # data << [""]
+    # data << ["stack counter: #{stack_counter}"]
+
+    # if stack_check1 == stack_check2 && stack_check2 == stack_check3
+    #   data << ["stack integrity intact"]
+    # else
+    #   data << ["!!!! STACK INTEGRITY COMPROMISED !!!"]
+    #   data << ["1: #{stack_check1}, 2: #{stack_check2}, 3: #{stack_check3}"]
+    # end
 
     self.elements[:table_1].set_table(data)
 
@@ -179,7 +207,7 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
 
   def get_frame_for_offset(frames,offset,process = nil)
     breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)# rescue 0
-    range_offsets = [(breakpoint_offset-16),(breakpoint_offset+160)]
+    range_offsets = [(breakpoint_offset-64),(breakpoint_offset+256)]
     if (range_offsets[0]..range_offsets[1]).include?(offset)
       return { "name"=>"debug_breakpoint", "type"=>"routine", "range_offsets"=>range_offsets, "stack"=>[] }
     end

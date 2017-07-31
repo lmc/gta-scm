@@ -131,8 +131,11 @@
 (Include "external-loader")
 % =====================================
 
-% == Routines =========================
+(labeldef global_variable_declares)
 (IncludeRuby "global-variable-declares")
+(return)
+
+% == Routines =========================
 (IncludeRuby "bitpacker")
 (IncludeRuby "corona")
 % (IncludeRuby "linear-interpolation")
@@ -156,7 +159,7 @@
 (IncludeRuby "helper")
 
 (labeldef helper_v2)
-% (script_name ((vlstring "xhelpv2")))
+(script_name ((vlstring "xhelpv2")))
 % (wait ((int8 0)))
 % % (terminate_this_script)
 % % (use_text_commands ((int8 0)))

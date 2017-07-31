@@ -32,5 +32,6 @@
 (start_new_script ((label helper) (end_var_args)))
 
 (set_var_int ((var code_state) (int8 1)))
+(gosub ((label global_variable_declares)))
 
 (return)

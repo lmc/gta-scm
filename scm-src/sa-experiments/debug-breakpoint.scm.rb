@@ -1,3 +1,4 @@
+$breakpoint_inited = 0
 $breakpoint_enabled = 1
 $breakpoint_resumed = 0
 $breakpoint_halt_vm = 1
@@ -11,10 +12,13 @@ $breakpoint_repl_ret3 = 0
 $breakpoint_repl_ret4 = 0
 $breakpoint_repl_ret5 = 0
 $breakpoint_repl_ret6 = 0
-$breakpoint_repl_ret7 = 0
+# $breakpoint_repl_ret7 = 0
+
+# set $breakpoint_enabled = 0 to disable all
+# set $breakpoint_resumed = 1 to resume
 
 DEBUG_BREAKPOINT = [:label, :debug_breakpoint_entry]
-DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint]
+DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint_inner]
 DEBUG_EVAL_TRUE = [:label, :debug_eval_true]
 DEBUG_EVAL_FALSE = [:label, :debug_eval_false]
 DEBUG_EXEC = [:label, :debug_exec]
@@ -23,15 +27,17 @@ routines do
 
   debug_breakpoint_entry = routine(export: :debug_breakpoint_entry, end_with: nil) do
     terminate_all_scripts_with_this_name("xrepl")
-    $breakpoint_enabled = 1
-    $breakpoint_halt_vm = 1
+    if $breakpoint_inited == 0
+      $breakpoint_inited = 1
+      $breakpoint_enabled = 1
+      $breakpoint_halt_vm = 1
+    end
     goto(DEBUG_BREAKPOINT_INNER)
   end
 
-  debug_breakpoint = routine(export: :debug_breakpoint) do
+  debug_breakpoint = routine(export: :debug_breakpoint_inner) do
     $breakpoint_resumed = 0
     $breakpoint_do_exec = 0
-
     loop do
       if $breakpoint_halt_vm == 0
         wait(0)
