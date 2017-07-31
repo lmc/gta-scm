@@ -439,16 +439,18 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def current_stack_vars(function_name)
+    current_stack_vars_buckets(function_name).flatten
+  end
+
+  def current_stack_vars_buckets(function_name)
     slots = []
     if function_name
-      slots += self.functions[function_name][:returns].map{|k,v| k }
-      slots += self.functions[function_name][:arguments].map{|k,v|
-        # k
+      slots << self.functions[function_name][:returns].map{|k,v| k }
+      slots << self.functions[function_name][:arguments].map{|k,v|
         safe_lvar_return_var(k,function_name) ? nil : k
       }.compact
     end
-    # slots += [:__why]
-    slots += self.functions[function_name][:locals].map{|k,v|
+    slots << self.functions[function_name][:locals].map{|k,v|
       safe_lvar_return_var(k,function_name) ? nil : k
     }.compact
   end
@@ -548,6 +550,14 @@ class GtaScm::RubyToScmCompiler2
       raise "multiple resolved types for ivar #{name}: #{resolved_types.inspect}"
     end
     resolved_types[0]
+  end
+
+  def resolved_return_var_name(function_name,return_var_index)
+    maybe_names = self.functions[function_name][:returns][return_var_index].map{|u| u[0] == :lvar ? u[1] : nil}.compact
+    if maybe_names.uniq.size > 1
+      raise "multiple return var names?"
+    end
+    maybe_names[0]
   end
 
   def gvar_name(name)
@@ -2159,7 +2169,7 @@ class GtaScm::RubyToScmCompiler2
     }
 
     current_stack_vars(nil).each do |var_name|
-      frame[:stack][ resolved_lvar_stack_offset(var_name,nil) ] = [var_name,resolved_lvar_type(var_name,nil)]
+      frame[:stack][ resolved_lvar_stack_offset(var_name,nil) ] = [var_name,resolved_lvar_type(var_name,nil),:local]
     end
 
     frames << frame
@@ -2177,16 +2187,24 @@ class GtaScm::RubyToScmCompiler2
         stack: {}
       }
 
-      current_stack_vars(function_name).each do |var_name|
-        unless stack_offset = safe_lvar_return_var(var_name,function_name)
-          stack_offset = resolved_lvar_stack_offset(var_name,function_name)
+      buckets = current_stack_vars_buckets(function_name)
+      buckets.each_with_index do |bucket,bucket_id|
+        bucket_name = {0 => :return, 1 => :argument, 2 => :local}[bucket_id]
+        bucket.each do |var_name|
+          unless stack_offset = safe_lvar_return_var(var_name,function_name)
+            stack_offset = resolved_lvar_stack_offset(var_name,function_name)
+          end
+          type = resolved_lvar_type(var_name,function_name)
+          if var_name.is_a?(Numeric)
+            type = resolve_function_return_types(function_name)[var_name]
+          end
+          if bucket_name == :return && (return_name = resolved_return_var_name(function_name,var_name))
+            var_name = return_name
+          end
+          frame[:stack][ stack_offset ] = [var_name,type,bucket_name]
         end
-        type = resolved_lvar_type(var_name,function_name)
-        if var_name.is_a?(Numeric)
-          type = resolve_function_return_types(function_name)[var_name]
-        end
-        frame[:stack][ stack_offset ] = [var_name,type]
       end
+
 
       frames << frame
 

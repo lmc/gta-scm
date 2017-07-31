@@ -134,7 +134,8 @@ loop do
               write_event_timer()
               # set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
               # 
-              start_new_streamed_script(78,7,event_idx,event_x,event_y,event_z,event_radius)
+              # start_new_streamed_script(78,7,event_idx,event_x,event_y,event_z,event_radius)
+              start_new_streamed_script(79,event_idx,event_x,event_y,event_z,event_radius)
             else
               # do nothing (no free slots)
               nop()

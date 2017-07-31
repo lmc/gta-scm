@@ -42,7 +42,7 @@
   % (start_new_streamed_script ((int8 78) (int8 5) (int8 1) (float32 2262.4) (float32 -1254.8) (float32 23.9) (float32 270.0) (float32 10.0) (end_var_args)))
 
   % spatial
-  (start_new_streamed_script ((int8 78) (int8 6) (end_var_args)))
+  % (start_new_streamed_script ((int8 78) (int8 6) (end_var_args)))
 
   % r1 menu
   (start_new_streamed_script ((int8 78) (int8 8) (end_var_args)))
@@ -55,8 +55,8 @@
   (is_int_var_equal_to_number ((var ext79_count) (int8 0)))
 (goto_if_false ((label external_loader_idle_2)))
 
-% 79
-(start_new_streamed_script ((int8 79) (end_var_args)))
+% 79 - spatial
+(start_new_streamed_script ((int8 79) (int8 -1) (end_var_args)))
 
 (labeldef external_loader_idle_2)
 

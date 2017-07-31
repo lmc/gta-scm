@@ -3,7 +3,7 @@ script(name: "xhelpv2") do
 
   def add_to_d(d)
     d += 0.25
-    # debugger
+    debugger
     return d
   end
 
@@ -69,7 +69,6 @@ script(name: "xhelpv2") do
     y = 1500.0
     z = 2000.0
 
-    # FIXME: symbols exporter does not correctly detect multi-assign instance vars
     @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,@input_arg)
 
     @c = 0
