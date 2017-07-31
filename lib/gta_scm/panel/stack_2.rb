@@ -97,7 +97,7 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
     self.settings[:breakpoint_thread] = self.controller.settings[:breakpoint_thread] if self.controller
 
-
+    stack_offset = process.scm_var_offset_for(:_stack)
     stack_size = process.read_scm_var(:_ss,:int)
     stack_counter = process.read_scm_var(:_sc,:int)
     stack_check1  = process.read_scm_var(:_canary1,:int)
@@ -106,16 +106,17 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
 
     data = []
 
-
-    data << ["stack size: #{stack_size}"]
-    data << ["stack counter: #{stack_counter}"]
-    if stack_check1 == stack_check2 && stack_check2 == stack_check3
-      data << ["stack integrity intact"]
+    stack_integral = stack_check1 == stack_check2 && stack_check2 == stack_check3
+    # stack_integral = false
+    if stack_integral
+      integrity = "integral"
     else
-      data << ["!!!! STACK INTEGRITY COMPROMISED !!!"]
-      data << ["1: #{stack_check1}, 2: #{stack_check2}, 3: #{stack_check3}"]
+      integrity = ""
     end
-
+    data << ["stack: #{stack_counter} / #{stack_size},  offset: #{stack_offset} .. #{stack_offset+(stack_size*4)} (#{stack_size}),  #{integrity}"]
+    if !stack_integral
+      data << ["STACK CHECK FAIL: 1: #{stack_check1}, 2: #{stack_check2}, 3: #{stack_check3}"]
+    end
 
     if thread_id = self.settings[:breakpoint_thread]
 
@@ -163,7 +164,9 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
             data << ["-"*(self.width-4)]
           # end
           data << ["#{return_offset - 7} - #{frame["type"]} #{frame["name"]} +#{return_offset - frame["range_offsets"][0] - 7} #{calls_text}"]
-          data << ["-"*(self.width-4)]
+          if frame["stack"].size > 0 && idx != return_stack.size - 1
+            data << ["-"*(self.width-4)]
+          end
           # data << ["  stack #{frame["stack"].size}"]
           frame["stack"].each do |(sv_i,(sv_name,sv_type,sv_bucket))|
             name = variable_stack_index == 0 ? :_stack : :"_stack_#{variable_stack_index}"

@@ -9,9 +9,9 @@ class GtaScm::Panel::ThreadSelector < GtaScm::Panel::Base
   def set_text(process = nil)
     if process
       # str = "Threads (#{process.threads.select(&:active?).size}) - w/s: prev/next"
-      str = "Threads (#{process.cached_threads.select(&:active?).size})"
+      str = "Scripts (#{process.cached_threads.select(&:active?).size})"
     else
-      str = "Threads"
+      str = "Scripts"
     end
     str = str.center(self.width)
     self.elements[:header].bg = self.theme_get(:header_bg)
