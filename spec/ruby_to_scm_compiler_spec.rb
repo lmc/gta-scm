@@ -1455,7 +1455,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (add_val_to_int_var ((var _sc) (int8 1)))
           (goto ((label function_end_my_stack_function)))
           (labeldef function_my_stack_function)
@@ -1473,7 +1473,7 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_int_to_var_int ((var_array _stack+8 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
           (gosub ((label function_my_stack_function)))
           (set_lvar_int_to_var_int ((lvar 0 local_var int) (var_array _stack-0 _sc 32 (int32 var))))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
       # won't know var types at function definition
@@ -1498,7 +1498,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (add_val_to_int_var ((var _sc) (int8 4)))
           (goto ((label function_end_my_stack_function)))
           (labeldef function_my_stack_function)
@@ -1516,7 +1516,7 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_float_to_var_float ((var_array _stack-12 _sc 32 (float32 var)) (var_array _stack-0 _sc 32 (float32 var))))
           (set_var_float_to_var_float ((var_array _stack-8 _sc 32 (float32 var)) (var_array _stack+4 _sc 32 (float32 var))))
           (set_var_float_to_var_float ((var_array _stack-4 _sc 32 (float32 var)) (var_array _stack+8 _sc 32 (float32 var))))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1538,7 +1538,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (goto ((label function_end_f2)))
           (labeldef function_f2)
           (add_val_to_int_var ((var _sc) (int8 1)))
@@ -1559,7 +1559,7 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_int_to_lvar_int ((var_array _stack+4 _sc 32 (int32 var)) (lvar 0 b int)))
           (gosub ((label function_f1)))
           (set_lvar_int_to_var_int ((lvar 1 a int) (var_array _stack-0 _sc 32 (int32 var))))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1582,7 +1582,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (add_val_to_int_var ((var _sc) (int8 2)))
           (set_var_int ((var_array _stack-8 _sc 32 (int32 var)) (int32 0)))
           (goto ((label function_end_timeout_time)))
@@ -1597,7 +1597,7 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_int_to_var_int ((var_array _stack+4 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
           (gosub ((label function_timeout_time)))
           (set_var_int_to_var_int ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-0 _sc 32 (int32 var))))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1620,7 +1620,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (add_val_to_int_var ((var _sc) (int8 1)))
           (goto ((label function_end_modulo)))
           (labeldef function_modulo)
@@ -1640,7 +1640,7 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_int ((var_array _stack+8 _sc 32 (int32 var)) (int32 6)))
           (gosub ((label function_modulo)))
           (set_var_int_to_var_int ((var_array _stack-4 _sc 32 (int32 var)) (var_array _stack-0 _sc 32 (int32 var))))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1675,7 +1675,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (add_val_to_int_var ((var 10236) (int8 5)))
           (EmitNodes nil)
           (EmitNodes t)
@@ -1707,7 +1707,7 @@ describe GtaScm::RubyToScmCompiler do
           (labeldef label_if_14)
           (goto ((label label_loop_start_8)))
           (labeldef label_loop_end_9)
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1752,7 +1752,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (add_val_to_int_var ((var _sc) (int8 6)))
           (set_var_int ((var_array _stack-24 _sc 32 (int32 var)) (int32 6)))
           (set_var_int ((var_array _stack-20 _sc 32 (int32 var)) (int32 1000)))
@@ -1774,7 +1774,7 @@ describe GtaScm::RubyToScmCompiler do
           (wait ((int32 100)))
           (cset_lvar_float_to_lvar_int ((lvar 3 d float) (lvar 0 a int)))
           (add_val_to_float_lvar ((lvar 3 d float) (float32 10.0)))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1796,12 +1796,12 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (set_var_int ((dmavar 500 int) (int32 1)))
           (wait ((dmavar 500 int)))
           (set_lvar_int ((lvar 30 30 int) (int32 2)))
           (wait ((lvar 30 30 int)))
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1830,7 +1830,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (set_var_int ((var index int) (int32 0)))
           (EmitNodes nil)
           (set_var_int ((var cars) (int8 0)))
@@ -1854,7 +1854,7 @@ describe GtaScm::RubyToScmCompiler do
           (goto_if_false ((label label_if_2)))
           (wait ((int32 0)))
           (labeldef label_if_2)
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -1940,7 +1940,7 @@ describe GtaScm::RubyToScmCompiler do
       RUBY
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
-          (labeldef start_script)
+          (labeldef start_script_test)
           (set_var_float ((var coords_x float) (float32 123.4)))
           (set_var_float ((var coords_y float) (float32 456.7)))
           (set_var_float ((var coords_z float) (float32 89.0)))
@@ -1974,7 +1974,7 @@ describe GtaScm::RubyToScmCompiler do
           (goto_if_false ((label label_if_2)))
           (set_var_float ((var coords_x float) (float32 1.0)))
           (labeldef label_if_2)
-          (labeldef end_script)
+          (labeldef end_script_test)
         LISP
       }
     end
@@ -2022,21 +2022,21 @@ describe GtaScm::RubyToScmCompiler do
     end
 
 
-    describe "functions as arguments" do
-      let(:ruby){ <<-RUBY
-        script() do
-        def test
-        end
-        end
-        # gosub(test)
-        # gosub(&test)
-        # gosub([:label,:foo])
-      RUBY
-      }
-      it { is_expected.to eql <<-LISP.strip_heredoc.strip
-        LISP
-      }
-    end
+    # describe "functions as arguments" do
+    #   let(:ruby){ <<-RUBY
+    #     script() do
+    #     def test
+    #     end
+    #     end
+    #     # gosub(test)
+    #     # gosub(&test)
+    #     # gosub([:label,:foo])
+    #   RUBY
+    #   }
+    #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
+    #     LISP
+    #   }
+    # end
 
   end
 

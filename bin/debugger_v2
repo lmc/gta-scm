@@ -96,6 +96,8 @@ $panel_manager.panels[:breakpoint].controller = $panel_manager.panels[:thread_se
 $panel_manager.add_panel :gvars, GtaScm::Panel::Gvars2.new($panel_manager,13,ty+43,52,40)
 # $panel_manager.add_panel :mission_skipper, GtaScm::Panel::MissionSkipper.new($panel_manager,63,ty+15,28,32)
 
+$panel_manager.add_panel :logger, GtaScm::Panel::Logger2.new($panel_manager,66,40,59,30)
+
 
 screen = RuTui::Screen.new
 

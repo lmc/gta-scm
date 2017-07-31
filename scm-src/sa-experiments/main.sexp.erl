@@ -153,19 +153,19 @@
 % (start_new_script ((label interior_teleporter) (int8 -1) (end_var_args)))
 % (start_new_script ((label test) (int8 -1) (end_var_args)))
 % (start_new_script ((label thread_corona) (float32 2500.0) (float32 -1670.0) (float32 20.0) (float32 8.0) (int8 9) (int16 255) (int16 255) (int16 255) (end_var_args)))
-% (start_new_script ((label helper_v2) (float32 0.5) (end_var_args)))
+(start_new_script ((label helper_v2) (float32 0.5) (end_var_args)))
 % (start_new_script ((label helper_v2) (float32 0.25) (end_var_args)))
 % (start_new_script ((label helper_v2) (float32 0.75) (end_var_args)))
 (IncludeRuby "helper")
 
-% (labeldef helper_v2)
-% (script_name ((vlstring "xhelpv2")))
+(labeldef helper_v2)
+(script_name ((vlstring "xhelpv2")))
 % (wait ((int8 0)))
 % % (terminate_this_script)
 % % (use_text_commands ((int8 0)))
 % % (display_text ((float32 200.0) (float32 100.0) (vlstring "GSCM100")))
 % % (goto ((label helper_v2)))
-% (IncludeRuby "helper_v2" (v2 true))
+(IncludeRuby "helper_v2" (v2 true))
 % =====================================
 
 

@@ -5,6 +5,7 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   todo: find out if string var assigns will work
 
 # TODO:
+# share function defs between compiler instances
 # while loops
 # next loop keyword
 # for i in 0..12
@@ -12,6 +13,7 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   $cars = IntegerArray[8]
 #   @coords = Vector3[ 500.0 , 400.0 , 20.0 ]
 #   foo(Vector3[],1000) => foo(0.0,0.0,0.0,1000)
+#   last thing left: instance/stack struct vars
 # functions returning true/false when used in if statements (use temp vars on stack?)
 # switch statements
 # syntax for raw global/local vars (GLOBALS[12]/LOCALS[2]) ($123 / @12)
@@ -192,13 +194,13 @@ class GtaScm::RubyToScmCompiler2
     #     s(:arg, :arg2)),
     #   s(:begin,
     #     [body]
-    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send] )
+    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send,:if] )
       on_function_block( node )
     # when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send] )
     #   debugger
     #   on_function_block( node )
 
-    when node.match( :def , [1] => :args , [2] => [:begin,:return,:send] )
+    when node.match( :def , [1] => :args , [2] => [:begin,:return,:send,:if] )
       on_function_block( node )
 
     # when node.match( :send , [1] => :function )
@@ -309,7 +311,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1,0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1,1] => :[] , [1,2] => [:lvar,:ivar,:gvar,:int,:float,:string] )
       on_assign( node )
 
-    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && node[1].match(/=$/)
+    when node.match( :send, [0] => [:lvar,:ivar,:gvar] ) && node[1].match(/\w+=$/)
       on_assign( node )
 
     # Multi-assignment
@@ -356,6 +358,9 @@ class GtaScm::RubyToScmCompiler2
 
     when node.match( :send , [1] => [:debugger])
       on_debugger(node)
+
+    when node.match( :send , [1] => [:log,:puts] , [2] => :str)
+      on_log(node)
 
     # Return
     when node.match( :return )
@@ -539,6 +544,9 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def resolved_ivar_type(name)
+    if name == :@timer_a || name == :@timer_b
+      return :int
+    end
     if !self.functions[nil][:instances][ivar_name(name)]
       debugger
     end
@@ -1007,6 +1015,8 @@ class GtaScm::RubyToScmCompiler2
       on_gvar_assign(node,rhs)
     when node.match( :op_asgn , [0] => [:lvasgn] )
       on_lvar_assign(node[0],rhs)
+    when node.match( :op_asgn , [0] => [:gvasgn] )
+      on_gvar_assign(node[0],rhs)
     when node.match( :send , [0] => [:lvar] )
       on_lvar_assign(node[0],rhs)
     when node.match( :op_asgn , [0] => [:ivasgn] )
@@ -1124,6 +1134,8 @@ class GtaScm::RubyToScmCompiler2
 
     false_label = generate_label!(:if)
 
+    # debugger
+
     [
       *andor_instruction(andor_value),
       *conditions,
@@ -1183,6 +1195,11 @@ class GtaScm::RubyToScmCompiler2
           raise "unknown condition node #{condition_node.inspect}"
         end
       end
+
+      if conditions[0][0].is_a?(Array)
+        conditions = [ *conditions[0] , *conditions[1..-1] ]
+      end
+
 
       if parent_logical_operator
         return conditions
@@ -1878,6 +1895,20 @@ class GtaScm::RubyToScmCompiler2
     [
       [:gosub,[self.constants[:DEBUGGER_ADDR]]]
     ]
+  end
+
+  def on_log(node)
+    str = node[2][0] + "\0"
+    groups = str.chars.in_groups_of(4,"\0")
+    ints = groups.map do |group|
+      group.join.unpack("l<")
+    end
+    instructions = []
+    ints.each do |int|
+      call_node = sexp(:send,[nil,:log_char4,sexp(:int,int)])
+      instructions += transform_node(call_node)
+    end
+    instructions
   end
 
 
