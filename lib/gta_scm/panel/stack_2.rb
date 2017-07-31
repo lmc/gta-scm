@@ -154,7 +154,9 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
 
       variable_stack_index = 0
       return_stack.each_with_index do |return_offset,idx|
-        frame = get_frame_for_offset(frames,return_offset,process)
+        frame = get_frame_for_offset(frames,return_offset,process,thread.base_pc_scm,thread.name.strip)
+        f_return_offset = return_offset
+        f_return_offset -= thread.base_pc_scm if thread.base_pc_scm && return_offset > 4_000_000
         if frame
           calls_text = ""
           if next_frame = get_frame_for_offset(frames,return_stack[idx+1],process)
@@ -163,7 +165,7 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
           # if idx != 0
             data << ["-"*(self.width-4)]
           # end
-          data << ["#{return_offset - 7} - #{frame["type"]} #{frame["name"]} +#{return_offset - frame["range_offsets"][0] - 7} #{calls_text}"]
+          data << ["#{f_return_offset - 7} - #{frame["type"]} #{frame["name"]} +#{f_return_offset - frame["range_offsets"][0] - 7} #{calls_text}"]
           if frame["stack"].size > 0 && idx != return_stack.size - 1
             data << ["-"*(self.width-4)]
           end
@@ -186,7 +188,7 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
         else
           data << ["-"*(self.width-4)]
           # data << ["#{return_offset} - debug_breakpoint"]
-          data << ["unknown #{return_offset}"]
+          data << ["unknown #{f_return_offset}"]
           data << ["-"*(self.width-4)]
         end
       end
@@ -208,15 +210,19 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
 
   end
 
-  def get_frame_for_offset(frames,offset,process = nil)
+  def get_frame_for_offset(frames,offset,process = nil,base_pc = nil,script_name = nil)
     breakpoint_offset = process.scm_label_offset_for(:debug_breakpoint)# rescue 0
     range_offsets = [(breakpoint_offset-64),(breakpoint_offset+256)]
     if (range_offsets[0]..range_offsets[1]).include?(offset)
       return { "name"=>"debug_breakpoint", "type"=>"routine", "range_offsets"=>range_offsets, "stack"=>[] }
     end
 
+    if base_pc
+      offset -= base_pc
+    end
+
     frames.select { |frame|
-      Range.new(frame["range_offsets"][0],frame["range_offsets"][1]).include?(offset)
+      Range.new(frame["range_offsets"][0],frame["range_offsets"][1]).include?(offset) && (script_name ? frame["script"].strip == script_name.strip : true)
     }.sort_by { |frame|
       frame["range_offsets"][1] - frame["range_offsets"][0]
     }.first

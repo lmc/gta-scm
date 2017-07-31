@@ -40,6 +40,8 @@ class GtaScm::Assembler::Base
   attr_accessor :compiler_data
   attr_accessor :symbols_data
 
+  attr_accessor :externals_label_map
+
 
   def initialize(input_dir)
     self.input_dir = input_dir
@@ -60,6 +62,8 @@ class GtaScm::Assembler::Base
     self.constants_to_values ||= {}
     self.compiler_data = nil
     self.symbols_data = []
+
+    self.externals_label_map = {}
   end
 
   def assemble(scm,out_path)
@@ -347,6 +351,8 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
 
           if args[:v2]
             compiler = GtaScm::RubyToScmCompiler2.new()
+            compiler.external_id = self.external_id
+            compiler.label_type = !!args[:external] ? :mission_label : :label
             ruby = compiler.transform_source(ruby)
             parsed = Parser::CurrentRuby.parse(ruby)
             # compiler.scm = @scm
@@ -440,6 +446,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iasm.external = true
           iasm.external_id = external_id
           iasm.copy_touchups_from_parent!
+          # iasm.symbols_data = self.symbols_data
 
           def iasm.install_features!
             class << self
@@ -461,6 +468,10 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           self.external_offsets[external_id] = [file,self.nodes.size]
           self.include_sizes.merge!(iasm.include_sizes)
           self.compiler_data = iasm.compiler_data
+          self.symbols_data += iasm.symbols_data
+          self.symbols_data.uniq!
+
+          self.externals_label_map[external_id] = iasm.label_map if iasm.respond_to?(:label_map)
           n
 
         when :Rawhex
@@ -792,6 +803,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
     self.constants_to_values = self.parent.constants_to_values
     self.vars_to_use = self.parent.vars_to_use
     self.compiler_data = self.parent.compiler_data
+    self.symbols_data = self.parent.symbols_data
 
     self.allocated_vars = self.parent.allocated_vars if self.respond_to?(:allocated_vars) && self.parent.respond_to?(:allocated_vars)
 
@@ -809,11 +821,17 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
       # end
 
       sd[:frames].each do |frame|
-        # debugger
-        frame[:range_offsets] = [
-          self.label_map[ frame[:range_labels][0] ],
-          self.label_map[ frame[:range_labels][1] ],
-        ]
+        if frame[:external_id]
+          frame[:range_offsets] = [
+            self.external_label_map[frame[:external_id]][ frame[:range_labels][0] ],
+            self.external_label_map[frame[:external_id]][ frame[:range_labels][1] ],
+          ]
+        else
+          frame[:range_offsets] = [
+            self.label_map[ frame[:range_labels][0] ],
+            self.label_map[ frame[:range_labels][1] ],
+          ]
+        end
       end
 
     end

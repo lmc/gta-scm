@@ -20,6 +20,9 @@
 (goto ((mission_label ext79_failsafe)))
 
 (labeldef ext79_spatial_manager)
+% (labeldef ext79_test)
+% (IncludeRuby "helper_v2" (v2 true) (external true))
+% (start_new_script ((mission_label ext79_test) (end_var_args)))
 (IncludeRuby "spatial" (external true))
 
 (labeldef ext79_spatial_script_000)

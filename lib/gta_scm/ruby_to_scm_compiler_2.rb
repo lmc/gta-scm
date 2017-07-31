@@ -73,6 +73,7 @@ class GtaScm::RubyToScmCompiler2
   attr_accessor :constants
   attr_accessor :scripts
   attr_accessor :struct_definitions
+  attr_accessor :external_id
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -110,6 +111,7 @@ class GtaScm::RubyToScmCompiler2
     self.struct_definitions = {
       Vector3: { x: :float, y: :float, z: :float }
     }
+    self.external_id = nil
   end
 
   def opcode(name)
@@ -867,7 +869,7 @@ class GtaScm::RubyToScmCompiler2
       end
       body += transform_node(node[2])
       if hash[:loop]
-        body << [:goto,[[:label,loop_label]]]
+        body << [:goto,[[self.label_type,loop_label]]]
       end
     ensure
       self.main_block_hash = nil
@@ -1111,7 +1113,7 @@ class GtaScm::RubyToScmCompiler2
     [
       [:labeldef,loop_start],
       *body,
-      [:goto,[[:label,loop_start]]],
+      [:goto,[[self.label_type,loop_start]]],
       [:labeldef,loop_end]
     ]
   end
@@ -2161,12 +2163,17 @@ class GtaScm::RubyToScmCompiler2
     frames = []
 
     frame = {
+      script: script_name,
       type: :script,
       name: script_name,
       range_labels: [:"start_script_#{script_name}",:"end_script_#{script_name}"],
       range_offsets: [], # gets filled in later
       stack: {}
     }
+
+    if self.external_id
+      frame[:external_id] = self.external_id
+    end
 
     current_stack_vars(nil).each do |var_name|
       frame[:stack][ resolved_lvar_stack_offset(var_name,nil) ] = [var_name,resolved_lvar_type(var_name,nil),:local]
@@ -2180,12 +2187,17 @@ class GtaScm::RubyToScmCompiler2
       next if function_name.nil?
 
       frame = {
+        script: script_name,
         type: :function,
         name: function_name,
         range_labels: [:"function_#{function_name}",:"function_end_#{function_name}"],
         range_offsets: [], # gets filled in later
         stack: {}
       }
+
+      if self.external_id
+        frame[:external_id] = self.external_id
+      end
 
       buckets = current_stack_vars_buckets(function_name)
       buckets.each_with_index do |bucket,bucket_id|

@@ -1,5 +1,6 @@
 
 script(name: "xhelpv2") do
+  script_name("xhelpv2")
 
   def add_to_d(d)
     d += 0.25
@@ -68,6 +69,8 @@ script(name: "xhelpv2") do
     x = 1000.0
     y = 1500.0
     z = 2000.0
+
+    @input_arg = 1.0
 
     @x,@y,@z = linear_interpolate(0.0,0.0,0.0,x,y,z,@input_arg)
 
