@@ -49,10 +49,30 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
       to_read = buffer_size if buffer_index > buffer_size
 
       buffer = []
+      next_char4_is = nil
       to_read.times do |i|
         i = i == 0 ? "" : "_#{i}"
         char4 = process.read_scm_var(:"debug_logger_buffer#{i}",nil,4)
-        buffer << char4
+        int32 = GtaScm::Types.bin2value(char4,:int32)
+
+        case next_char4_is
+        when :int32
+          buffer << int32.to_s
+          next_char4_is = nil
+        when :float32
+          float32 = GtaScm::Types.bin2value(char4,:float32)
+          buffer << float32.to_s
+          next_char4_is = nil
+        else
+          case int32
+          when -1
+            next_char4_is = :int32
+          when -2
+            next_char4_is = :float32
+          else
+            buffer << char4
+          end
+        end
       end
 
       new_buffer = []

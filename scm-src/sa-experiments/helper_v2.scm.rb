@@ -30,7 +30,9 @@ script(name: "xhelpv2") do
   main(wait: 100) do
     if @timer_a > 2000 && @done_a == 0
       # log_char4(3285089)
-      log("@timer_a > 2000")
+      log("@timer_a = ")
+      log_int(@timer_a)
+      # log("@timer_a = #{@timer_a}!")
       @done_a = 1
     end
     # if @timer_a > 2000
@@ -39,6 +41,8 @@ script(name: "xhelpv2") do
     if @timer_b > 5000 && @done_b == 0
       # log_char4(3481698)
       log("@timer_b > 5000")
+      @woah = 420.69
+      log_float(@woah)
       @done_b = 1
     end
   end

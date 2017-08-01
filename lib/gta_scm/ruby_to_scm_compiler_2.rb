@@ -5,6 +5,10 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   todo: find out if string var assigns will work
 
 # TODO:
+# some way to assign variable allocator assignments
+# properly emit (end_var_args) for (start_new_script)
+# emit smallest immediate int size possible
+# re-implement routines{} block to skip jumps over function definitions
 # share function defs between compiler instances
 # while loops
 # next loop keyword
@@ -359,7 +363,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :send , [1] => [:debugger])
       on_debugger(node)
 
-    when node.match( :send , [1] => [:log,:puts] , [2] => :str)
+    when node.match( :send , [1] => [:log,:puts,:log_int,:log_float] , [2] => [:str,:dstr,:ivar,:gvar,:lvar])
       on_log(node)
 
     # Return
@@ -1898,19 +1902,37 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def on_log(node)
-    str = node[2][0] + "\0"
-    groups = str.chars.in_groups_of(4,"\0")
-    ints = groups.map do |group|
-      group.join.unpack("l<")[0]
-    end
+    logger_name = node[1]
     instructions = []
-    ints.each do |int|
-      # call_node = sexp(:send,[nil,:log_char4,sexp(:int,int)])
-      # instructions += transform_node(call_node)
-      instructions << [:assign,[ [:var,:debug_logger_argument], [:int32,int] ]]
-      instructions << [:gosub,[ [:label,:function_debug_logger] ]]
+
+    case logger_name
+    when :log_int
+      var = on_var_use(node[2])
+      instructions += logger_call(:function_debug_logger,[:int32,-1])
+      instructions += logger_call(:function_debug_logger,var)
+    when :log_float
+      var = on_var_use(node[2])
+      instructions += logger_call(:function_debug_logger,[:int32,-2])
+      instructions += logger_call(:function_debug_logger,var)
+    else
+      # debugger
+      str = node[2][0] + "\0"
+      groups = str.chars.in_groups_of(4,"\0")
+      ints = groups.map do |group|
+        group.join.unpack("l<")[0]
+      end
+      ints.each do |int|
+        instructions += logger_call(:function_debug_logger,[:int32,int])
+      end
     end
     instructions
+  end
+
+  def logger_call(function_name,argument)
+    [
+      [:assign,[ [:var,:debug_logger_argument], argument ]],
+      [:gosub,[ [:label,:"#{function_name}"] ]]
+    ]
   end
 
 
