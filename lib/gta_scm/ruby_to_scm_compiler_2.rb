@@ -5,7 +5,8 @@ require 'gta_scm/ruby_to_scm_compiler'
 #   todo: find out if string var assigns will work
 
 # TODO:
-# some way to assign variable allocator assignments
+# inline logging `log("var = #{var}")`
+# some way to assign variable allocator assignments (ie. put specific vars in the temp bucket)
 # properly emit (end_var_args) for (start_new_script)
 # emit smallest immediate int size possible
 # re-implement routines{} block to skip jumps over function definitions
@@ -34,6 +35,8 @@ require 'gta_scm/ruby_to_scm_compiler'
 
 =begin
 helper methods:
+
+TODO: check stack canaries when yielding? high performance + will still catch/blame errors
 
 def stack_verify_limit(next_up)
   next_up += $_sc
@@ -70,6 +73,8 @@ class GtaScm::RubyToScmCompiler2
   attr_accessor :opcode_names
   attr_accessor :functions
   attr_accessor :current_function
+  attr_accessor :in_declare_block
+  attr_accessor :in_functions_block
   attr_accessor :last_child_was_return
   attr_accessor :label_type
   attr_accessor :loop_labels
@@ -101,6 +106,8 @@ class GtaScm::RubyToScmCompiler2
     self.opcodes.load_definitions!("san-andreas")
     self.opcode_names = Hash[self.opcodes.names2opcodes.map{|k,v| [k.downcase.to_sym,k]}]
     self.current_function = nil
+    self.in_functions_block = false
+    self.in_declare_block = false
     self.label_type = :label
     self.loop_labels = []
     self.stack_locations = {
@@ -206,6 +213,9 @@ class GtaScm::RubyToScmCompiler2
 
     when node.match( :def , [1] => :args , [2] => [:begin,:return,:send,:if] )
       on_function_block( node )
+
+    when node.match( :block , [0] => :send , [0,1] => :functions , [1] => [:args] , [2] => [:begin,:return,:send,:if,:def] )
+      on_functions_block( node )
 
     # when node.match( :send , [1] => :function )
 
@@ -890,6 +900,36 @@ class GtaScm::RubyToScmCompiler2
     body
   end
 
+  def on_functions_block(node)
+    hash = eval_hash_node(node[0][2]) || {}
+
+    begin
+      self.in_functions_block = true
+      body = transform_node(node[2])
+    ensure
+      self.in_functions_block = false
+    end
+
+    label_name = generate_label!(:end_functions)
+    label_def = [
+      [:labeldef,label_name]
+    ]
+    goto = [
+      [:goto,[[:label,label_name]]]
+    ]
+
+    if hash[:bare]
+      goto = []
+      label_def = []
+    end
+
+    [
+      *goto,
+      *body,
+      *label_def
+    ]
+  end
+
   # Function declare
   # 
   # function(:name) do |arg1|
@@ -933,9 +973,17 @@ class GtaScm::RubyToScmCompiler2
       end
     end
 
+    goto = [
+      [:goto,[[self.label_type,:"function_end_#{self.current_function}"]]]
+    ]
+
+    if self.in_functions_block
+      goto = []
+    end
+
 
     [
-      [:goto,[[self.label_type,:"function_end_#{self.current_function}"]]],
+      *goto,
       [:labeldef,:"function_#{self.current_function}"],
       *prologue,
       *body,
@@ -1578,7 +1626,7 @@ class GtaScm::RubyToScmCompiler2
     array_type = array_class_type(node)
 
     instructions = []
-    instructions << [:EmitNodes,false]
+    instructions << [:EmitNodes,false] if !self.in_declare_block
 
     case node.type
     when :gvasgn
@@ -1597,7 +1645,7 @@ class GtaScm::RubyToScmCompiler2
       raise "cannot use local vars as arrays"
     end
 
-    instructions << [:EmitNodes,true]
+    instructions << [:EmitNodes,true] if !self.in_declare_block
     return instructions
   end
 
@@ -1742,11 +1790,15 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def on_declare_block(node)
+    raise "can't nest declare blocks" if self.in_declare_block
+    self.in_declare_block = true
     [
       [:EmitNodes, false],
       *transform_node(node[2]),
       [:EmitNodes, true]
     ]
+  ensure
+    self.in_declare_block = false
   end
 
   def on_declare_call(node)

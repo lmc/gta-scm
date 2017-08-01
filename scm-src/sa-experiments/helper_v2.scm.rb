@@ -2,28 +2,28 @@
 script(name: "xhelpv2") do
   script_name("xhelpv2")
 
-  # declare do
-    $log_char4_buffer_size = 16
-    $log_char4_buffer_index = 0
-    $log_char4_buffer = IntegerArray[16]
-  # end
+  # # declare do
+  #   $log_char4_buffer_size = 16
+  #   $log_char4_buffer_index = 0
+  #   $log_char4_buffer = IntegerArray[16]
+  # # end
 
-  # put method in breakpoint script and export it
-  # def log_char4(int_char4)
-  #   # TODO: use global vars instead of stack argument?
-  #   # TODO: will this work?
-  #   # if $log_char4_buffer_size == 0
-  #   #   $log_char4_buffer_size = 16
-  #   #   $log_char4_buffer_index = 0
-  #   #   define do
-  #   #     $log_char4_buffer = IntegerArray[16]
-  #   #   end
-  #   # end
-  #   if $log_char4_buffer_index < $log_char4_buffer_size && $log_char4_buffer_index >= 0
-  #     $log_char4_buffer[$log_char4_buffer_index] = int_char4
-  #   end
-  #   $log_char4_buffer_index += 1
-  # end
+  # # put method in breakpoint script and export it
+  # # def log_char4(int_char4)
+  # #   # TODO: use global vars instead of stack argument?
+  # #   # TODO: will this work?
+  # #   # if $log_char4_buffer_size == 0
+  # #   #   $log_char4_buffer_size = 16
+  # #   #   $log_char4_buffer_index = 0
+  # #   #   define do
+  # #   #     $log_char4_buffer = IntegerArray[16]
+  # #   #   end
+  # #   # end
+  # #   if $log_char4_buffer_index < $log_char4_buffer_size && $log_char4_buffer_index >= 0
+  # #     $log_char4_buffer[$log_char4_buffer_index] = int_char4
+  # #   end
+  # #   $log_char4_buffer_index += 1
+  # # end
 
   @done_a = 0
   @done_b = 0
