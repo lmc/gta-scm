@@ -9,9 +9,9 @@ $breakpoint_repl_ret0 = 0
 $breakpoint_repl_ret1 = 0
 $breakpoint_repl_ret2 = 0
 $breakpoint_repl_ret3 = 0
-$breakpoint_repl_ret4 = 0
-$breakpoint_repl_ret5 = 0
-$breakpoint_repl_ret6 = 0
+# $breakpoint_repl_ret4 = 0
+# $breakpoint_repl_ret5 = 0
+# $breakpoint_repl_ret6 = 0
 # $breakpoint_repl_ret7 = 0
 
 # set $breakpoint_enabled = 0 to disable all

@@ -18,6 +18,7 @@
 % kill all scripts executing in undefined code
 
 (labeldef make_safe_for_save)
+% log("make_safe_for_save")
 % kill threads that will have PCs in undefined code if scm file is uninstalled
 (terminate_all_scripts_with_this_name ((string8 "xdbgrpc")))
 (terminate_all_scripts_with_this_name ((string8 "xextldr")))

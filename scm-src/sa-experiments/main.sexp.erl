@@ -48,10 +48,11 @@
 % 7076 - debug_breakpoint_enabled
 % 7080 - debug_breakpoint_pc
 % 7084 - debug_rpc_feedback_enabled
-(labeldef debug_rpc)
-(Include "debug-rpc")
+% (labeldef debug_rpc)
+% (Include "debug-rpc")
 (labeldef debug_breakpoint)
 (IncludeRuby "debug-breakpoint")
+(IncludeRuby "debug-logger" (v2 true))
 % =====================================
 
 % == Patches ==========================

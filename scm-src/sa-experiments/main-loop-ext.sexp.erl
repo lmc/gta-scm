@@ -24,10 +24,11 @@
 
 % load new features from an unmodded-compatible save
 (labeldef restart_after_save)
-(set_var_int ((dmavar 7088 debug_rpc_enabled) (int8 1)))
-(set_var_int ((dmavar 7084 debug_rpc_feedback_enabled) (int8 1)))
+% log("restart_after_save")
+% (set_var_int ((dmavar 7088 debug_rpc_enabled) (int8 1)))
+% (set_var_int ((dmavar 7084 debug_rpc_feedback_enabled) (int8 1)))
 
-(start_new_script ((label debug_rpc) (end_var_args)))
+% (start_new_script ((label debug_rpc) (end_var_args)))
 (start_new_script ((label external_loader) (end_var_args)))
 (start_new_script ((label helper) (end_var_args)))
 

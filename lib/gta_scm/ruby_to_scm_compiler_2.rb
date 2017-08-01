@@ -1901,12 +1901,14 @@ class GtaScm::RubyToScmCompiler2
     str = node[2][0] + "\0"
     groups = str.chars.in_groups_of(4,"\0")
     ints = groups.map do |group|
-      group.join.unpack("l<")
+      group.join.unpack("l<")[0]
     end
     instructions = []
     ints.each do |int|
-      call_node = sexp(:send,[nil,:log_char4,sexp(:int,int)])
-      instructions += transform_node(call_node)
+      # call_node = sexp(:send,[nil,:log_char4,sexp(:int,int)])
+      # instructions += transform_node(call_node)
+      instructions << [:assign,[ [:var,:debug_logger_argument], [:int32,int] ]]
+      instructions << [:gosub,[ [:label,:function_debug_logger] ]]
     end
     instructions
   end
