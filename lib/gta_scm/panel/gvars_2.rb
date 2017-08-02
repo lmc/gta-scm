@@ -3,19 +3,35 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
     super
     self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
     set_text
-    self.elements[:table] = RuTui::Table.new({
+    # self.elements[:table] = RuTui::Table.new({
+    #   x: self.dx(1),
+    #   y: self.dy(1),
+    #   table: [["","","",""]],
+    #   cols: [
+    #     { title: "", length: 5 },
+    #     { title: "", length: 3 },
+    #     { title: "", length: self.width - 33 },
+    #     { title: "", length: 11 },
+    #   ],
+    #   header: false,
+    #   hover: RuTui::Theme.get(:highlight),
+    #   hover_fg: RuTui::Theme.get(:highlight_fg),
+    # })
+    table(:table,{
       x: self.dx(1),
       y: self.dy(1),
-      table: [["","","",""]],
-      cols: [
-        { title: "", length: 5 },
-        { title: "", length: 3 },
-        { title: "", length: self.width - 33 },
-        { title: "", length: 11 },
-      ],
+      width: self.width,
+      height: 20,
+      columns: {
+        offset:   { width: 5, header: "GVar" },
+        type:     { width: 3, header: "Typ" },
+        name:     { width: 1.0 },
+        value:    { width: 12, align: :right }
+      },
       header: false,
-      hover: RuTui::Theme.get(:highlight),
-      hover_fg: RuTui::Theme.get(:highlight_fg),
+      scrollable: true,
+      scroll_bar: true,
+      selectable: true,
     })
     self.settings[:gvars] = []
     self.settings[:types] = []
@@ -106,7 +122,7 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
 
     range = self.settings[:gvars]
 
-    range = range[ (self.settings[:offset])..(self.settings[:offset] + self.settings[:rows])]
+    # range = range[ (self.settings[:offset])..(self.settings[:offset] + self.settings[:rows])]
 
     data = range.map.each_with_index do |gvar,idx|
       idx += self.settings[:offset]
@@ -121,11 +137,21 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
 
     # data = data[38..-1]
 
-    data = self.panel_list(data,self.height - 3,[["","",""]])
+    # data = self.panel_list(data,self.height - 3,[["","",""]])
 
-    self.elements[:table].clear_highlight!
-    self.elements[:table].highlight(self.settings[:selected_gvar] - self.settings[:offset])
-    self.elements[:table].set_table(data)
+    # self.elements[:table].clear_highlight!
+    # self.elements[:table].highlight(self.settings[:selected_gvar] - self.settings[:offset])
+    # self.elements[:table].set_table(data)
+
+    table_style(:table) do |row,col,char_idx,char,col_value,is_highlighted_row|
+      if is_highlighted_row
+        [1,2,char]
+      else
+        [1,3,char]
+      end
+    end
+
+    table_set(:table,data)
   end
 
   def input(key,is_attached,process)
@@ -149,9 +175,11 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
   def focused_input(key,is_attached,process)
     case key
     when :up
-      self.settings[:selected_gvar] -= 1
+      # self.settings[:selected_gvar] -= 1
+      table_scroll_selected_row(:table,-1)
     when :down
-      self.settings[:selected_gvar] += 1
+      # self.settings[:selected_gvar] += 1
+      table_scroll_selected_row(:table,+1)
     end
     if self.settings[:selected_gvar] > (self.settings[:offset] + self.settings[:rows])
       self.settings[:offset] += 1

@@ -90,6 +90,7 @@ class RuTui::Table
 
   attr_accessor :fg
   attr_accessor :bg
+  attr_accessor :cell_style_block
 
   def initialize_with_highlight_fg(options)
     initialize_without_highlight_fg(options)
@@ -161,28 +162,47 @@ class RuTui::Table
       _obj = []
       _obj << RuTui::Pixel.new(@pixel.fg,@pixel.bg,"|") if @ascii
       line.each_with_index do |col, index|
-        # fg = @fg
-        fg = @cols[index][:color] if !@cols[index].nil? and !@cols[index][:color].nil?
-        fg = @highlight_lines.include?(lindex) ? @highlight_line_color : fg if @highlight_lines
-        fg = @highlight_line_colours[lindex] if @highlight_line_colours.andand[lindex] && @highlight_lines
 
-        if @highlight_direction == :vertical
-          if index == @highlight
-            bg = @hover
-          else
-            bg = @bg
+        if self.cell_style_block
+
+        else
+
+          # fg = @fg
+          fg = @cols[index][:color] if !@cols[index].nil? and !@cols[index][:color].nil?
+          fg = @highlight_lines.include?(lindex) ? @highlight_line_color : fg if @highlight_lines
+          fg = @highlight_line_colours[lindex] if @highlight_line_colours.andand[lindex] && @highlight_lines
+
+          if @highlight_direction == :vertical
+            if index == @highlight
+              bg = @hover
+            else
+              bg = @bg
+            end
           end
+
         end
 
-
-        chars = col.to_s.split("")
         _obj << nil
         max_chars = nil
         max_chars = @cols[index][:max_length]+1 if !@cols[index].nil? and !@cols[index][:max_length].nil?
         max_chars = @cols[index][:length]+1 if !@cols[index].nil? and !@cols[index][:length].nil?
+
+        # chars = col.to_s.split("")
+        if @cols[index][:align] == :right
+          chars = col.to_s.rjust(max_chars-1," ").split("")
+        else
+          chars = col.to_s.ljust(max_chars-1," ").split("")
+        end
+
         chars.each_with_index do |e, char_count|
           break if !max_chars.nil? and char_count >= max_chars
-          e = RuTui::Ansi.underline(e) if @underline_lines.andand[lindex] && e != " "
+
+          if self.cell_style_block
+            fg,bg,e = self.cell_style_block.call(lindex,index,char_count,e,chars,(lindex == @highlight))
+          else
+            e = RuTui::Ansi.underline(e) if @underline_lines.andand[lindex] && e != " "
+          end
+
           _obj << RuTui::Pixel.new(fg,bg,e)
         end
         (@meta[:max_widths][index]-chars.size+1).times do |i|
