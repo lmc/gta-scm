@@ -27,27 +27,75 @@ SIZE = RuTui::Screen.size
 # puts SIZE
 # exit
 
-RuTui::Theme.create :scm, {
-  :background => RuTui::Pixel.new(236,234,":"),
-  :border     => RuTui::Pixel.new(103,234,"-"),
-  :textcolor  => 250,
-  :unfocused  => 245,
-  # :highlight  => 234,
-  # :highlight_fg  => 134,
-  :highlight  => 244,
-  :highlight_fg  => 234,
-  :rainbow    => [1,3,11,2,4,5],
+# RuTui::Theme.create :scm, {
+#   :background_bg => 234,
+#   :background_fg => 236,
+#   :border_fg => 103,
+#   :background => RuTui::Pixel.new(236,234,":"),
+#   :border     => RuTui::Pixel.new(103,234,"-"),
+#   :textcolor  => 250,
+#   :unfocused  => 245,
+#   # :highlight  => 234,
+#   # :highlight_fg  => 134,
+#   :highlight  => 244,
+#   :highlight_fg  => 234,
+#   :rainbow    => [1,3,11,2,4,5],
 
-  :header_bg => 7,
-  # :header_bg => 3,
-  :header_fg => 0,
-  # :header_fg => 5,
+#   :header_bg => 7,
+#   # :header_bg => 3,
+#   :header_fg => 0,
+#   # :header_fg => 5,
 
-  :repl_fg => 7,
-  :repl_error => 198,
-  :repl_output => 5,
-  :repl_input => 6,
-}
+#   :repl_fg => 7,
+#   :repl_error => 198,
+#   :repl_output => 5,
+#   :repl_input => 6,
+# }
+
+theme = {}
+theme[:bgfg] = 235
+theme[:bgbg] = 233
+theme[:bg] = ":"
+theme[:text_fg] = 247
+theme[:text_bg] = theme[:bgbg]
+theme[:header_fg] = theme[:text_bg]
+theme[:header_bg] = theme[:text_fg]
+theme[:highlight_fg] = theme[:text_bg]
+theme[:highlight_bg] = theme[:text_fg]
+theme[:table_fg] = 242
+theme[:table_fg] = 130
+theme[:table_bg] = theme[:text_bg]
+theme[:table_corner] = "+"
+theme[:table_horizontal] = "-"
+theme[:table_vertical] = "|"
+theme[:table_row_odd_fg] = theme[:text_fg]
+theme[:table_row_odd_bg] = theme[:text_bg]
+theme[:table_row_even_fg] = theme[:text_fg]
+theme[:table_row_even_bg] = theme[:text_bg]
+theme[:scroll_bar_on_fg] = theme[:text_bg]
+theme[:scroll_bar_on_bg] = theme[:text_fg]
+theme[:scroll_bar_on] = " "
+theme[:scroll_bar_off_fg] = theme[:text_fg]
+theme[:scroll_bar_off_bg] = theme[:text_bg]
+theme[:scroll_bar_off] = "|"
+
+theme[:background] = RuTui::Pixel.new(theme[:bgfg],theme[:bgbg],theme[:bg])
+theme[:border] = RuTui::Pixel.new(theme[:table_fg],theme[:table_bg],"-")
+theme[:border_fg] = theme[:bgfg]
+theme[:background_bg] = theme[:bgbg]
+theme[:background_fg] = theme[:bgfg]
+theme[:textcolor] = theme[:text_fg]
+theme[:highlight] = theme[:highlight_bg]
+theme[:highlight_fg] = theme[:highlight_fg]
+theme[:header_bg] = 7
+theme[:header_fg] = 0
+theme[:repl_fg] = 7
+theme[:repl_error] = 198
+theme[:repl_output] = 5
+theme[:repl_input] = 6
+theme[:rainbow] = [1,3,11,2,4,5]
+
+RuTui::Theme.create :scm, theme
 RuTui::Theme.use :scm
 
 

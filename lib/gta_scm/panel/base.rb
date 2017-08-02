@@ -82,23 +82,23 @@ class GtaScm::Panel::Base
   end
 
   def on_focus
-    self.elements.each_pair do |name,element|
-      if name.to_s.match(/header/)
-        # element.fg = RuTui::Theme.get(:textcolor)
-      else
-        element.fg = RuTui::Theme.get(:textcolor)
-      end
-    end
+    # self.elements.each_pair do |name,element|
+    #   if name.to_s.match(/header/)
+    #     # element.fg = RuTui::Theme.get(:textcolor)
+    #   else
+    #     element.fg = RuTui::Theme.get(:textcolor)
+    #   end
+    # end
   end
 
   def on_blur
-    self.elements.each_pair do |name,element|
-      if name.to_s.match(/header/)
+    # self.elements.each_pair do |name,element|
+    #   if name.to_s.match(/header/)
 
-      else
-        element.fg = RuTui::Theme.get(:unfocused)
-      end
-    end
+    #   else
+    #     element.fg = RuTui::Theme.get(:unfocused)
+    #   end
+    # end
   end
 
   def var_value(type,binary)
@@ -149,6 +149,31 @@ class GtaScm::Panel::Base
   end
 =end
 
+  def header(name,options = {})
+    options.reverse_merge!({
+      type: :header,
+      x: nil,
+      y: nil,
+      width: nil,
+      text: "Header",
+      fg: theme_get(:header_fg),
+      bg: theme_get(:header_bg),
+    })
+    self.elements[:"#{name}"] = RuTui::Text.new({
+      x: options[:x],
+      y: options[:y],
+      text: options[:text]
+    })
+    self.special_elements[name] = options
+    header_set(name,options[:text])
+  end
+
+  def header_set(name,text)
+    self.elements[name].fg = self.special_elements[name][:fg]
+    self.elements[name].bg = self.special_elements[name][:bg]
+    self.elements[name].set_text(text.center(self.special_elements[name][:width]))
+  end
+
   def table(name,options = {})
     options.reverse_merge!({
       type: :table,
@@ -165,10 +190,27 @@ class GtaScm::Panel::Base
     })
     options[:rows] = options[:height] - 2
     options[:rows] -= 2 if options[:header]
-    options[:var_width] = options[:width] - 2 - options[:columns].map{|_,c| c[:width].is_a?(Float) ? 0 : c[:width]}.inject(:+) - (options[:columns].size * 3)
+
+    xo,wo = 0,0
+    if options[:scroll_bar] == :left
+      xo,wo = 1, 1
+      self.elements[:"#{name}_scroll_bar"] = RuTui::CustomLine.new({
+        x: options[:x],
+        y: options[:y]+1,
+        length: options[:height]-2,
+        onpixel: RuTui::Pixel.new(0,7," "),
+        offpixel: RuTui::Pixel.new(7,0,"|"),
+      })
+    elsif options[:scroll_bar] == :right
+      xo,wo = 0, 1
+    end
+
+    options[:var_width] = options[:width] - wo - 1 - options[:columns].map{|_,c| c[:width].is_a?(Float) ? 0 : c[:width]}.inject(:+) - (options[:columns].size * 3)
+
+
 
     self.elements[name] = RuTui::Table.new({
-      x: options[:x],
+      x: options[:x]+xo,
       y: options[:y],
       table: [[""]*options[:columns].size],
       cols: options[:columns].map {|col_name,col|
@@ -176,9 +218,12 @@ class GtaScm::Panel::Base
         {title: "#{col[:header] || col_name}", length: width, align: col[:align] }
       },
       header: options[:header],
+      pixel: RuTui::Pixel.new(theme_get(:table_fg),theme_get(:table_bg)," "),
+      bg: theme_get(:table_bg)
     })
 
     self.special_elements[name] = options
+    self.special_elements[name][:max_rows] = 0
 
     if options[:scrollable]
       self.settings[:"#{name}_scroll_offset"] = 0
@@ -192,8 +237,15 @@ class GtaScm::Panel::Base
   def table_set(name,data1,data2 = nil,data3 = nil)
     if data1 && !data2 && !data3
       if self.special_elements[name][:scrollable]
+        self.special_elements[name][:max_rows] = data1.size
         data1 = data1.slice( self.settings[:"#{name}_scroll_offset"] , self.special_elements[name][:rows] )
-
+      end
+      if self.special_elements[name][:scroll_bar]
+        begin_percent = self.settings[:"#{name}_scroll_offset"].to_f
+        begin_percent /= self.special_elements[name][:max_rows]
+        end_percent = (self.settings[:"#{name}_scroll_offset"]+self.special_elements[name][:rows]).to_f
+        end_percent /= self.special_elements[name][:max_rows]
+        self.elements[:"#{name}_scroll_bar"].set_scroll(begin_percent,end_percent)
       end
       self.elements[name].set_table(data1)
     else

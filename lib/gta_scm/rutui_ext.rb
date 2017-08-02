@@ -300,3 +300,45 @@ class RuTui::Screen
   end
 end
 
+class RuTui::CustomLine < RuTui::BaseObject
+  attr_accessor :length, :offpixel, :onpixel, :onpixel_begin, :onpixel_end
+
+  def initialize options
+    @x = options[:x]
+    @y = options[:y]
+    @length = options[:length]
+    @direction = :vertical
+
+    return if @x.nil? or @y.nil? or @length.nil?
+    @offpixel = options[:offpixel]
+    @onpixel = options[:onpixel]
+
+    @onpixel_begin = 0.25
+    @onpixel_end = 0.5
+
+    create
+  end
+
+  def create
+    @obj = []
+    @length.times do |i|
+      percent = (i.to_f / @length)
+      if percent >= @onpixel_begin && percent < @onpixel_end
+        @obj << [@onpixel]
+      else
+        @obj << [@offpixel]
+      end
+    end
+    @obj
+  end
+
+  def set_scroll(onpixel_begin,onpixel_end)
+    @onpixel_begin, @onpixel_end = onpixel_begin, onpixel_end
+    create
+  end
+
+  def fg=(val)
+    
+  end
+end
+

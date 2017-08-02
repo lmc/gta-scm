@@ -1,27 +1,19 @@
 class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
   def initialize(*)
     super
-    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
-    set_text
-    # self.elements[:table] = RuTui::Table.new({
-    #   x: self.dx(1),
-    #   y: self.dy(1),
-    #   table: [["","","",""]],
-    #   cols: [
-    #     { title: "", length: 5 },
-    #     { title: "", length: 3 },
-    #     { title: "", length: self.width - 33 },
-    #     { title: "", length: 11 },
-    #   ],
-    #   header: false,
-    #   hover: RuTui::Theme.get(:highlight),
-    #   hover_fg: RuTui::Theme.get(:highlight_fg),
-    # })
+    
+    header(:header,{
+      x: dx(0),
+      y: dy(0),
+      width: self.width,
+      text: "Global Variables - ctrl+y: type",
+    })
+
     table(:table,{
-      x: self.dx(1),
+      x: self.dx(0),
       y: self.dy(1),
       width: self.width,
-      height: 20,
+      height: self.height - 2,
       columns: {
         offset:   { width: 5, header: "GVar" },
         type:     { width: 3, header: "Typ" },
@@ -30,74 +22,18 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
       },
       header: false,
       scrollable: true,
-      scroll_bar: true,
+      scroll_bar: :left,
       selectable: true,
     })
+
     self.settings[:gvars] = []
     self.settings[:types] = []
     self.settings[:names] = []
-    self.settings[:rows] = self.height - 4
-    self.settings[:offset] = 0
-
-    # [
-      # [172  ,:int ,"interior"],
-      # [100  ,:int ,"stat"],
-      # [160  ,:int ,"day of week"],
-      # [616  ,:int ,"language"],
-      # [1636,:int ,"mission_flag"],
-      # [21136,:int ,"game timer"],
-
-      # [7084,:int ,"watchdog timer"],
-      # [7088,:int ,"extscript 78 count"],
-      # [4484,:int ,"watchdog check"],
-      # [4488,:int ,"watchdog timer"],
-      # [4492,:int ,"extscript 78 count"],
-      # [4496,:int ,"code state"],
-      # [3428,:int ,"code version"],
-      # [3432,:int ,"save version"],
-      # [7088,:int ,"debug enabled"],
-      # [7084,:int ,"debug feedback enabled"],
-    #   [7120,:int ,"array item"],
-    #   [7124,:int ,"array index"],
-    #   [7128,:int ,"array 0"],
-    #   [7132,:int ,"array 1"],
-    #   [7136,:int ,"array 2"],
-    #   [7140,:int ,"array 3"],
-    #   [7144,:int ,"array 4"],
-    #   [7148,:int ,"array 5"],
-    #   [7152,:int ,"array 6"],
-    #   [7156,:int ,"array 7"],
-    #   [21828,:int ,"unused ?"],
-    #   [21832,:int ,"unused ?"],
-    #   [21836,:int ,"unused ?"],
-    #   [21840,:int ,"unused ?"],
-    #   [21844,:int ,"unused ?"],
-    #   [40848,:int ,"unused ?"],
-    # ]
-
-
-
-    # .each do |(gvar,type,name)|
-    #   self.settings[:gvars] << gvar
-    #   self.settings[:types] << type
-    #   self.settings[:names] << name
-    # end
     self.settings[:gvars_inited] = false
-    self.settings[:selected_gvar] = 0
-  end
-
-  def set_text(process = nil)
-    str = "Global Variables - ctrl+y: type"
-    str = str.center(self.width)
-    self.elements[:header].bg = 7
-    self.elements[:header].fg = 0
-    self.elements[:header].set_text(str)
   end
 
   def update(process,is_attached,focused = false)
-    if !is_attached
-      return
-    end
+    return if !is_attached
 
     if !self.settings[:gvars_inited]
       gvars = process.symbols_var_offsets.each_pair.map do |name,offset|
@@ -118,16 +54,9 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
       self.settings[:gvars_inited] = true
     end
 
-    # self.elements[:header].set_text("#{self.settings[:offset]},#{self.settings[:selected_gvar]}")
-
     range = self.settings[:gvars]
-
-    # range = range[ (self.settings[:offset])..(self.settings[:offset] + self.settings[:rows])]
-
     data = range.map.each_with_index do |gvar,idx|
-      idx += self.settings[:offset]
       label = self.settings[:names][idx] || "gvar #{gvar}"
-      # value = process.read_scm_var(gvar,self.settings[:types][idx]).to_s
       size = self.settings[:types][idx] == :str ? 8 : 4
       type = self.settings[:types][idx]
       value = process.read_scm_var(gvar,nil,size)
@@ -135,19 +64,11 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
       ["#{gvar}","#{type}",label,value]
     end.compact
 
-    # data = data[38..-1]
-
-    # data = self.panel_list(data,self.height - 3,[["","",""]])
-
-    # self.elements[:table].clear_highlight!
-    # self.elements[:table].highlight(self.settings[:selected_gvar] - self.settings[:offset])
-    # self.elements[:table].set_table(data)
-
     table_style(:table) do |row,col,char_idx,char,col_value,is_highlighted_row|
       if is_highlighted_row
-        [1,2,char]
+        [theme_get(:highlight_fg),theme_get(:highlight_bg),char]
       else
-        [1,3,char]
+        [theme_get(:text_fg),theme_get(:text_bg),char]
       end
     end
 
@@ -157,7 +78,7 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
   def input(key,is_attached,process)
     case key
     when :ctrl_y
-      type = self.settings[:types][ self.settings[:selected_gvar] ]
+      type = self.settings[:types][ self.settings[:"table_select_offset"] ]
       new_type = case type
       when :int
         :float
@@ -168,37 +89,27 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
       when :bin
         :int
       end
-      self.settings[:types][ self.settings[:selected_gvar] ] = new_type
+      self.settings[:types][ self.settings[:"table_select_offset"] ] = new_type
     end
   end
 
   def focused_input(key,is_attached,process)
     case key
     when :up
-      # self.settings[:selected_gvar] -= 1
       table_scroll_selected_row(:table,-1)
     when :down
-      # self.settings[:selected_gvar] += 1
       table_scroll_selected_row(:table,+1)
     end
-    if self.settings[:selected_gvar] > (self.settings[:offset] + self.settings[:rows])
-      self.settings[:offset] += 1
-    end
-    if self.settings[:selected_gvar] < self.settings[:offset]
-      self.settings[:offset] -= 1
-    end
-    self.settings[:offset] = 0 if self.settings[:offset] < 0
-    cap_lvar_selected
   end
 
   def mouse_click(x,y,is_attached,process)
+    first_row = 2 # header bar + top of table
+    first_row += 2 if self.special_elements[:table][:header]
+
     if y >= 2 && y < self.height - 1
-      self.settings[:selected_gvar] = self.settings[:offset] + y - 2
+      clicked_row = y - first_row
+      table_select_row(:table, self.settings[:"table_scroll_offset"] + clicked_row)
     end
   end
 
-  def cap_lvar_selected
-    self.settings[:selected_gvar] = self.settings[:gvars].size - 1 if self.settings[:selected_gvar] >= self.settings[:gvars].size - 1
-    self.settings[:selected_gvar] = 0  if self.settings[:selected_gvar] <= 0
-  end
 end
