@@ -342,8 +342,18 @@ class RuTui::CustomLine < RuTui::BaseObject
     create
   end
 
-  def fg=(val)
-    
+  def offpixel_fg=(val)
+    @offpixel = RuTui::Pixel.new(val,@offpixel.bg,@offpixel.symbol)
+  end
+  def offpixel_bg=(val)
+    @offpixel = RuTui::Pixel.new(@offpixel.fg,val,@offpixel.symbol)
+  end
+
+  def onpixel_fg=(val)
+    @onpixel = RuTui::Pixel.new(val,@onpixel.bg,@onpixel.symbol)
+  end
+  def onpixel_bg=(val)
+    @onpixel = RuTui::Pixel.new(@onpixel.fg,val,@onpixel.symbol)
   end
 end
 

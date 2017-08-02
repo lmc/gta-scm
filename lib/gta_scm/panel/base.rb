@@ -198,6 +198,12 @@ class GtaScm::Panel::Base
         self.elements[name].fg = theme_get(:table_fg)
         self.elements[name].bg = theme_get(:table_bg)
         self.elements[name].pixel = RuTui::Pixel.new( theme_get(:table_fg), theme_get(:table_bg), " " )
+        if self.special_elements[name][:scroll_bar]
+          self.elements[:"#{name}_scroll_bar"].onpixel_fg = theme_get(:scroll_bar_on_fg)
+          self.elements[:"#{name}_scroll_bar"].onpixel_bg = theme_get(:scroll_bar_on_bg)
+          self.elements[:"#{name}_scroll_bar"].offpixel_fg = theme_get(:scroll_bar_off_fg)
+          self.elements[:"#{name}_scroll_bar"].offpixel_bg = theme_get(:scroll_bar_off_bg)
+        end
       end
     end
   end

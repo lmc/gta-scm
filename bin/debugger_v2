@@ -57,20 +57,23 @@ theme[:bgfg] = 235
 theme[:bgbg] = 233
 theme[:bg] = ":"
 
-theme[:text_fg] = 247
+theme[:text_fg] = 245
+# theme[:text_fg] = 87
 theme[:text_bg] = theme[:bgbg]
 
 theme[:header_fg] = theme[:text_bg]
-theme[:header_bg] = 130
+theme[:header_bg] = 75
 theme[:focus_header_fg] = theme[:text_bg]
 theme[:focus_header_bg] = 200
 
 theme[:highlight_fg] = theme[:text_bg]
-theme[:highlight_bg] = theme[:text_fg]
+theme[:highlight_bg] = 75
+theme[:focus_highlight_fg] = theme[:text_bg]
+theme[:focus_highlight_bg] = 200
 
-theme[:table_fg] = 130
+theme[:table_fg] = 75
 theme[:table_bg] = theme[:text_bg]
-theme[:focus_table_fg] = 75
+theme[:focus_table_fg] = 200
 theme[:focus_table_bg] = theme[:text_bg]
 
 theme[:table_corner] = "+"
@@ -82,13 +85,24 @@ theme[:table_row_odd_bg] = theme[:text_bg]
 theme[:table_row_even_fg] = theme[:text_fg]
 theme[:table_row_even_bg] = theme[:text_bg]
 
-theme[:scroll_bar_on_fg] = 130
-theme[:scroll_bar_on_bg] = theme[:text_fg]
+theme[:scroll_bar_on_fg] = theme[:table_bg]
+theme[:scroll_bar_on_bg] = theme[:table_fg]
 theme[:scroll_bar_on] = " "
+theme[:focus_scroll_bar_on_fg] = theme[:focus_table_bg]
+theme[:focus_scroll_bar_on_bg] = theme[:focus_table_fg]
+theme[:focus_scroll_bar_on] = " "
 
-theme[:scroll_bar_off_fg] = 130
-theme[:scroll_bar_off_bg] = theme[:text_bg]
+theme[:scroll_bar_off_fg] = theme[:table_fg]
+theme[:scroll_bar_off_bg] = theme[:table_bg]
 theme[:scroll_bar_off] = "|"
+theme[:focus_scroll_bar_off_fg] = theme[:focus_table_fg]
+theme[:focus_scroll_bar_off_bg] = theme[:focus_table_bg]
+theme[:focus_scroll_bar_off] = "|"
+
+theme[:script_custom_fg] = 75
+theme[:script_custom_bg] = theme[:text_bg]
+theme[:script_error_fg] = theme[:text_bg]
+theme[:script_error_bg] = 200
 
 theme[:background] = RuTui::Pixel.new(theme[:bgfg],theme[:bgbg],theme[:bg])
 theme[:border] = RuTui::Pixel.new(theme[:table_fg],theme[:table_bg],"-")
@@ -108,6 +122,14 @@ theme[:rainbow] = [1,3,11,2,4,5]
 
 RuTui::Theme.create :scm, theme
 RuTui::Theme.use :scm
+
+# change stack viewer to be just single-line stats
+# generate stack dump in logger instead
+# is a plotter window a legit good idea?
+# hex viewer for memory
+# with single-instruction disassembly / value interpreter
+# tools window - compile
+# experiment with readline for responsive text?
 
 
 require 'gta_scm/panel'
@@ -139,7 +161,7 @@ $panel_manager.add_panel :thread_selector, GtaScm::Panel::ThreadSelector.new($pa
 $panel_manager.add_panel :thread_info, GtaScm::Panel::ThreadInfo2.new($panel_manager,13,ty+1,52,22)
 $panel_manager.panels[:thread_info].controller = $panel_manager.panels[:thread_selector]
 
-$panel_manager.add_panel :thread_list, GtaScm::Panel::ThreadList2.new($panel_manager,0,ty+1,14,bl)
+$panel_manager.add_panel :thread_list, GtaScm::Panel::ThreadList2.new($panel_manager,0,ty+1,14,42)
 $panel_manager.panels[:thread_list].controller = $panel_manager.panels[:thread_selector]
 
 $panel_manager.add_panel :lvars, GtaScm::Panel::Lvars2.new($panel_manager,13,ty+6,52,37)
@@ -152,7 +174,7 @@ $panel_manager.add_panel :breakpoint, GtaScm::Panel::Breakpoint2.new($panel_mana
 $panel_manager.panels[:breakpoint].controller = $panel_manager.panels[:thread_selector]
 
 # $panel_manager.add_panel :code_injector, GtaScm::Panel::CodeInjector.new($panel_manager,63,ty+11,62,12)
-$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars2.new($panel_manager,13,ty+43,52,40)
+$panel_manager.add_panel :gvars, GtaScm::Panel::Gvars2.new($panel_manager,0,ty+43,65,40)
 # $panel_manager.add_panel :mission_skipper, GtaScm::Panel::MissionSkipper.new($panel_manager,63,ty+15,28,32)
 
 $panel_manager.add_panel :logger, GtaScm::Panel::Logger2.new($panel_manager,66,40,59,30)
