@@ -1,4 +1,15 @@
 
+# repl host script
+# @0  = code
+# @24 = code end (100 bytes) (opcode 2 + (16 array args 96) + return 2)
+# @25 = eval return 1
+# @26 = eval return 2
+# @27 = eval return 3
+# @28 = eval return 4
+# @29 = eval status ( -1 = ready to eval code once, 0 = eval'd false, 1 = eval'd true )
+# @30 = script idx
+# @31 = script offset
+
 declare do
   int @30
 end

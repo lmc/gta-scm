@@ -1,27 +1,29 @@
-$breakpoint_inited = 0
-$breakpoint_enabled = 1
-$breakpoint_resumed = 0
-$breakpoint_halt_vm = 1
-$breakpoint_do_exec = 0
+if emit(false)
+  $breakpoint_inited = 0
+  $breakpoint_enabled = 1
+  $breakpoint_resumed = 0
+  $breakpoint_halt_vm = 1
+  $breakpoint_do_exec = 0
 
-$breakpoint_repl_if_result = 0
-$breakpoint_repl_ret0 = 0
-$breakpoint_repl_ret1 = 0
-$breakpoint_repl_ret2 = 0
-$breakpoint_repl_ret3 = 0
-# $breakpoint_repl_ret4 = 0
-# $breakpoint_repl_ret5 = 0
-# $breakpoint_repl_ret6 = 0
-# $breakpoint_repl_ret7 = 0
+  $breakpoint_repl_if_result = 0
+  $breakpoint_repl_ret0 = 0
+  $breakpoint_repl_ret1 = 0
+  $breakpoint_repl_ret2 = 0
+  $breakpoint_repl_ret3 = 0
+  # $breakpoint_repl_ret4 = 0
+  # $breakpoint_repl_ret5 = 0
+  # $breakpoint_repl_ret6 = 0
+  # $breakpoint_repl_ret7 = 0
 
-# set $breakpoint_enabled = 0 to disable all
-# set $breakpoint_resumed = 1 to resume
+  # set $breakpoint_enabled = 0 to disable all
+  # set $breakpoint_resumed = 1 to resume
 
-DEBUG_BREAKPOINT = [:label, :debug_breakpoint_entry]
-DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint_inner]
-DEBUG_EVAL_TRUE = [:label, :debug_eval_true]
-DEBUG_EVAL_FALSE = [:label, :debug_eval_false]
-DEBUG_EXEC = [:label, :debug_exec]
+  DEBUG_BREAKPOINT = [:label, :debug_breakpoint_entry]
+  DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint_inner]
+  DEBUG_EVAL_TRUE = [:label, :debug_eval_true]
+  DEBUG_EVAL_FALSE = [:label, :debug_eval_false]
+  DEBUG_EXEC = [:label, :debug_exec]
+end
 
 routines do
 
@@ -69,16 +71,16 @@ routines do
     goto(DEBUG_BREAKPOINT_INNER)
   end
 
-  # thread for handling execution requests from the external REPL
-  # simply sets $breakpoint_halt_vm = 0 so the game doesn't lock up during the breakpoint
-  # then hits the breakpoint in a loop so we can execute code in this thread from the REPL
-  debug_repl = routine(export: :debug_repl) do
-    script_name("xrepl")
-    $breakpoint_halt_vm = 0
-    $breakpoint_enabled = 1
-    loop do
-      debug_breakpoint()
-    end
-  end
+  # # thread for handling execution requests from the external REPL
+  # # simply sets $breakpoint_halt_vm = 0 so the game doesn't lock up during the breakpoint
+  # # then hits the breakpoint in a loop so we can execute code in this thread from the REPL
+  # debug_repl = routine(export: :debug_repl) do
+  #   script_name("xrepl")
+  #   $breakpoint_halt_vm = 0
+  #   $breakpoint_enabled = 1
+  #   loop do
+  #     debug_breakpoint()
+  #   end
+  # end
 
 end

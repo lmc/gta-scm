@@ -9,7 +9,6 @@ require 'gta_scm/ruby_to_scm_compiler'
 # some way to assign variable allocator assignments (ie. put specific vars in the temp bucket)
 # properly emit (end_var_args) for (start_new_script)
 # emit smallest immediate int size possible
-# re-implement routines{} block to skip jumps over function definitions
 # share function defs between compiler instances
 # while loops
 # next loop keyword
@@ -745,7 +744,13 @@ class GtaScm::RubyToScmCompiler2
   def on_immediate_use(node)
     case node.type
     when :int
-      [:int32,node[0]]
+      if node[0] >= -128 && node[0] <= 128-1
+        [:int8,node[0]]
+      elsif node[0] >= -32768 && node[0] <= 32768-1
+        [:int16,node[0]]
+      else
+        [:int32,node[0]]
+      end
     when :float
       [:float32,node[0]]
     when :str

@@ -4,6 +4,10 @@ declare do
   $debug_logger_argument = 0
   $debug_logger_buffer = IntegerArray[32]
 
+  SCM_OFFSET = 10664568
+  SCB_OFFSET = 10933576
+  SCB_SIZE = 224
+  MAX_SCRIPTS = 96
   $get_script_offset = 0
   $get_script_idx = 0
 end
@@ -11,8 +15,6 @@ end
 functions(bare: true) do
   
   def debug_logger()
-    # TODO: use global vars instead of stack argument?
-    # TODO: will this work?
     if $debug_logger_buffer_size == 0
       $debug_logger_buffer_size = 32
       $debug_logger_buffer_index = 0
@@ -21,12 +23,8 @@ functions(bare: true) do
       $debug_logger_buffer[$debug_logger_buffer_index] = $debug_logger_argument
     end
     $debug_logger_buffer_index += 1
+    $debug_logger_argument = 0
   end
-
-  SCM_OFFSET = 10664568
-  SCB_OFFSET = 10933576
-  SCB_SIZE = 224
-  MAX_SCRIPTS = 96
 
   def get_script_idx()
     @30 = generate_random_int_in_range(0,2_000_000_000)
