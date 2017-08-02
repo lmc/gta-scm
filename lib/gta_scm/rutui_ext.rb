@@ -31,6 +31,10 @@ class RuTui::Text
     @fg = val
     self.create
   end
+  def bg=(val)
+    @bg = val
+    self.create
+  end
 end
 
 class RuTui::TextWithColors < RuTui::Text
@@ -90,6 +94,7 @@ class RuTui::Table
 
   attr_accessor :fg
   attr_accessor :bg
+  attr_accessor :pixel
   attr_accessor :cell_style_block
 
   def initialize_with_highlight_fg(options)

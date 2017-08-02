@@ -1,65 +1,85 @@
 class GtaScm::Panel::ThreadList2 < GtaScm::Panel::Base
   def initialize(*)
     super
-    self.elements[:table] = RuTui::Table.new({
+
+    table(:table,{
       x: self.dx(0),
       y: self.dy(0),
-      table: [[""]],
-      cols: [
-        { title: "", length: 9 },
-      ],
+      width: self.width,
+      height: self.height,
+      columns: {
+        offset: { width: 9, header: "ID" },
+      },
       header: false,
-      hover: RuTui::Theme.get(:highlight),
-      hover_fg: RuTui::Theme.get(:highlight_fg),
+      scrollable: true,
+      scroll_bar: :left,
+      selectable: true,
     })
-    # self.settings[:thread_id] ||= 95
-    self.settings[:selected_row] = 0
   end
 
   def update(process,is_attached,focused = false)
-    if !is_attached
-      data = self.panel_list( [], self.height+1, ["#{self.height+1}"])
-      self.elements[:table].set_table(data)
-      return
-    end
+    return if !is_attached
 
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
-    self.elements[:table].clear_highlight_lines!
-    self.elements[:table].set_highlight_line_color(3)
+    # self.elements[:table].clear_highlight_lines!
+    # self.elements[:table].set_highlight_line_color(3)
 
-    data = self.panel_list( threads(process).map.each_with_index do |thread,idx|
+    data = threads(process).map.each_with_index do |thread,idx|
       if thread.thread_id == self.settings[:thread_id]
         self.settings[:selected_row] = idx
       end
-      color = ""
-      if thread.name.andand.match(/^x/)
-        self.elements[:table].add_highlight_line(idx)
-      end
-      if thread.active? && !thread.prev_opcode_is_wait?(process)
-        self.elements[:table].add_highlight_line(idx,1)
-      end
-      if thread.active? && self.controller && self.controller.settings[:breakpoint_thread] == thread.thread_id
-        self.elements[:table].add_highlight_line(idx,5)
-      end
+      # color = ""
+      # if thread.name.andand.match(/^x/)
+      #   self.elements[:table].add_highlight_line(idx)
+      # end
+      # if thread.active? && !thread.prev_opcode_is_wait?(process)
+      #   self.elements[:table].add_highlight_line(idx,1)
+      # end
+      # if thread.active? && self.controller && self.controller.settings[:breakpoint_thread] == thread.thread_id
+      #   self.elements[:table].add_highlight_line(idx,5)
+      # end
       [
         "#{thread.status_icon} #{(thread.nice_name||"").ljust(8," ")}"
       ]
-    end, self.height - 2 , [""])
+    end
 
-    self.elements[:table].clear_highlight!
-    # self.elements[:table].underline_all_lines!
-    self.elements[:table].highlight( self.settings[:selected_row] )
-    self.elements[:table].set_table(data)
+    table_style(:table) do |row,col,char_idx,char,col_value,is_highlighted_row|
+      if is_highlighted_row
+        [theme_get(:highlight_fg),theme_get(:highlight_bg),char]
+      else
+        [theme_get(:text_fg),theme_get(:text_bg),char]
+      end
+    end
+
+    table_set(:table,data)
   end
 
   def focused_input(key,is_attached,process)
-    self.controller.focused_input(key,is_attached,process)
+
+    case key
+    when :up
+      table_scroll_selected_row(:table,-1)
+      self.controller.focused_input(key,is_attached,process)
+    when :down
+      table_scroll_selected_row(:table,+1)
+      self.controller.focused_input(key,is_attached,process)
+    end
   end
 
+  # def mouse_click(x,y,is_attached,process)
+  #   if y >= 1 && y < self.height - 1
+  #     if thread = threads(process)[y - 1]
+  #       self.controller.settings[:thread_id] = thread.thread_id
+  #       self.controller.cap_thread_id
+  #     end
+  #   end
+  # end
   def mouse_click(x,y,is_attached,process)
-    if y >= 1 && y < self.height - 1
-      if thread = threads(process)[y - 1]
+    if index = table_click_index(:table,x,y,1)
+      table_select_row(:table, self.settings[:"table_scroll_offset"] + index)
+      # self.controller.focused_input(nil,is_attached,process)
+      if thread = threads(process)[index]
         self.controller.settings[:thread_id] = thread.thread_id
         self.controller.cap_thread_id
       end

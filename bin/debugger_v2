@@ -56,26 +56,37 @@ theme = {}
 theme[:bgfg] = 235
 theme[:bgbg] = 233
 theme[:bg] = ":"
+
 theme[:text_fg] = 247
 theme[:text_bg] = theme[:bgbg]
+
 theme[:header_fg] = theme[:text_bg]
-theme[:header_bg] = theme[:text_fg]
+theme[:header_bg] = 130
+theme[:focus_header_fg] = theme[:text_bg]
+theme[:focus_header_bg] = 200
+
 theme[:highlight_fg] = theme[:text_bg]
 theme[:highlight_bg] = theme[:text_fg]
-theme[:table_fg] = 242
+
 theme[:table_fg] = 130
 theme[:table_bg] = theme[:text_bg]
+theme[:focus_table_fg] = 75
+theme[:focus_table_bg] = theme[:text_bg]
+
 theme[:table_corner] = "+"
 theme[:table_horizontal] = "-"
 theme[:table_vertical] = "|"
+
 theme[:table_row_odd_fg] = theme[:text_fg]
 theme[:table_row_odd_bg] = theme[:text_bg]
 theme[:table_row_even_fg] = theme[:text_fg]
 theme[:table_row_even_bg] = theme[:text_bg]
-theme[:scroll_bar_on_fg] = theme[:text_bg]
+
+theme[:scroll_bar_on_fg] = 130
 theme[:scroll_bar_on_bg] = theme[:text_fg]
 theme[:scroll_bar_on] = " "
-theme[:scroll_bar_off_fg] = theme[:text_fg]
+
+theme[:scroll_bar_off_fg] = 130
 theme[:scroll_bar_off_bg] = theme[:text_bg]
 theme[:scroll_bar_off] = "|"
 
@@ -87,8 +98,8 @@ theme[:background_fg] = theme[:bgfg]
 theme[:textcolor] = theme[:text_fg]
 theme[:highlight] = theme[:highlight_bg]
 theme[:highlight_fg] = theme[:highlight_fg]
-theme[:header_bg] = 7
-theme[:header_fg] = 0
+# theme[:header_bg] = 7
+# theme[:header_fg] = 0
 theme[:repl_fg] = 7
 theme[:repl_error] = 198
 theme[:repl_output] = 5

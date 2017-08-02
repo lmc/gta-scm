@@ -1,24 +1,6 @@
 class GtaScm::Panel::Lvars2 < GtaScm::Panel::Base
   def initialize(*)
     super
-    # self.elements = {}
-    # self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
-    # set_text
-    # self.elements[:table] = RuTui::Table.new({
-    #   x: self.dx(0),
-    #   y: self.dy(1),
-    #   table: [["","","",""]],
-    #   cols: [
-    #     { title: "", length: 2 },
-    #     { title: "", length: 3 },
-    #     { title: "", length: ((self.width.to_f - 9) * 0.6).to_i - 4 },
-    #     { title: "", length: ((self.width.to_f - 9) * 0.4).to_i - 4 },
-    #   ],
-    #   header: false,
-    #   hover: RuTui::Theme.get(:highlight),
-    #   hover_fg: RuTui::Theme.get(:highlight_fg),
-    # })
-
 
     header(:header,{
       x: dx(0),
@@ -43,11 +25,7 @@ class GtaScm::Panel::Lvars2 < GtaScm::Panel::Base
       selectable: true,
     })
 
-
-
-    # self.settings[:thread_id] ||= 95
     self.settings[:lvars_count] = 32
-    self.settings[:lvar_selected] = 0
     self.settings[:types] = [:int] * self.settings[:lvars_count]
     self.settings[:names] = [nil] * self.settings[:lvars_count]
   end

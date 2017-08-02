@@ -8,6 +8,7 @@ class GtaScm::Panel::Base
   attr_accessor :settings
   attr_accessor :controller
   attr_accessor :special_elements
+  attr_accessor :theme_prefix
 
 
   def initialize(manager = nil,x = 0,y = 0,width = 0,height = 0)
@@ -19,6 +20,7 @@ class GtaScm::Panel::Base
     self.elements = Hash.new
     self.settings = Hash.new
     self.special_elements = Hash.new
+    self.theme_prefix = nil
   end
 
   def add_elements_to_screen(screen)
@@ -81,7 +83,10 @@ class GtaScm::Panel::Base
     data
   end
 
+
   def on_focus
+    self.theme_prefix = :focus
+    special_set_colors
     # self.elements.each_pair do |name,element|
     #   if name.to_s.match(/header/)
     #     # element.fg = RuTui::Theme.get(:textcolor)
@@ -92,6 +97,8 @@ class GtaScm::Panel::Base
   end
 
   def on_blur
+    self.theme_prefix = nil
+    special_set_colors
     # self.elements.each_pair do |name,element|
     #   if name.to_s.match(/header/)
 
@@ -118,7 +125,11 @@ class GtaScm::Panel::Base
   end
 
   def theme_get(symbol)
-    RuTui::Theme.get(symbol)
+    if self.theme_prefix
+      RuTui::Theme.get(:"#{self.theme_prefix}_#{symbol}") || RuTui::Theme.get(symbol)
+    else
+      RuTui::Theme.get(symbol)
+    end
   end
 
 
@@ -162,7 +173,10 @@ class GtaScm::Panel::Base
     self.elements[:"#{name}"] = RuTui::Text.new({
       x: options[:x],
       y: options[:y],
-      text: options[:text]
+      text: options[:text],
+      foreground: options[:fg],
+      background: options[:bg],
+      bold: true
     })
     self.special_elements[name] = options
     header_set(name,options[:text])
@@ -172,6 +186,20 @@ class GtaScm::Panel::Base
     self.elements[name].fg = self.special_elements[name][:fg]
     self.elements[name].bg = self.special_elements[name][:bg]
     self.elements[name].set_text(text.center(self.special_elements[name][:width]))
+  end
+
+  def special_set_colors
+    self.special_elements.each_pair do |name,special|
+      case special[:type]
+      when :header
+        self.elements[name].fg = theme_get(:header_fg)
+        self.elements[name].bg = theme_get(:header_bg)
+      when :table
+        self.elements[name].fg = theme_get(:table_fg)
+        self.elements[name].bg = theme_get(:table_bg)
+        self.elements[name].pixel = RuTui::Pixel.new( theme_get(:table_fg), theme_get(:table_bg), " " )
+      end
+    end
   end
 
   def table(name,options = {})
@@ -293,11 +321,11 @@ class GtaScm::Panel::Base
   end
 
   # TODO: handle elements not named `:table` and use positions/dimensions from element
-  def table_click_index(name,x,y)
-    first_row = 2 # header bar + top of table
+  def table_click_index(name,x,y,top = 2)
+    first_row = top # header bar + top of table
     first_row += 2 if self.special_elements[:table][:header]
 
-    if y >= 2 && y < self.height - 1
+    if y >= top && y < self.height - 1
       y - first_row
     else
       nil
