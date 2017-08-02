@@ -31,7 +31,7 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
     set_text
 
     self.settings[:buffer_rows] = self.height - 5
-    self.settings[:buffer] = [["hello"]]
+    self.settings[:buffer] = []
   end
 
   def update(process,is_attached,focused = false)
@@ -59,6 +59,9 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
         when :int32
           buffer << int32.to_s
           next_char4_is = nil
+        when :hex32
+          buffer << hex(char4)
+          next_char4_is = nil
         when :float32
           float32 = GtaScm::Types.bin2value(char4,:float32)
           buffer << float32.to_s
@@ -69,6 +72,8 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
             next_char4_is = :int32
           when -2
             next_char4_is = :float32
+          when -3
+            next_char4_is = :hex32
           else
             buffer << char4
           end

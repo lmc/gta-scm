@@ -316,7 +316,7 @@ class GtaScm::RubyToScmCompiler2
 
 
     # Assignment
-    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string] )
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string,:const] )
       on_assign( node )
 
     when node.match( :send , [0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1] => :[]=, [3] => [:lvar,:ivar,:gvar,:int,:float,:string] )
@@ -373,7 +373,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :send , [1] => [:debugger])
       on_debugger(node)
 
-    when node.match( :send , [1] => [:log,:puts,:log_int,:log_float] , [2] => [:str,:dstr,:ivar,:gvar,:lvar])
+    when node.match( :send , [1] => [:log,:puts,:log_int,:log_float,:log_hex] , [2] => [:str,:dstr,:ivar,:gvar,:lvar,:send])
       on_log(node)
 
     # Return
@@ -641,6 +641,10 @@ class GtaScm::RubyToScmCompiler2
       return 33
     end
 
+    if name =~ /^_\d+$/
+      return name.to_s.gsub("_","").to_i
+    end
+
     @ivar_lvar_ids ||= {}
     @ivar_lvar_id_counter ||= -1
     if @ivar_lvar_ids[name]
@@ -704,6 +708,8 @@ class GtaScm::RubyToScmCompiler2
       on_var_use(var)
     when node.match( :send , [1] => :block_pass )
       raise "handle block_pass"
+    when node[0][0].match(/^\$_\d+$/) && :send # $_0[]
+      on_global_array_use(node)
     else
       debugger
       raise "unknown var use #{node.inspect}"
@@ -750,15 +756,25 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def on_global_array_use(node)
-    array = self.functions[nil][:global_arrays][gvar_name(node[0][0])]
 
-    array_var = gvar_name(node[0][0])
+    if node[0][0].match(/^\$_\d+$/)
+      array = [:int,-1]
+      array_var = node[0][0].to_s.gsub(/[\$_]/,"").to_i
+    else
+      array = self.functions[nil][:global_arrays][gvar_name(node[0][0])]
+      array_var = gvar_name(node[0][0])
+    end
+
     index_var,index_var_type,array_offset = array_index_var_type_offset(node[2])
 
     if !array_offset.nil?
-      sign = array_offset > 0 ? :+ : :-
       array_offset *= 4
-      array_var = :"#{array_var}#{sign}#{array_offset.abs}"
+      if array_var.is_a?(Numeric)
+        array_var += array_offset
+      else
+        sign = array_offset > 0 ? :+ : :-
+        array_var = :"#{array_var}#{sign}#{array_offset.abs}"
+      end
     end
 
     if !array
@@ -769,6 +785,7 @@ class GtaScm::RubyToScmCompiler2
     array_type = array_type_token(array[0])
 
     if generating? && index_var_type == :lvar
+      # debugger
       index_var = ivar_lvar_id(index_var)
     end
 
@@ -1094,7 +1111,7 @@ class GtaScm::RubyToScmCompiler2
       on_var_use(node[1])
     when node.match( :op_asgn , [2] => :lvar )
       on_var_use(node[2])
-    when node.match( :op_asgn, [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/], [2] => [:lvar,:ivar,:gvar])
+    when node.match( :op_asgn, [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/], [2] => [:lvar,:ivar,:gvar,:const])
       on_var_use(node[2])
     when node.match( :op_asgn, [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/], [2] => [:int,:float])
       on_immediate_use(node[2])
@@ -1120,6 +1137,8 @@ class GtaScm::RubyToScmCompiler2
         var = sexp(node[0].type,["#{node[0][0]}_#{node[1]}".gsub(/=/,'').to_sym])
         assignment_rhs(var)
       end
+    when node.match( [:lvasgn,:ivasgn,:gvasgn], [1] => [:const])
+      on_const_use(node[1])
     else
       debugger
       raise "unknown assignment_rhs #{node.inspect}"
@@ -1958,23 +1977,28 @@ class GtaScm::RubyToScmCompiler2
     instructions = []
 
     case logger_name
-    when :log_int
+    when :log_int, :log_hex
+      id = {log_int: -1, log_hex: -3}[logger_name]
       var = on_var_use(node[2])
-      instructions += logger_call(:function_debug_logger,[:int32,-1])
+      instructions += logger_call(:function_debug_logger,[:int32,id])
       instructions += logger_call(:function_debug_logger,var)
     when :log_float
       var = on_var_use(node[2])
       instructions += logger_call(:function_debug_logger,[:int32,-2])
       instructions += logger_call(:function_debug_logger,var)
     else
-      # debugger
-      str = node[2][0] + "\0"
-      groups = str.chars.in_groups_of(4,"\0")
-      ints = groups.map do |group|
-        group.join.unpack("l<")[0]
-      end
-      ints.each do |int|
-        instructions += logger_call(:function_debug_logger,[:int32,int])
+      if node[2].type == :str
+        str = node[2][0] + "\0"
+        groups = str.chars.in_groups_of(4,"\0")
+        ints = groups.map do |group|
+          group.join.unpack("l<")[0]
+        end
+        ints.each do |int|
+          instructions += logger_call(:function_debug_logger,[:int32,int])
+        end
+      else
+        var = on_var_use(node[2])
+        instructions += logger_call(:function_debug_logger,var)
       end
     end
     instructions

@@ -222,7 +222,7 @@ class GtaScm::Panel::Stack2 < GtaScm::Panel::Base
     end
 
     frames.select { |frame|
-      Range.new(frame["range_offsets"][0],frame["range_offsets"][1]).include?(offset) && (script_name ? frame["script"].strip == script_name.strip : true)
+      Range.new(frame["range_offsets"][0],frame["range_offsets"][1]).include?(offset) && (script_name ? frame["script"].strip == script_name.strip : true) rescue false
     }.sort_by { |frame|
       frame["range_offsets"][1] - frame["range_offsets"][0]
     }.first

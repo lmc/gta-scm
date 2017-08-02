@@ -1,53 +1,147 @@
 
+declare do
+  int @30
+end
+
 script(name: "xhelpv2") do
   script_name("xhelpv2")
 
-  # # declare do
-  #   $log_char4_buffer_size = 16
-  #   $log_char4_buffer_index = 0
-  #   $log_char4_buffer = IntegerArray[16]
-  # # end
+  [:gosub,[[:label,:function_get_script_idx]]]
 
-  # # put method in breakpoint script and export it
-  # # def log_char4(int_char4)
-  # #   # TODO: use global vars instead of stack argument?
-  # #   # TODO: will this work?
-  # #   # if $log_char4_buffer_size == 0
-  # #   #   $log_char4_buffer_size = 16
-  # #   #   $log_char4_buffer_index = 0
-  # #   #   define do
-  # #   #     $log_char4_buffer = IntegerArray[16]
-  # #   #   end
-  # #   # end
-  # #   if $log_char4_buffer_index < $log_char4_buffer_size && $log_char4_buffer_index >= 0
-  # #     $log_char4_buffer[$log_char4_buffer_index] = int_char4
-  # #   end
-  # #   $log_char4_buffer_index += 1
-  # # end
+  log("script idx =")
+  log_int(@30)
 
-  @done_a = 0
-  @done_b = 0
-  main(wait: 100) do
-    if @timer_a > 2000 && @done_a == 0
-      # log_char4(3285089)
-      log("@timer_a = ")
-      log_int(@timer_a)
-      # log("@timer_a = #{@timer_a}!")
-      @done_a = 1
-    end
-    # if @timer_a > 2000
-    #   # log("its above 2000!! wow!!!")
-    # end
-    if @timer_b > 5000 && @done_b == 0
-      # log_char4(3481698)
-      log("@timer_b > 5000")
-      @woah = 420.69
-      log_float(@woah)
-      @done_b = 1
-    end
-  end
-
+  loop { wait(0) }
 end
+
+# script(name: "xhelpv2") do
+#   script_name("xhelpv2")
+
+#   SCM_OFFSET = 10664568
+#   SCB_OFFSET = 10933576
+#   SCB_SIZE = 224
+#   MAX_SCRIPTS = 96
+
+#   @30 = generate_random_int_in_range(0,2_000_000_000)
+#   # log("set @30 =")
+#   # log_int(@30)
+#   # log("")
+
+#   @31 = generate_random_int_in_range(0,2_000_000_000)
+#   # log("set @31 =")
+#   # log_int(@31)
+#   # log("")
+
+#   @28 = MAX_SCRIPTS
+#   loop do
+#     @29 = SCB_SIZE
+#     @29 *= @28
+#     @29 += SCB_OFFSET
+#     @29 -= SCM_OFFSET
+#     @29 /= 4
+
+#     # log_int(@29)
+#     # log( "" )
+
+#     # # script name is at +8/+12 (+2/+3)
+#     # log( $0[@29 + 2] )
+#     # log( $0[@29 + 3] )
+#     # log( "" )
+
+#     # # base pc is at +16 (+4)
+#     # log_int( $0[@29 + 4] )
+#     # log( "" )
+
+#     # # pc is at +20 (+5)
+#     # log_int( $0[@29 + 5] )
+#     # log( "" )
+
+#     # # local vars start at +60 (+15)
+#     # # local var n = +60 + (n * 4)
+#     # # @30 = 45
+#     # # @31 = 46
+
+#     if $0[ @29 + 45 ] == @30 && $0[ @29 + 46] == @31
+#       # log("my script index is")
+#       # log_int(@28)
+#       # log("")
+#       break
+#     end
+
+#     @28 -= 1
+#     break if @28 < 0
+#   end
+
+#   loop do
+#     wait(0)
+#   end
+# end
+
+
+
+  # @28 = 0
+  # @29 = 0
+
+  # # @30 = generate_random_int_in_range(0,2_000_000_000)
+  # # log("set @30 =")
+  # # log_int(@30)
+  # # log("")
+
+  # # @31 = generate_random_int_in_range(0,2_000_000_000)
+  # # log("set @31 =")
+  # # log_int(@31)
+  # # log("")
+
+
+# script(name: "xhelpv2") do
+#   script_name("xhelpv2")
+
+#   # # declare do
+#   #   $log_char4_buffer_size = 16
+#   #   $log_char4_buffer_index = 0
+#   #   $log_char4_buffer = IntegerArray[16]
+#   # # end
+
+#   # # put method in breakpoint script and export it
+#   # # def log_char4(int_char4)
+#   # #   # TODO: use global vars instead of stack argument?
+#   # #   # TODO: will this work?
+#   # #   # if $log_char4_buffer_size == 0
+#   # #   #   $log_char4_buffer_size = 16
+#   # #   #   $log_char4_buffer_index = 0
+#   # #   #   define do
+#   # #   #     $log_char4_buffer = IntegerArray[16]
+#   # #   #   end
+#   # #   # end
+#   # #   if $log_char4_buffer_index < $log_char4_buffer_size && $log_char4_buffer_index >= 0
+#   # #     $log_char4_buffer[$log_char4_buffer_index] = int_char4
+#   # #   end
+#   # #   $log_char4_buffer_index += 1
+#   # # end
+
+#   @done_a = 0
+#   @done_b = 0
+#   main(wait: 100) do
+#     if @timer_a > 2000 && @done_a == 0
+#       # log_char4(3285089)
+#       log("@timer_a = ")
+#       log_int(@timer_a)
+#       # log("@timer_a = #{@timer_a}!")
+#       @done_a = 1
+#     end
+#     # if @timer_a > 2000
+#     #   # log("its above 2000!! wow!!!")
+#     # end
+#     if @timer_b > 5000 && @done_b == 0
+#       # log_char4(3481698)
+#       log("@timer_b > 5000")
+#       @woah = 420.69
+#       log_float(@woah)
+#       @done_b = 1
+#     end
+#   end
+
+# end
 
 # script(name: "xhelpv2") do
 #   script_name("xhelpv2")
