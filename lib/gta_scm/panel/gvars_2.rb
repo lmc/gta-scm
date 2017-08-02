@@ -1,7 +1,7 @@
 class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
   def initialize(*)
     super
-    
+
     header(:header,{
       x: dx(0),
       y: dy(0),
@@ -13,7 +13,7 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
       x: self.dx(0),
       y: self.dy(1),
       width: self.width,
-      height: self.height - 2,
+      height: self.height - 1,
       columns: {
         offset:   { width: 5, header: "GVar" },
         type:     { width: 3, header: "Typ" },
@@ -103,12 +103,8 @@ class GtaScm::Panel::Gvars2 < GtaScm::Panel::Base
   end
 
   def mouse_click(x,y,is_attached,process)
-    first_row = 2 # header bar + top of table
-    first_row += 2 if self.special_elements[:table][:header]
-
-    if y >= 2 && y < self.height - 1
-      clicked_row = y - first_row
-      table_select_row(:table, self.settings[:"table_scroll_offset"] + clicked_row)
+    if index = table_click_index(:table,x,y)
+      table_select_row(:table, self.settings[:"table_scroll_offset"] + index)
     end
   end
 

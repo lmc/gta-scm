@@ -1,23 +1,50 @@
 class GtaScm::Panel::Lvars2 < GtaScm::Panel::Base
   def initialize(*)
     super
-    self.elements = {}
-    self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
-    set_text
-    self.elements[:table] = RuTui::Table.new({
+    # self.elements = {}
+    # self.elements[:header] = RuTui::Text.new(x: dx(0), y: dy(0), text: "")
+    # set_text
+    # self.elements[:table] = RuTui::Table.new({
+    #   x: self.dx(0),
+    #   y: self.dy(1),
+    #   table: [["","","",""]],
+    #   cols: [
+    #     { title: "", length: 2 },
+    #     { title: "", length: 3 },
+    #     { title: "", length: ((self.width.to_f - 9) * 0.6).to_i - 4 },
+    #     { title: "", length: ((self.width.to_f - 9) * 0.4).to_i - 4 },
+    #   ],
+    #   header: false,
+    #   hover: RuTui::Theme.get(:highlight),
+    #   hover_fg: RuTui::Theme.get(:highlight_fg),
+    # })
+
+
+    header(:header,{
+      x: dx(0),
+      y: dy(0),
+      width: self.width,
+      text: "Local Variables - ctrl+t: type",
+    })
+
+    table(:table,{
       x: self.dx(0),
       y: self.dy(1),
-      table: [["","","",""]],
-      cols: [
-        { title: "", length: 2 },
-        { title: "", length: 3 },
-        { title: "", length: ((self.width.to_f - 9) * 0.6).to_i - 4 },
-        { title: "", length: ((self.width.to_f - 9) * 0.4).to_i - 4 },
-      ],
+      width: self.width,
+      height: self.height - 1,
+      columns: {
+        offset:   { width: 2, header: "ID" },
+        type:     { width: 3, header: "Typ" },
+        name:     { width: 1.0 },
+        value:    { width: 12, align: :right }
+      },
       header: false,
-      hover: RuTui::Theme.get(:highlight),
-      hover_fg: RuTui::Theme.get(:highlight_fg),
+      scrollable: false,
+      selectable: true,
     })
+
+
+
     # self.settings[:thread_id] ||= 95
     self.settings[:lvars_count] = 32
     self.settings[:lvar_selected] = 0
@@ -25,19 +52,9 @@ class GtaScm::Panel::Lvars2 < GtaScm::Panel::Base
     self.settings[:names] = [nil] * self.settings[:lvars_count]
   end
 
-  def set_text(process = nil)
-    str = "Local Variables - ctrl+t: type"
-    str = str.center(self.width)
-    self.elements[:header].bg = 7
-    self.elements[:header].fg = 0
-    self.elements[:header].set_text(str)
-  end
-
 
   def update(process,is_attached,focused = false)
-    if !is_attached
-      return
-    end
+    return if !is_attached
 
     self.settings[:thread_id] = self.controller.settings[:thread_id] if self.controller
 
@@ -72,19 +89,14 @@ class GtaScm::Panel::Lvars2 < GtaScm::Panel::Base
         ["33","int","Timer B","#{thread.timer_b}"],
       ]
 
-      # data << ["#{self.settings[:thread_id]}","#{$key}","#{self.settings[:key]}",""]
-      # self.settings[:thread_id] -= 1
-
-      self.elements[:table].clear_highlight!
-      self.elements[:table].highlight(self.settings[:lvar_selected])
-      self.elements[:table].set_table(data)
+      table_set(:table,data)
     end
   end
 
   def input(key,is_attached,process)
     case key
     when :ctrl_t
-      type = self.settings[:types][ self.settings[:lvar_selected] ]
+      type = self.settings[:types][ self.settings[:"table_select_offset"] ]
       new_type = case type
       when :int
         :float
@@ -95,28 +107,23 @@ class GtaScm::Panel::Lvars2 < GtaScm::Panel::Base
       when :bin
         :int
       end
-      self.settings[:types][ self.settings[:lvar_selected] ] = new_type
+      self.settings[:types][ self.settings[:"table_select_offset"] ] = new_type
     end
   end
 
   def mouse_click(x,y,is_attached,process)
-    if y >= 2 && y < self.height - 1
-      self.settings[:lvar_selected] = y - 2
+    if index = table_click_index(:table,x,y)
+      table_select_row(:table, self.settings[:"table_scroll_offset"] + index)
     end
   end
 
   def focused_input(key,is_attached,process)
     case key
     when :up
-      self.settings[:lvar_selected] -= 1
+      table_scroll_selected_row(:table,-1)
     when :down
-      self.settings[:lvar_selected] += 1
+      table_scroll_selected_row(:table,+1)
     end
-    cap_lvar_selected
   end
 
-  def cap_lvar_selected
-    self.settings[:lvar_selected] = 33 if self.settings[:lvar_selected] >= 33
-    self.settings[:lvar_selected] = 0  if self.settings[:lvar_selected] <= 0
-  end
 end

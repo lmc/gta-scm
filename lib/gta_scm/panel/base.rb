@@ -221,23 +221,19 @@ class GtaScm::Panel::Base
       pixel: RuTui::Pixel.new(theme_get(:table_fg),theme_get(:table_bg)," "),
       bg: theme_get(:table_bg)
     })
+    self.elements[name].cell_style_block = self.default_table_style
 
     self.special_elements[name] = options
     self.special_elements[name][:max_rows] = 0
 
-    if options[:scrollable]
-      self.settings[:"#{name}_scroll_offset"] = 0
-    end
-
-    if options[:selectable]
-      self.settings[:"#{name}_select_offset"] = 0
-    end
+    self.settings[:"#{name}_scroll_offset"] = 0
+    self.settings[:"#{name}_select_offset"] = 0
   end
 
   def table_set(name,data1,data2 = nil,data3 = nil)
     if data1 && !data2 && !data3
+      self.special_elements[name][:max_rows] = data1.size
       if self.special_elements[name][:scrollable]
-        self.special_elements[name][:max_rows] = data1.size
         data1 = data1.slice( self.settings[:"#{name}_scroll_offset"] , self.special_elements[name][:rows] )
       end
       if self.special_elements[name][:scroll_bar]
@@ -269,17 +265,20 @@ class GtaScm::Panel::Base
 
   def table_scroll_check(name)
     self.settings[:"#{name}_scroll_offset"] = 0 if self.settings[:"#{name}_scroll_offset"] < 0
+    self.settings[:"#{name}_scroll_offset"] = self.special_elements[name][:max_rows] - self.special_elements[name][:rows] if self.settings[:"#{name}_scroll_offset"] > self.special_elements[name][:max_rows] - self.special_elements[name][:rows]
   end
 
   def table_scroll_selected_row(name,rows = +1)
     table_select_row(name,self.settings[:"#{name}_select_offset"] + rows)
-    if self.settings[:"#{name}_select_offset"] >= self.settings[:"#{name}_scroll_offset"] + self.special_elements[name][:rows]
-      table_scroll_page(name,+1)
-    elsif self.settings[:"#{name}_select_offset"] < self.settings[:"#{name}_scroll_offset"]
-      # table_scroll_page(name,-1)
-      self.settings[:"#{name}_scroll_offset"] = self.settings[:"#{name}_select_offset"]
+    if self.special_elements[name][:scrollable]
+      if self.settings[:"#{name}_select_offset"] >= self.settings[:"#{name}_scroll_offset"] + self.special_elements[name][:rows]
+        table_scroll_page(name,+1)
+      elsif self.settings[:"#{name}_select_offset"] < self.settings[:"#{name}_scroll_offset"]
+        # table_scroll_page(name,-1)
+        self.settings[:"#{name}_scroll_offset"] = self.settings[:"#{name}_select_offset"]
+      end
+      table_select_row(name,self.settings[:"#{name}_select_offset"])
     end
-    table_select_row(name,self.settings[:"#{name}_select_offset"])
   end
 
   def table_select_row(name,index)
@@ -290,6 +289,29 @@ class GtaScm::Panel::Base
 
   def table_select_check(name)
     self.settings[:"#{name}_select_offset"] = 0 if self.settings[:"#{name}_select_offset"] < 0
+    self.settings[:"#{name}_select_offset"] = self.special_elements[name][:max_rows] if self.settings[:"#{name}_select_offset"] > self.special_elements[name][:max_rows]
+  end
+
+  # TODO: handle elements not named `:table` and use positions/dimensions from element
+  def table_click_index(name,x,y)
+    first_row = 2 # header bar + top of table
+    first_row += 2 if self.special_elements[:table][:header]
+
+    if y >= 2 && y < self.height - 1
+      y - first_row
+    else
+      nil
+    end
+  end
+
+  def default_table_style
+    lambda do |row,col,char_idx,char,col_value,is_highlighted_row|
+      if is_highlighted_row
+        [theme_get(:highlight_fg),theme_get(:highlight_bg),char]
+      else
+        [theme_get(:text_fg),theme_get(:text_bg),char]
+      end
+    end
   end
 
 end
