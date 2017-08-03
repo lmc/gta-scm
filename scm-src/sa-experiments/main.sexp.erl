@@ -33,23 +33,7 @@
 % skip over 1217 bytes of jumped-over code (56728 - 57945)
 % =====================================
 
-% == Debug RPC ==================
-% Global vars used:
-% 7036 - debug_rpc_int_arg_0
-% 7040 - debug_rpc_int_arg_1
-% 7044 - debug_rpc_int_arg_2
-% 7048 - debug_rpc_int_arg_3
-% 7052 - debug_rpc_int_arg_4
-% 7056 - debug_rpc_int_arg_5
-% 7060 - debug_rpc_int_arg_6
-% 7064 - debug_rpc_int_arg_7
-% 7068 - debug_rpc_syscall
-% 7072 - debug_rpc_syscall_result
-% 7076 - debug_breakpoint_enabled
-% 7080 - debug_breakpoint_pc
-% 7084 - debug_rpc_feedback_enabled
-% (labeldef debug_rpc)
-% (Include "debug-rpc")
+% == Debug Helpers ====================
 (labeldef debug_breakpoint)
 (IncludeRuby "debug-breakpoint")
 (IncludeRuby "debug-logger" (v2 true))
@@ -111,12 +95,18 @@
 % =====================================
 
 
+% need to export
+% global vars
+% constants
+% functions
+(IncludeRuby "declares" (v2 true))
 
 % == Main Loop Extension ==============
 % Global vars used:
 % 4484 - watchdog timeout
 % 4488 - watchdog timer
-(Include "main-loop-ext")
+% (Include "main-loop-ext")
+(IncludeRuby "main-loop-ext" (v2 true))
 % =====================================
 
 % == Save Thread Extension ============
@@ -132,9 +122,9 @@
 (Include "external-loader")
 % =====================================
 
-(labeldef global_variable_declares)
-(IncludeRuby "global-variable-declares")
-(return)
+% (labeldef global_variable_declares)
+% (IncludeRuby "global-variable-declares")
+% (return)
 
 % == Routines =========================
 (IncludeRuby "bitpacker")

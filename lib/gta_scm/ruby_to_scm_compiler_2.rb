@@ -315,7 +315,7 @@ class GtaScm::RubyToScmCompiler2
 
 
     # Assignment
-    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:string,:const] )
+    when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:str,:const] )
       on_assign( node )
 
     when node.match( :send , [0] => [:lvar,:ivar,:gvar,:int,:float,:string] , [1] => :[]=, [3] => [:lvar,:ivar,:gvar,:int,:float,:string] )
@@ -520,6 +520,8 @@ class GtaScm::RubyToScmCompiler2
       resolve_var_type(var_or_val[4],nil)
     when :var
       resolved_gvar_type(var_or_val[1])
+    when :vlstring
+      :string8
     else
       debugger
       raise "unknown var type #{var_or_val.inspect}"
@@ -698,6 +700,8 @@ class GtaScm::RubyToScmCompiler2
       on_gvar_use(node)
     when :const
       on_const_use(node)
+    when :int, :float
+      on_immediate_use(node)
     when sexp?(node[0]) && node[0].type == :gvar && self.functions[nil][:global_arrays][gvar_name(node[0][0])] && :send
       on_global_array_use(node)
     when sexp?(node[0]) && node[0].type == :ivar && self.functions[nil][:instance_arrays][ivar_name(node[0][0])] && :send
@@ -1110,7 +1114,7 @@ class GtaScm::RubyToScmCompiler2
 
   def assignment_rhs(node)
     case
-    when node.match([:lvasgn,:ivasgn,:gvasgn], [1] => [:int,:float,:string])
+    when node.match([:lvasgn,:ivasgn,:gvasgn], [1] => [:int,:float,:str])
       on_immediate_use(node[1])
     when node.match([:lvasgn,:ivasgn,:gvasgn], [1] => [:lvar,:gvar,:ivar])
       on_var_use(node[1])
@@ -1652,6 +1656,10 @@ class GtaScm::RubyToScmCompiler2
     instructions = []
     instructions << [:EmitNodes,false] if !self.in_declare_block
 
+    if !array_size
+      debugger
+    end
+
     case node.type
     when :gvasgn
       name = gvar_name(node[0])
@@ -1674,7 +1682,7 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def array_declare_size(node)
-    node[1][2][0]
+    on_var_use(node[1][2])[1]
   end
 
   def array_class_type(node)
@@ -2044,11 +2052,15 @@ class GtaScm::RubyToScmCompiler2
 
         opcode_name = "set_#{lhs_scope}_#{lhs_type}"
         
-        if rhs_scope
+        if lhs_scope == :var && rhs_type == :string8
+          opcode_name = "set_var_text_label"
+        elsif lhs_scope == :lvar && rhs_type == :string8
+          opcode_name = "set_lvar_text_label"
+        elsif rhs_scope
           opcode_name << "_to_#{rhs_scope}_#{rhs_type}"
         end
 
-        if opcode_name == "set_var_int_to_lvar_float"
+        if opcode_name == "set_var_string8"
           debugger
         end
 
@@ -2078,7 +2090,7 @@ class GtaScm::RubyToScmCompiler2
           opcode_name << "#{lhs_type}_#{lhs_scope}"
         end
 
-        if opcode_name == "mult_val_by_int_var"
+        if opcode_name == "set_var_string8"
           debugger
         end
 
@@ -2219,6 +2231,8 @@ class GtaScm::RubyToScmCompiler2
       tokens[3]
     when :var, :dmavar
       tokens[2]
+    when :vlstring
+      :string8
     else
       # return [:unknown] if generating?
       debugger
@@ -2235,6 +2249,8 @@ class GtaScm::RubyToScmCompiler2
     when :int,:int8,:int16,:int32
       nil
     when :float,:float32
+      nil
+    when :vlstring
       nil
     else
       # return [:unknown] if generating?
