@@ -450,6 +450,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           iasm.external = true
           iasm.external_id = external_id
           iasm.copy_touchups_from_parent!
+          iasm.compiler_data2 = self.compiler_data2
           # iasm.symbols_data = self.symbols_data
 
           def iasm.install_features!

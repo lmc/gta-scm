@@ -1,3 +1,19 @@
+# NEXT:
+# mem_copy function using arrays
+# rewrite ext78 in v2, reorganise files, use switch statement?
+# rewrite spatial script in v2
+# verify function calls work between files (for spatial terminate function)
+# verify function calls work to both main and external functions
+# specify gvars to use as args/returns for functions (instead of stack)
+# option to retain script context between compiles (ensure instance vars are shared between spatial/vehicle scripts)
+# support $[] / @[] array syntax with gsub
+# var bucket report
+# compiler feature modules - put binary functions in there, w/api to register node patterns
+# detect generic block later on?
+# timer debounce function? no order of evaluation, hard to do properly. can handle in menu helpers
+# menu helpers? - name/position/styles, populate/scroll/button callbacks
+# global var for active menu, manage it that way
+
 binary("games/san-andreas/data/script/main.scm") do |scm|
   # delete original headers
   scm.delete(0,55976)
