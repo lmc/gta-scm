@@ -1,3 +1,4 @@
+$_breakpoint_inited = 0
 if emit(false)
   $_breakpoint_inited = 0
   $_breakpoint_enabled = 1

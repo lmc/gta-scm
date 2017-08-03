@@ -247,6 +247,13 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :block, [0] => :send, [0,1] => :loop, [2] => [:begin,:send])
       on_loop( node )
 
+    when node.match( :block, [0] => :send, [0,1] => :binary, [2] => [:begin,:send])
+      on_binary_block( node )
+    when node.match( :block, [0] => :send, [0,0] => :lvar, [0,0,0] => self.binary_block_lvar, [0,1] => [:replace,:delete,:patch,:include] )
+      on_binary_block_call_block( node )
+    when node.match( :send, [0] => :lvar, [0,0] => self.binary_block_lvar, [1] => [:replace,:delete,:patch,:include] )
+      on_binary_block_call( node )
+
     when node.match( :if ) && node[2]
       on_if_else(node)
 
@@ -2430,6 +2437,77 @@ class GtaScm::RubyToScmCompiler2
     # -3: x float
     # -2: y float
     # -1: z float
+  end
+
+
+  attr_accessor :binary_block_filename
+  attr_accessor :binary_block_offset
+  attr_accessor :binary_block_lvar
+  attr_accessor :binary_block_slices
+  def on_binary_block(node)
+    self.binary_block_filename = node[0][2][0]
+    self.binary_block_offset = 0
+    self.binary_block_lvar = node[1][0][0]
+    self.binary_block_slices = [
+      # [0,nil]
+    ]
+
+    body = transform_node(node[2])
+
+    [
+      *body
+    ]
+  ensure
+    self.binary_block_filename = nil
+    self.binary_block_offset = nil
+    self.binary_block_lvar = nil
+    self.binary_block_slices = nil
+  end
+
+  def on_binary_block_call_block(node)
+    method_name = node[0][1]
+    args = node[0][2..-1].map{|a| transform_node(a)[1] }
+    body = transform_node(node[2])
+    case method_name
+    when :replace
+      instruction = emit_next_binary_instruction(args[0])
+      self.binary_block_offset = args[1]
+      [
+        instruction,
+        *body
+      ]
+    when :patch
+      instruction = emit_next_binary_instruction(args[0])
+      self.binary_block_offset = args[1]
+      [
+        instruction,
+        *body,
+        [:PadUntil,[args[1]]]
+      ]
+    end
+  end
+
+  def on_binary_block_call(node)
+    method_name = node[1]
+    args = node[2..-1].map{|a| transform_node(a)[1] }
+    instruction = nil
+
+    case method_name
+    when :delete
+      instruction = emit_next_binary_instruction(args[0])
+      self.binary_block_offset = args[1]
+    when :include
+      instruction = [:IncludeBin,[self.binary_block_filename,args[0],args[1]]]
+    end
+
+    [
+      instruction
+    ]
+  end
+
+  def emit_next_binary_instruction(next_offset)
+    instruction = [:IncludeBin,[self.binary_block_filename,self.binary_block_offset,next_offset]]
+    instruction
   end
 
 end

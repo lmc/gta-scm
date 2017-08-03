@@ -52,8 +52,9 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
       next_char4_is = nil
       to_read.times do |i|
         i = i == 0 ? "" : "_#{i}"
-        puts "to_read: #{to_read}, buffer_size: #{buffer_size}"
-        char4 = process.read_scm_var(:"_debug_logger_buffer#{i}",nil,4)
+        # puts "to_read: #{to_read}, buffer_size: #{buffer_size}"
+        char4 = process.read_scm_var(:"_debug_logger_buffer#{i}",nil,4) rescue nil
+        return if char4.nil?
         int32 = GtaScm::Types.bin2value(char4,:int32)
 
         case next_char4_is

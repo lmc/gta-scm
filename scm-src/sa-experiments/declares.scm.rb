@@ -1,3 +1,6 @@
+[:UseGlobalVariables, :persist, 21700, 22268] # minigame (mission 4) vars
+[:UseGlobalVariables, :temp, 55976, 60026]    # crazy?! re-uses bootstrapper code as global vars
+
 [:nop]
 
 declare do
