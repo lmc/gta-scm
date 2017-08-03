@@ -38,6 +38,7 @@ class GtaScm::Assembler::Base
 
   attr_accessor :constants_to_values
   attr_accessor :compiler_data
+  attr_accessor :compiler_data2
   attr_accessor :symbols_data
 
   attr_accessor :externals_label_map
@@ -61,6 +62,7 @@ class GtaScm::Assembler::Base
 
     self.constants_to_values ||= {}
     self.compiler_data = nil
+    self.compiler_data2 = {}
     self.symbols_data = []
 
     self.externals_label_map = {}
@@ -353,6 +355,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             compiler = GtaScm::RubyToScmCompiler2.new()
             compiler.external_id = self.external_id
             compiler.label_type = !!args[:external] ? :mission_label : :label
+            compiler.compiler_data = self.compiler_data2
             ruby = compiler.transform_source(ruby)
             parsed = Parser::CurrentRuby.parse(ruby)
             # compiler.scm = @scm
@@ -381,6 +384,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           # self.touchup_defines.merge!(compiler.)
           if args[:v2]
             self.symbols_data << compiler.export_symbols()
+            self.compiler_data2 = compiler.compiler_data()
           else
             self.constants_to_values.merge!(compiler.constants_to_values)
             self.compiler_data = compiler.compiler_data

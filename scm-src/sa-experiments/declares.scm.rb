@@ -63,6 +63,7 @@ declare do
   end
 
   int $code_state
+  int $save_in_progress
 
   $carid2gxt_tmp = 0
   $carid2gxt_id = 0

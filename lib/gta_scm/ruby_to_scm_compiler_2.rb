@@ -126,6 +126,26 @@ class GtaScm::RubyToScmCompiler2
     self.external_id = nil
   end
 
+  def compiler_data
+    data = {}
+    data[:functions] = self.functions.deep_dup
+    data[:functions][nil][:instances] = {}
+    data[:functions][nil][:instance_structs] = {}
+    data[:functions][nil][:instance_arrays] = {}
+    data[:functions][nil][:locals] = {}
+    data[:constants] = self.constants.deep_dup
+    data
+  end
+
+  def compiler_data=(val)
+    # debugger
+    val = val.deep_dup
+    if val.present?
+      self.functions = val[:functions]
+      self.constants = val[:constants]
+    end
+  end
+
   def opcode(name)
     if name.match(/^not_/)
       name = name[4..-1].to_sym
@@ -464,6 +484,9 @@ class GtaScm::RubyToScmCompiler2
 
   def current_stack_vars_buckets(function_name)
     slots = []
+    # if !self.functions[function_name] || !self.functions[function_name][:returns]
+    #   debugger
+    # end
     if function_name
       slots << self.functions[function_name][:returns].map{|k,v| k }
       slots << self.functions[function_name][:arguments].map{|k,v|
@@ -621,6 +644,7 @@ class GtaScm::RubyToScmCompiler2
 
   def resolved_gvar_type(name)
     uses = self.functions[nil][:globals][gvar_name(name)]
+    debugger if !uses
     raise "unknown gvar #{name}" if !uses
     resolved_types = uses.map do |var_or_val|
       resolve_var_type(var_or_val,nil)

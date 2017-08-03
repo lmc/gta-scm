@@ -1,6 +1,6 @@
 % TODO: set 21700 to non-zero to avoid these getting wiped (or allow them to??? compatibility when reverting to vanilla save)
-(UseGlobalVariables mission_4_vars 21704 22260)
-% (UseGlobalVariables mission_4_vars 21704 22268)
+% (UseGlobalVariables mission_4_vars 21700 22260)
+(UseGlobalVariables mission_4_vars 21700 22268)
 
 % minigame 2 vars
 % 22264 - 21700
