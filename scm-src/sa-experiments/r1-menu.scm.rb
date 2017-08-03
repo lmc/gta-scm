@@ -22,16 +22,17 @@ routines do
 
     y += 20.0
 
-    _i = get_int_stat(STAT_MAX_HEALTH)
-    set_text_styles()
-    display_text_with_number(x,y,"GSCM301",_i)
+    # _i = get_int_stat(STAT_MAX_HEALTH)
+    # set_text_styles()
+    # display_text_with_number(x,y,"GSCM301",_i)
 
-    y += 20.0
+    # y += 20.0
 
 
   end
 end
 
+CONTROLLER_LEFTSHOULDER1 = 4
 
 loop do
   wait(0)
