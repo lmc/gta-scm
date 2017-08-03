@@ -1,8 +1,4 @@
 binary("games/san-andreas/data/script/main.scm") do |scm|
-  # scm.replace(0,55976) do
-  #   # headers
-  # end
-
   # delete original headers
   scm.delete(0,55976)
 
@@ -51,7 +47,7 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
   scm.patch(127559,129478) do
     # [:goto,[[:int32,127573]]]
     # [:goto,[[:int32,129490]]]
-    [:goto,[[:int32,129490]]]
+    [:goto,[[:int32,122006]]]
     [:goto,[[:int32,129490]]]
     # more code can go here
   end
@@ -66,7 +62,7 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
   scm.patch(194125,200000) do
     [:IncludeRuby,"declares",[:v2,true]]
     [:IncludeRuby,"main-loop-ext",[:v2,true]]
-    [:Include,"save-ext"]
+    [:IncludeRuby,"save-script-ext",[:v2,true]]
     [:IncludeRuby,"external-loader",[:v2,true]]
 
     [:IncludeRuby,"bitpacker"]

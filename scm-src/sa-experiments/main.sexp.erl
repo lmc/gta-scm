@@ -1,6 +1,5 @@
 
 % NEXT:
-%   rewrite watchdog
 %   auto-calculate missions/header
 %   patch missions
 

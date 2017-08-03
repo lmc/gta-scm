@@ -1,5 +1,13 @@
 (script_name ((string8 "zextini")))
 
+% scripts:
+% car detector
+% car scripts
+% spatial detector
+% spatial scripts
+% spatial - collectables finder manager
+% spatial - interior teleporter
+
 (andor ((int8 0)))
 (not_is_int_lvar_equal_to_number ((lvar 0) (int8 0)))
 (goto_if_false ((mission_label menu)))
