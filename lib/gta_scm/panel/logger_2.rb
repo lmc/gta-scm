@@ -39,20 +39,21 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
       return
     end
 
-    buffer_size  = process.read_scm_var(:debug_logger_buffer_size,:int)
-    buffer_index = process.read_scm_var(:debug_logger_buffer_index,:int)
+    buffer_size  = process.read_scm_var(:_debug_logger_buffer_size,:int)
+    buffer_index = process.read_scm_var(:_debug_logger_buffer_index,:int)
     timestamp = Time.now.strftime("%H:%M:%S.%L")
 
     if buffer_index > 0
 
       to_read = buffer_index
-      to_read = buffer_size if buffer_index > buffer_size
+      to_read = buffer_size if buffer_index >= buffer_size
 
       buffer = []
       next_char4_is = nil
       to_read.times do |i|
         i = i == 0 ? "" : "_#{i}"
-        char4 = process.read_scm_var(:"debug_logger_buffer#{i}",nil,4)
+        puts "to_read: #{to_read}, buffer_size: #{buffer_size}"
+        char4 = process.read_scm_var(:"_debug_logger_buffer#{i}",nil,4)
         int32 = GtaScm::Types.bin2value(char4,:int32)
 
         case next_char4_is
@@ -93,7 +94,7 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
 
       self.settings[:buffer] = self.settings[:buffer].last(self.settings[:buffer_rows])
 
-      process.write_scm_var(:debug_logger_buffer_index,0,:int32)
+      process.write_scm_var(:_debug_logger_buffer_index,0,:int32)
     end
 
     self.elements[:table_1].set_table(self.settings[:buffer])

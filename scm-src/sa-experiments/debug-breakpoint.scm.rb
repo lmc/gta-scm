@@ -1,22 +1,22 @@
 if emit(false)
-  $breakpoint_inited = 0
-  $breakpoint_enabled = 1
-  $breakpoint_resumed = 0
-  $breakpoint_halt_vm = 1
-  $breakpoint_do_exec = 0
+  $_breakpoint_inited = 0
+  $_breakpoint_enabled = 1
+  $_breakpoint_resumed = 0
+  $_breakpoint_halt_vm = 1
+  $_breakpoint_do_exec = 0
 
-  $breakpoint_repl_if_result = 0
-  $breakpoint_repl_ret0 = 0
-  $breakpoint_repl_ret1 = 0
-  $breakpoint_repl_ret2 = 0
-  $breakpoint_repl_ret3 = 0
-  # $breakpoint_repl_ret4 = 0
-  # $breakpoint_repl_ret5 = 0
-  # $breakpoint_repl_ret6 = 0
-  # $breakpoint_repl_ret7 = 0
+  $_breakpoint_repl_if_result = 0
+  $_breakpoint_repl_ret0 = 0
+  $_breakpoint_repl_ret1 = 0
+  $_breakpoint_repl_ret2 = 0
+  $_breakpoint_repl_ret3 = 0
+  # $_breakpoint_repl_ret4 = 0
+  # $_breakpoint_repl_ret5 = 0
+  # $_breakpoint_repl_ret6 = 0
+  # $_breakpoint_repl_ret7 = 0
 
-  # set $breakpoint_enabled = 0 to disable all
-  # set $breakpoint_resumed = 1 to resume
+  # set $_breakpoint_enabled = 0 to disable all
+  # set $_breakpoint_resumed = 1 to resume
 
   DEBUG_BREAKPOINT = [:label, :debug_breakpoint_entry]
   DEBUG_BREAKPOINT_INNER = [:label, :debug_breakpoint_inner]
@@ -29,25 +29,25 @@ routines do
 
   debug_breakpoint_entry = routine(export: :debug_breakpoint_entry, end_with: nil) do
     terminate_all_scripts_with_this_name("xrepl")
-    if $breakpoint_inited == 0
-      $breakpoint_inited = 1
-      $breakpoint_enabled = 1
-      $breakpoint_halt_vm = 1
+    if $_breakpoint_inited == 0
+      $_breakpoint_inited = 1
+      $_breakpoint_enabled = 1
+      $_breakpoint_halt_vm = 1
     end
     goto(DEBUG_BREAKPOINT_INNER)
   end
 
   debug_breakpoint = routine(export: :debug_breakpoint_inner) do
-    $breakpoint_resumed = 0
-    $breakpoint_do_exec = 0
+    $_breakpoint_resumed = 0
+    $_breakpoint_do_exec = 0
     loop do
-      if $breakpoint_halt_vm == 0
+      if $_breakpoint_halt_vm == 0
         wait(0)
       end
-      if $breakpoint_do_exec == 1
+      if $_breakpoint_do_exec == 1
         goto(DEBUG_EXEC)
       end
-      if $breakpoint_enabled == 0 or $breakpoint_resumed == 1
+      if $_breakpoint_enabled == 0 or $_breakpoint_resumed == 1
         break
       end
     end
@@ -67,7 +67,7 @@ routines do
   end
 
   debug_eval_false = routine(export: :debug_eval_false, end_with: nil) do
-    $breakpoint_repl_if_result = 0
+    $_breakpoint_repl_if_result = 0
     goto(DEBUG_BREAKPOINT_INNER)
   end
 

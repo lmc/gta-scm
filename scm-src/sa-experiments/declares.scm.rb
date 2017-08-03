@@ -46,35 +46,35 @@ declare do
 
   STACK_SIZE = 20
   STACK_CANARY = 42069
-  int $_canary1
+  $_canary1 = 0
   $_stack = IntegerArray.new(STACK_SIZE)
-  int $_canary2
-  int $_ss
-  int $_sc
-  int $_canary3
+  $_canary2 = 0
+  $_ss = 0
+  $_sc = 0
+  $_canary3 = 0
 
-  def init_stack()
-    $_canary1 = STACK_CANARY
-    $_stack = IntegerArray.new(STACK_SIZE)
-    $_canary2 = STACK_CANARY
-    $_ss = STACK_SIZE
-    $_sc = 0
-    $_canary3 = STACK_CANARY
-  end
 
-  int $code_state
-  int $save_in_progress
+  $code_state = 0
+  $save_in_progress = 0
 
-  $carid2gxt_tmp = 0
-  $carid2gxt_id = 0
-  $carid2gxt_gxt = ""
+
+  $_carid2gxt_tmp = 0
+  $_carid2gxt_id = 0
+  $_carid2gxt_gxt = ""
 
 
   SPATIAL_ENTRIES = 8
   $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
   $spatial_index = 0
-
 end
 
-[:nop]
-
+functions do
+  def init_stack()
+    $_canary1 = STACK_CANARY
+    # $_stack = IntegerArray.new(STACK_SIZE)
+    $_canary2 = STACK_CANARY
+    $_ss = STACK_SIZE
+    $_sc = 0
+    $_canary3 = STACK_CANARY
+  end
+end

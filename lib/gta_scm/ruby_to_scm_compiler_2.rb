@@ -706,6 +706,9 @@ class GtaScm::RubyToScmCompiler2
 
     if scanning?
       if lhs[0] == :ivar && rhs
+        if rhs[0].nil? && rhs[1].nil?
+          debugger
+        end
         self.functions[nil][:instances][ lhs[1] ] ||= []
         self.functions[nil][:instances][ lhs[1] ] << [ self.current_function , rhs ]
       end
@@ -1538,6 +1541,7 @@ class GtaScm::RubyToScmCompiler2
 
     arguments = opcode_call_arguments(node)
     arguments += return_vars
+    arguments += [ [:end_var_args] ] if need_var_args?(opcode_name)
 
     if arguments.size == 0
       [ [opcode_name] ]
@@ -1621,6 +1625,10 @@ class GtaScm::RubyToScmCompiler2
     end
 
     out
+  end
+
+  def need_var_args?(opcode_name)
+    [:start_new_script,:start_new_streamed_script].include?(opcode_name)
   end
 
   def struct_var?(node)
@@ -2043,7 +2051,7 @@ class GtaScm::RubyToScmCompiler2
 
   def logger_call(function_name,argument)
     [
-      [:assign,[ [:var,:debug_logger_argument], argument ]],
+      [:assign,[ [:var,:_debug_logger_argument], argument ]],
       [:gosub,[ [:label,:"#{function_name}"] ]]
     ]
   end

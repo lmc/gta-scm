@@ -42,7 +42,7 @@ class GtaScm::OpcodeDefinitions < Hash
     path = "games/#{game_id}/opcodes_defines.h"
     File.open(path,"r").readlines.each do |line|
       next if line.match(%r{^\s*\/\/})
-
+      # oline = line.dup
       line = line.
         gsub(%r(  \/\* )   ,'').
         gsub(%r( \*\/ { )  ,',').
@@ -50,10 +50,14 @@ class GtaScm::OpcodeDefinitions < Hash
         gsub(%r( \{)     ,'')
 
       tokens = line.split(",").map(&:strip)
+      o_tokens = line.split(",").map(&:strip)
 
       hex_opcode = tokens.shift()
       opcode_bytes = hex_opcode.scan(/(..)(..)/).flatten.map{|hex| hex.to_i(16)}.reverse
       _ = tokens.shift()
+      # if tokens.shift().nil?
+      #   debugger
+      # end
       name = tokens.shift().gsub(/[^A-Z0-9_]/,'')
       arg_types = tokens.reject(&:blank?)
 

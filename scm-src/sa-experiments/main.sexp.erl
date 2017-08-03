@@ -112,6 +112,7 @@
 % == Save Thread Extension ============
 % Global vars used: 
 % 4496 - code state: 0 = needs init, 1 = init'd
+% (Include "save-ext")
 (Include "save-ext")
 % =====================================
 
@@ -119,7 +120,8 @@
 % == External Loader ==================
 % Global vars used:
 % 4492 - external 78 instance count
-(Include "external-loader")
+% (Include "external-loader")
+(IncludeRuby "external-loader" (v2 true))
 % =====================================
 
 % (labeldef global_variable_declares)

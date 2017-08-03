@@ -44,8 +44,8 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
     # return
 
     # self.settings[:breakpoint_enabled] = process.read_scm_var( process.scm_var_offset_for("debug_breakpoint_pc") , :int32 )
-    self.settings[:breakpoint_enabled] = process.read_scm_var( :breakpoint_enabled , :int32 )
-    self.settings[:breakpoint_resumed] = process.read_scm_var( :breakpoint_resumed , :int32 )
+    self.settings[:breakpoint_enabled] = process.read_scm_var( :_breakpoint_enabled , :int32 )
+    self.settings[:breakpoint_resumed] = process.read_scm_var( :_breakpoint_resumed , :int32 )
     str_enable = self.settings[:breakpoint_enabled] == 1 ? "ctrl+h: disable" : "ctrl+h: enable"
     str_enable_s = self.settings[:breakpoint_enabled] == 1 ? "Enabled" : "Disabled"
 
@@ -92,15 +92,15 @@ class GtaScm::Panel::Breakpoint2 < GtaScm::Panel::Base
   def input(key,is_attached,process)
     # return
     if key == :ctrl_g
-      process.write_scm_var( :breakpoint_resumed , 1 , :int32 )
+      process.write_scm_var( :_breakpoint_resumed , 1 , :int32 )
     end
     if key == :ctrl_h
       if self.settings[:breakpoint_enabled] == 1
         self.settings[:breakpoint_enabled] = 0
-        process.write_scm_var( :breakpoint_enabled , 0 , :int32 )
+        process.write_scm_var( :_breakpoint_enabled , 0 , :int32 )
       else
         self.settings[:breakpoint_enabled] = 1
-        process.write_scm_var( :breakpoint_enabled , 1 , :int32 )
+        process.write_scm_var( :_breakpoint_enabled , 1 , :int32 )
       end
     end
   end
