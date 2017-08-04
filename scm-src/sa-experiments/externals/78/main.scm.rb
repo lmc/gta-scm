@@ -11,23 +11,23 @@ if @0 >= 0 && @0 < 400
   if @0 == EXT78_TEST
     [:IncludeRuby, "helper_v2", [:v2,true], [:external,true]]
   elsif @0 == EXT78_VEHICLE_MANAGER
-    [:IncludeRuby, "detect-cars", [:external,true]]
+    [:IncludeRuby, "externals/78/vehicle-manager", [:external,true]]
   elsif @0 == EXT78_SPATIAL_MANAGER
-    [:IncludeRuby, "spatial", [:external,true]]
+    [:IncludeRuby, "externals/78/spatial-manager", [:external,true]]
   elsif @0 == EXT78_SMITE_DRIVER
-    [:IncludeRuby, "smite", [:external,true]]
+    [:IncludeRuby, "externals/78/vehicle-smite", [:external,true]]
   end
 elsif @0 >= 400 && @0 < 1000
   # vehicle scripts
   if @0 == 420
-    [:IncludeRuby, "car-feature-420-taxi", [:external,true]]
+    [:IncludeRuby, "externals/78/vehicle/420-taxi", [:external,true]]
   elsif @0 == 443
-    [:IncludeRuby, "car-feature-443-packer", [:external,true]]
+    [:IncludeRuby, "externals/78/vehicle/443-packer", [:external,true]]
   end
 elsif @0 >= 1000 && @0 < 2000
   # spatial scripts
   # functions do
-    [:IncludeRuby, "spatial-functions", [:v2,true], [:keep_instance_scope,true], [:external,true]]
+    [:IncludeRuby, "externals/78/spatial-functions", [:v2,true], [:keep_instance_scope,true], [:external,true]]
   # end
   @0 -= 1000
   if @0 == 0
