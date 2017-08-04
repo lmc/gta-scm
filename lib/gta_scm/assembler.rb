@@ -356,6 +356,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
             compiler.external_id = self.external_id
             compiler.label_type = !!args[:external] ? :mission_label : :label
             compiler.compiler_data = self.compiler_data2
+            compiler.label_prefix = "l_#{file.gsub(/\W+/,"_")}_"
             ruby = compiler.transform_source(ruby)
             parsed = Parser::CurrentRuby.parse(ruby)
             # compiler.scm = @scm

@@ -69,6 +69,15 @@ declare do
   SPATIAL_ENTRIES = 8
   $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
   $spatial_index = 0
+
+  # EXT78_DETECT_CARS = 1
+  # EXT78_R1_MENU = 8
+  # EXT78_SMITE = 9
+
+  EXT78_TEST = 0
+  EXT78_VEHICLE_MANAGER = 1
+  EXT78_SPATIAL_MANAGER = 2
+  EXT78_SMITE_DRIVER = 3
 end
 
 functions do

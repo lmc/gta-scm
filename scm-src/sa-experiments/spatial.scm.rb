@@ -22,6 +22,10 @@ if emit(false)
   EVENTS_MAX = 2
 
   need_to_decrement_timers = false
+  _tmp_event_idx = 0
+  player_x = 0.0
+  player_y = 0.0
+  player_z = 0.0
 end
 
 routines do
@@ -97,6 +101,7 @@ routines do
 
 end
 
+$spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
 clear_array()
 loop do
   wait(0)
@@ -111,13 +116,13 @@ loop do
 
     # check character location against all events
     # when near, trigger scripts and add to local array
-    $player_x,$player_y,$player_z = get_char_coordinates(PLAYER_CHAR)
+    player_x,player_y,player_z = get_char_coordinates(PLAYER_CHAR)
     event_idx = 0
     loop do
 
       get_event()
 
-      _distance = get_distance_between_coords_3d($player_x,$player_y,$player_z,event_x,event_y,event_z)
+      _distance = get_distance_between_coords_3d(player_x,player_y,player_z,event_x,event_y,event_z)
       if _distance < event_radius
         is_event_idx_in_array()
         if _return_value == 1
@@ -135,7 +140,9 @@ loop do
               # set_var_int_to_lvar_int($spatial_timers[event_idx],event_timer)
               # 
               # start_new_streamed_script(78,7,event_idx,event_x,event_y,event_z,event_radius)
-              start_new_streamed_script(79,event_idx,event_x,event_y,event_z,event_radius)
+              _tmp_event_idx = event_idx
+              _tmp_event_idx += 1000
+              start_new_streamed_script(78,_tmp_event_idx,event_x,event_y,event_z,event_radius)
             else
               # do nothing (no free slots)
               nop()
@@ -169,7 +176,7 @@ loop do
         if event_timer == 255
           nop()
         else
-          add_one_off_sound(0.0,0.0,0.0,SOUND_BING)
+          # add_one_off_sound(0.0,0.0,0.0,SOUND_BING)
           remove_event_idx_from_array()
         end
       end

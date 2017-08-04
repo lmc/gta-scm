@@ -84,6 +84,7 @@ class GtaScm::RubyToScmCompiler2
   attr_accessor :scripts
   attr_accessor :struct_definitions
   attr_accessor :external_id
+  attr_accessor :label_prefix
 
   def compile_lvars_as_temp_vars?; true; end
 
@@ -436,6 +437,9 @@ class GtaScm::RubyToScmCompiler2
       [
         eval(node.source_code)
       ]
+
+    when :const
+      on_const_use(node)
 
 
     # Default case
@@ -1077,7 +1081,9 @@ class GtaScm::RubyToScmCompiler2
       # prologue << [ :stack_push , lvar_name ]
     end
     stack_adjust = function_stack_size(function_name)
-    if stack_adjust != 0
+    if function_name.nil?
+      prologue << [ :stack_zero ]
+    elsif stack_adjust != 0
       prologue << [ :stack_adjust , stack_adjust ]
     end
     prologue
@@ -1220,7 +1226,7 @@ class GtaScm::RubyToScmCompiler2
   def generate_label!(prefix = nil)
     @generate_label_counter ||= 0
     @generate_label_counter += 1
-    [self.current_function || "label",prefix,@generate_label_counter].join("_").to_sym
+    [self.label_prefix,self.current_function || "label",prefix,@generate_label_counter].join("_").to_sym
   end
 
   def on_loop(node)
@@ -1550,6 +1556,10 @@ class GtaScm::RubyToScmCompiler2
     arguments += return_vars
     arguments += [ [:end_var_args] ] if need_var_args?(opcode_name)
 
+    # if opcode_name.to_sym == :get_char_coordinates && arguments[1] && arguments[1].is_a?(Array)
+    #   debugger
+    # end
+
     if arguments.size == 0
       [ [opcode_name] ]
     else
@@ -1594,7 +1604,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :masgn )
       vars = []
       node[0].each_with_index do |var,index|
-        vars << [assignment_lhs(var,[return_types[index],nil])]
+        vars << assignment_lhs(var,[return_types[index],nil])
       end
       vars
     else
@@ -2075,6 +2085,8 @@ class GtaScm::RubyToScmCompiler2
     tokens.map do |line|
       line[1] = transform_args_to_v1_tokens(line[1]) if line[1].is_a?(Array)
       case line[0]
+      when :stack_zero
+        [:set_var_int,[ [:var,self.stack_locations[:sc]] , [:int8,0] ]]
       when :stack_adjust
         [:add_val_to_int_var,[ [:var,self.stack_locations[:sc]] , [:int8,line[1]] ]]
       when :assign

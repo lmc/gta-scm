@@ -34,8 +34,8 @@ loop do
     terminate()
   else
 
-    $player_x,$player_y,$player_z = get_char_coordinates(PLAYER_CHAR)
-    distance = get_distance_between_coords_3d($player_x,$player_y,$player_z,event_x,event_y,event_z)
+    @player_x,@player_y,@player_z = get_char_coordinates(PLAYER_CHAR)
+    distance = get_distance_between_coords_3d(@player_x,@player_y,@player_z,event_x,event_y,event_z)
     if distance > event_radius
       terminate()
     end

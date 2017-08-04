@@ -169,7 +169,8 @@ loop do
           driver = get_driver_of_car(current_car)
           check_driver_shitty()
           if driver_shitty == 1
-            start_new_streamed_script(78,9,current_car)
+            EXT78_SMITE_DRIVER = 3
+            start_new_streamed_script(78,EXT78_SMITE_DRIVER,current_car)
             tmp_i = 1
           end
 

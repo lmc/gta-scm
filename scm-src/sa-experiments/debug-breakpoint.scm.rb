@@ -30,7 +30,7 @@ routines do
 
   debug_breakpoint_entry = routine(export: :debug_breakpoint_entry, end_with: nil) do
     terminate_all_scripts_with_this_name("xrepl")
-    if $_breakpoint_inited == 0
+    if $_breakpoint_inited != 1
       $_breakpoint_inited = 1
       $_breakpoint_enabled = 1
       $_breakpoint_halt_vm = 1
@@ -63,7 +63,7 @@ routines do
   end
 
   debug_eval_true = routine(export: :debug_eval_true, end_with: nil) do
-    $breakpoint_repl_if_result = 1
+    $_breakpoint_repl_if_result = 1
     goto(DEBUG_BREAKPOINT_INNER)
   end
 
