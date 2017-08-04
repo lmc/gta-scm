@@ -22,6 +22,7 @@ require 'gta_scm/panel/breakpoint'
 require 'gta_scm/panel/breakpoint_2'
 require 'gta_scm/panel/stack_2'
 require 'gta_scm/panel/logger_2'
+require 'gta_scm/panel/tools_2'
 
 
 

@@ -14,6 +14,20 @@
 # menu helpers? - name/position/styles, populate/scroll/button callbacks
 # global var for active menu, manage it that way
 
+# L1 menu
+# hold down L1 to invoke
+# DPAD free if:
+# on foot:
+# up/down - don't act if player is targeting someone
+# left/right - don't act if conversation active
+# in vehicle:
+# up/down - lock radio station during
+
+# DPAD UP - main menu (like phone in gtav)
+
+# hold down L1 to invoke bullet time
+# perform abilities with DPAD/L2/R2 ?
+
 binary("games/san-andreas/data/script/main.scm") do |scm|
   # delete original headers
   scm.delete(0,55976)
