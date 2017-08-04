@@ -773,7 +773,7 @@ class GtaScm::RubyToScmCompiler2
       on_var_use(var)
     when node.match( :send , [1] => :block_pass )
       raise "handle block_pass"
-    when node[0][0].match(/^\$_\d+$/) && :send # $_0[]
+    when node[0] && node[0][0] && node[0][0].match(/^\$_\d+$/) && :send # $_0[]
       on_global_array_use(node)
     else
       debugger

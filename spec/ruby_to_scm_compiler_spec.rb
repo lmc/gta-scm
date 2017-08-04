@@ -1456,6 +1456,7 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (add_val_to_int_var ((var _sc) (int8 1)))
           (goto ((label function_end_my_stack_function)))
           (labeldef function_my_stack_function)
@@ -1467,9 +1468,9 @@ describe GtaScm::RubyToScmCompiler do
           (add_val_to_int_var ((var _sc) (int8 -4)))
           (return)
           (labeldef function_end_my_stack_function)
-          (set_lvar_int ((lvar 0 local_var int) (int32 1)))
-          (set_var_int ((var_array _stack-4 _sc 32 (int32 var)) (int32 2)))
-          (set_var_int ((var_array _stack+4 _sc 32 (int32 var)) (int32 123)))
+          (set_lvar_int ((lvar 0 local_var int) (int8 1)))
+          (set_var_int ((var_array _stack-4 _sc 32 (int32 var)) (int8 2)))
+          (set_var_int ((var_array _stack+4 _sc 32 (int32 var)) (int8 123)))
           (set_var_int_to_var_int ((var_array _stack+8 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
           (gosub ((label function_my_stack_function)))
           (set_lvar_int_to_var_int ((lvar 0 local_var int) (var_array _stack-0 _sc 32 (int32 var))))
@@ -1499,15 +1500,16 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (add_val_to_int_var ((var _sc) (int8 4)))
           (goto ((label function_end_my_stack_function)))
           (labeldef function_my_stack_function)
           (add_val_to_int_var ((var _sc) (int8 4)))
-          (get_char_coordinates ((var_array _stack-4 _sc 32 (int32 var)) ((stack -4 tx float)) ((stack -3 ty float)) ((stack -2 tz float))))
+          (get_char_coordinates ((var_array _stack-4 _sc 32 (int32 var)) (var_array _stack-16 _sc 32 (float32 var)) (var_array _stack-12 _sc 32 (float32 var)) (var_array _stack-8 _sc 32 (float32 var))))
           (add_val_to_int_var ((var _sc) (int8 -4)))
           (return)
           (labeldef function_end_my_stack_function)
-          (set_var_int ((var_array _stack-16 _sc 32 (int32 var)) (int32 1)))
+          (set_var_int ((var_array _stack-16 _sc 32 (int32 var)) (int8 1)))
           (set_var_float ((var_array _stack-12 _sc 32 (float32 var)) (float32 0.0)))
           (set_var_float ((var_array _stack-8 _sc 32 (float32 var)) (float32 0.0)))
           (set_var_float ((var_array _stack-4 _sc 32 (float32 var)) (float32 0.0)))
@@ -1539,6 +1541,7 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (goto ((label function_end_f2)))
           (labeldef function_f2)
           (add_val_to_int_var ((var _sc) (int8 1)))
@@ -1555,7 +1558,7 @@ describe GtaScm::RubyToScmCompiler do
           (add_val_to_int_var ((var _sc) (int8 -2)))
           (return)
           (labeldef function_end_f1)
-          (set_lvar_int ((lvar 0 b int) (int32 1000)))
+          (set_lvar_int ((lvar 0 b int) (int16 1000)))
           (set_var_int_to_lvar_int ((var_array _stack+4 _sc 32 (int32 var)) (lvar 0 b int)))
           (gosub ((label function_f1)))
           (set_lvar_int_to_var_int ((lvar 1 a int) (var_array _stack-0 _sc 32 (int32 var))))
@@ -1583,8 +1586,9 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (add_val_to_int_var ((var _sc) (int8 2)))
-          (set_var_int ((var_array _stack-8 _sc 32 (int32 var)) (int32 0)))
+          (set_var_int ((var_array _stack-8 _sc 32 (int32 var)) (int8 0)))
           (goto ((label function_end_timeout_time)))
           (labeldef function_timeout_time)
           (add_val_to_int_var ((var _sc) (int8 2)))
@@ -1593,7 +1597,7 @@ describe GtaScm::RubyToScmCompiler do
           (add_val_to_int_var ((var _sc) (int8 -2)))
           (return)
           (labeldef function_end_timeout_time)
-          (set_var_int ((var_array _stack-4 _sc 32 (int32 var)) (int32 1000)))
+          (set_var_int ((var_array _stack-4 _sc 32 (int32 var)) (int16 1000)))
           (set_var_int_to_var_int ((var_array _stack+4 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
           (gosub ((label function_timeout_time)))
           (set_var_int_to_var_int ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-0 _sc 32 (int32 var))))
@@ -1621,23 +1625,24 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (add_val_to_int_var ((var _sc) (int8 1)))
           (goto ((label function_end_modulo)))
           (labeldef function_modulo)
           (add_val_to_int_var ((var _sc) (int8 2)))
-          (labeldef modulo_loop_start_4)
+          (labeldef _modulo_loop_start_4)
           (not_is_int_var_greater_or_equal_to_int_var ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
-          (goto_if_false ((label modulo_if_6)))
-          (goto ((label modulo_loop_end_5)))
-          (labeldef modulo_if_6)
+          (goto_if_false ((label _modulo_if_6)))
+          (goto ((label _modulo_loop_end_5)))
+          (labeldef _modulo_if_6)
           (sub_int_var_from_int_var ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-4 _sc 32 (int32 var))))
-          (goto ((label modulo_loop_start_4)))
-          (labeldef modulo_loop_end_5)
+          (goto ((label _modulo_loop_start_4)))
+          (labeldef _modulo_loop_end_5)
           (add_val_to_int_var ((var _sc) (int8 -2)))
           (return)
           (labeldef function_end_modulo)
-          (set_var_int ((var_array _stack+4 _sc 32 (int32 var)) (int32 20)))
-          (set_var_int ((var_array _stack+8 _sc 32 (int32 var)) (int32 6)))
+          (set_var_int ((var_array _stack+4 _sc 32 (int32 var)) (int8 20)))
+          (set_var_int ((var_array _stack+8 _sc 32 (int32 var)) (int8 6)))
           (gosub ((label function_modulo)))
           (set_var_int_to_var_int ((var_array _stack-4 _sc 32 (int32 var)) (var_array _stack-0 _sc 32 (int32 var))))
           (labeldef end_script_test)
@@ -1676,37 +1681,38 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var 10236) (int8 0)))
           (add_val_to_int_var ((var 10236) (int8 5)))
           (EmitNodes nil)
           (EmitNodes t)
-          (labeldef label_loop_start_8)
-          (wait ((int32 100)))
-          (set_var_int ((var_array 10240-20 10236 256 (int32 var)) (int32 0)))
+          (labeldef _label_loop_start_8)
+          (wait ((int8 100)))
+          (set_var_int ((var_array 10240-20 10236 256 (int32 var)) (int8 0)))
           (is_player_playing ((dmavar 8 int)))
-          (goto_if_false ((label label_if_14)))
-          (get_char_coordinates ((dmavar 12 int) ((stack -4 x float)) ((stack -3 y float)) ((stack -2 z float))))
+          (goto_if_false ((label _label_if_14)))
+          (get_char_coordinates ((dmavar 12 int) (var_array 10240-16 10236 256 (float32 var)) (var_array 10240-12 10236 256 (float32 var)) (var_array 10240-8 10236 256 (float32 var))))
           (get_game_timer ((var_array 10240-4 10236 256 (int32 var))))
           (andor ((int8 1)))
-          (is_int_var_greater_than_number ((var_array 10240-4 10236 256 (int32 var)) (int32 5000)))
-          (not_is_int_var_greater_or_equal_to_number ((var_array 10240-4 10236 256 (int32 var)) (int32 10000)))
-          (goto_if_false ((label label_if_13)))
-          (add_one_off_sound ((var_array 10240-16 10236 256 (float32 var)) (var_array 10240-12 10236 256 (float32 var)) (var_array 10240-8 10236 256 (float32 var)) (int32 1056)))
+          (is_int_var_greater_than_number ((var_array 10240-4 10236 256 (int32 var)) (int16 5000)))
+          (not_is_int_var_greater_or_equal_to_number ((var_array 10240-4 10236 256 (int32 var)) (int16 10000)))
+          (goto_if_false ((label _label_if_13)))
+          (add_one_off_sound ((var_array 10240-16 10236 256 (float32 var)) (var_array 10240-12 10236 256 (float32 var)) (var_array 10240-8 10236 256 (float32 var)) (int16 1056)))
           (terminate_this_script)
-          (goto ((label label_if_12)))
-          (labeldef label_if_13)
+          (goto ((label _label_if_12)))
+          (labeldef _label_if_13)
           (andor ((int8 21)))
           (not_is_float_var_greater_or_equal_to_float_var ((var_array 10240-16 10236 256 (float32 var)) (var_array 10240-12 10236 256 (float32 var))))
           (not_is_float_var_greater_or_equal_to_float_var ((var_array 10240-12 10236 256 (float32 var)) (var_array 10240-8 10236 256 (float32 var))))
-          (goto_if_false ((label label_if_11)))
+          (goto_if_false ((label _label_if_11)))
           (terminate_this_script)
-          (goto ((label label_if_10)))
-          (labeldef label_if_11)
-          (add_val_to_int_var ((var_array 10240-20 10236 256 (int32 var)) (int32 100)))
-          (labeldef label_if_10)
-          (labeldef label_if_12)
-          (labeldef label_if_14)
-          (goto ((label label_loop_start_8)))
-          (labeldef label_loop_end_9)
+          (goto ((label _label_if_10)))
+          (labeldef _label_if_11)
+          (add_val_to_int_var ((var_array 10240-20 10236 256 (int32 var)) (int8 100)))
+          (labeldef _label_if_10)
+          (labeldef _label_if_12)
+          (labeldef _label_if_14)
+          (goto ((label _label_loop_start_8)))
+          (labeldef _label_loop_end_9)
           (labeldef end_script_test)
         LISP
       }
@@ -1753,25 +1759,26 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (add_val_to_int_var ((var _sc) (int8 6)))
-          (set_var_int ((var_array _stack-24 _sc 32 (int32 var)) (int32 6)))
-          (set_var_int ((var_array _stack-20 _sc 32 (int32 var)) (int32 1000)))
+          (set_var_int ((var_array _stack-24 _sc 32 (int32 var)) (int8 6)))
+          (set_var_int ((var_array _stack-20 _sc 32 (int32 var)) (int16 1000)))
           (set_var_int_to_var_int ((var_array _stack-16 _sc 32 (int32 var)) (var_array _stack-24 _sc 32 (int32 var))))
-          (add_val_to_int_var ((var_array _stack-16 _sc 32 (int32 var)) (int32 1)))
+          (add_val_to_int_var ((var_array _stack-16 _sc 32 (int32 var)) (int8 1)))
           (set_var_int_to_var_int ((var_array _stack-12 _sc 32 (int32 var)) (var_array _stack-16 _sc 32 (int32 var))))
-          (mult_int_var_by_val ((var_array _stack-12 _sc 32 (int32 var)) (int32 10)))
+          (mult_int_var_by_val ((var_array _stack-12 _sc 32 (int32 var)) (int8 10)))
           (set_var_int_to_var_int ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-20 _sc 32 (int32 var))))
           (sub_int_var_from_int_var ((var_array _stack-8 _sc 32 (int32 var)) (var_array _stack-12 _sc 32 (int32 var))))
           (set_var_int_to_var_int ((var_array _stack-4 _sc 32 (int32 var)) (var_array _stack-8 _sc 32 (int32 var))))
-          (set_lvar_int ((lvar 0 a int) (int32 1000)))
-          (set_lvar_int ((lvar 1 b int) (int32 3)))
+          (set_lvar_int ((lvar 0 a int) (int16 1000)))
+          (set_lvar_int ((lvar 1 b int) (int8 3)))
           (set_var_int_to_lvar_int ((var_array _stack-12 _sc 32 (int32 var)) (lvar 0 a int)))
-          (add_val_to_int_var ((var_array _stack-12 _sc 32 (int32 var)) (int32 5)))
+          (add_val_to_int_var ((var_array _stack-12 _sc 32 (int32 var)) (int8 5)))
           (set_var_int_to_lvar_int ((var_array _stack-16 _sc 32 (int32 var)) (lvar 1 b int)))
-          (mult_int_var_by_val ((var_array _stack-16 _sc 32 (int32 var)) (int32 10)))
+          (mult_int_var_by_val ((var_array _stack-16 _sc 32 (int32 var)) (int8 10)))
           (mult_int_var_by_int_var ((var_array _stack-12 _sc 32 (int32 var)) (var_array _stack-16 _sc 32 (int32 var))))
           (set_lvar_int_to_var_int ((lvar 2 c int) (var_array _stack-12 _sc 32 (int32 var))))
-          (wait ((int32 100)))
+          (wait ((int8 100)))
           (cset_lvar_float_to_lvar_int ((lvar 3 d float) (lvar 0 a int)))
           (add_val_to_float_lvar ((lvar 3 d float) (float32 10.0)))
           (labeldef end_script_test)
@@ -1797,9 +1804,10 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
-          (set_var_int ((dmavar 500 int) (int32 1)))
+          (set_var_int ((var _sc) (int8 0)))
+          (set_var_int ((dmavar 500 int) (int8 1)))
           (wait ((dmavar 500 int)))
-          (set_lvar_int ((lvar 30 30 int) (int32 2)))
+          (set_lvar_int ((lvar 30 30 int) (int8 2)))
           (wait ((lvar 30 30 int)))
           (labeldef end_script_test)
         LISP
@@ -1831,7 +1839,8 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
-          (set_var_int ((var index int) (int32 0)))
+          (set_var_int ((var _sc) (int8 0)))
+          (set_var_int ((var index int) (int8 0)))
           (EmitNodes nil)
           (set_var_int ((var cars) (int8 0)))
           (set_var_int ((var cars_1) (int8 0)))
@@ -1842,18 +1851,18 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_float ((var coords_1) (float32 0.0)))
           (set_var_float ((var coords_2) (float32 0.0)))
           (EmitNodes t)
-          (set_var_int ((var_array cars index 3 (int32 var)) (int32 0)))
-          (set_var_int ((var_array cars+4 index 3 (int32 var)) (int32 1)))
+          (set_var_int ((var_array cars index 3 (int32 var)) (int8 0)))
+          (set_var_int ((var_array cars+4 index 3 (int32 var)) (int8 1)))
           (wait ((var_array cars index 3 (int32 var))))
           (wait ((var_array cars+4 index 3 (int32 var))))
           (get_game_timer (var_array cars index 3 (int32 var)))
-          (get_char_coordinates ((dmavar 12 nil) ((var_array coords index 3 (float32 var))) ((var_array coords+4 index 3 (float32 var))) ((var_array coords+8 index 3 (float32 var)))))
+          (get_char_coordinates ((dmavar 12 nil) (var_array coords index 3 (float32 var)) (var_array coords+4 index 3 (float32 var)) (var_array coords+8 index 3 (float32 var))))
           (set_var_int_to_var_int ((var_array cars index 3 (int32 var)) (var index int)))
           (set_var_int_to_var_int ((var index int) (var_array cars index 3 (int32 var))))
           (is_int_var_greater_or_equal_to_int_var ((var_array cars index 3 (int32 var)) (var_array cars-4 index 3 (int32 var))))
-          (goto_if_false ((label label_if_2)))
-          (wait ((int32 0)))
-          (labeldef label_if_2)
+          (goto_if_false ((label _label_if_2)))
+          (wait ((int8 0)))
+          (labeldef _label_if_2)
           (labeldef end_script_test)
         LISP
       }
@@ -1885,31 +1894,31 @@ describe GtaScm::RubyToScmCompiler do
         end
       RUBY
       }
-      # FIXME: we expect lvar_array args to be integer lvar ids ?
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
-          (set_var_int ((var index int) (int32 0)))
-          (set_lvar_int ((lvar 0 index int) (int32 0)))
+          (set_var_int ((var _sc) (int8 0)))
+          (set_var_int ((var index int) (int8 0)))
+          (set_lvar_int ((lvar 0 index int) (int8 0)))
           (EmitNodes nil)
           (EmitNodes t)
           (EmitNodes nil)
           (EmitNodes t)
-          (set_lvar_int ((lvar 1 cars int) (int32 0)))
-          (set_lvar_int ((lvar 1 cars int) (int32 1)))
+          (set_lvar_int ((lvar 1 cars int) (int8 0)))
+          (set_lvar_int ((lvar 1 cars int) (int8 1)))
           (wait ((lvar_array 1 0 3 (int32 lvar))))
           (wait ((lvar_array 2 0 3 (int32 lvar))))
           (get_game_timer (lvar_array 1 0 3 (int32 lvar)))
-          (get_char_coordinates ((dmavar 12 nil) ((lvar 2 coords float)) ((lvar 2 coords float)) ((lvar 2 coords float))))
+          (get_char_coordinates ((dmavar 12 nil) (lvar 2 coords float) (lvar 2 coords float) (lvar 2 coords float)))
           (set_lvar_int_to_lvar_int ((lvar 1 cars int) (lvar 0 index int)))
           (set_lvar_int_to_lvar_int ((lvar 0 index int) (lvar_array 1 0 3 (int32 lvar))))
           (is_int_lvar_greater_or_equal_to_int_lvar ((lvar_array 1 0 3 (int32 lvar)) (lvar_array 0 0 3 (int32 lvar))))
-          (goto_if_false ((label label_if_3)))
-          (wait ((int32 0)))
-          (labeldef label_if_3)
+          (goto_if_false ((label _label_if_3)))
+          (wait ((int8 0)))
+          (labeldef _label_if_3)
           (is_int_lvar_greater_or_equal_to_int_lvar ((lvar_array 1 index 3 (int32 var)) (lvar_array 0 index 3 (int32 var))))
-          (goto_if_false ((label label_if_4)))
-          (wait ((int32 0)))
-          (labeldef label_if_4)
+          (goto_if_false ((label _label_if_4)))
+          (wait ((int8 0)))
+          (labeldef _label_if_4)
           (labeldef end_script_test)
         LISP
       }
@@ -1941,12 +1950,13 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (labeldef start_script_test)
+          (set_var_int ((var _sc) (int8 0)))
           (set_var_float ((var coords_x float) (float32 123.4)))
           (set_var_float ((var coords_y float) (float32 456.7)))
           (set_var_float ((var coords_z float) (float32 89.0)))
-          (create_car ((int32 123) (var coords_x float) (var coords_y float) (var coords_z float) (var car int)))
-          (create_car ((int32 123) (var coords_x float) (var coords_y float) (var coords_z float) (var car int)))
-          (get_char_coordinates ((int32 123) (var coords_x float) (var coords_y float) (var coords_z float)))
+          (create_car ((int8 123) (var coords_x float) (var coords_y float) (var coords_z float) (var car int)))
+          (create_car ((int8 123) (var coords_x float) (var coords_y float) (var coords_z float) (var car int)))
+          (get_char_coordinates ((int8 123) (var coords_x float) (var coords_y float) (var coords_z float)))
           (set_var_float_to_var_float ((var coords_x float) (var coords_y float)))
           (goto ((label function_end_vector_func)))
           (labeldef function_vector_func)
@@ -1971,9 +1981,9 @@ describe GtaScm::RubyToScmCompiler do
           (set_var_float_to_var_float ((var returns_y float) (var_array _stack+4 _sc 32 (float32 var))))
           (set_var_float_to_var_float ((var returns_z float) (var_array _stack+8 _sc 32 (float32 var))))
           (is_float_var_greater_or_equal_to_float_var ((var coords_y float) (var coords_z float)))
-          (goto_if_false ((label label_if_2)))
+          (goto_if_false ((label _label_if_2)))
           (set_var_float ((var coords_x float) (float32 1.0)))
-          (labeldef label_if_2)
+          (labeldef _label_if_2)
           (labeldef end_script_test)
         LISP
       }
@@ -2011,32 +2021,45 @@ describe GtaScm::RubyToScmCompiler do
       }
       it { is_expected.to eql <<-LISP.strip_heredoc.strip
           (andor ((int8 2)))
-          (not_is_car_stuck ((int32 0)))
-          (is_car_stuck ((int32 1)))
-          (not_is_car_stuck ((int32 2)))
-          (goto_if_false ((label label_if_2)))
-          (wait ((int32 0)))
-          (labeldef label_if_2)
+          (not_is_car_stuck ((int8 0)))
+          (is_car_stuck ((int8 1)))
+          (not_is_car_stuck ((int8 2)))
+          (goto_if_false ((label _label_if_2)))
+          (wait ((int8 0)))
+          (labeldef _label_if_2)
         LISP
       }
     end
 
 
-    # describe "functions as arguments" do
-    #   let(:ruby){ <<-RUBY
-    #     script() do
-    #     def test
-    #     end
-    #     end
-    #     # gosub(test)
-    #     # gosub(&test)
-    #     # gosub([:label,:foo])
-    #   RUBY
-    #   }
-    #   it { is_expected.to eql <<-LISP.strip_heredoc.strip
-    #     LISP
-    #   }
-    # end
+    describe "functions as arguments" do
+      let(:ruby){ <<-RUBY
+        script() do
+          def test(arg)
+            nop()
+          end
+          test(&test)
+          gosub(&test)
+        end
+      RUBY
+      }
+      it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        LISP
+      }
+    end
+
+
+  describe "log" do
+    let(:ruby){ <<-RUBY
+      @a = 1234
+      log("string is #{@a}, wow!")
+    RUBY
+    }
+    it { is_expected.to eql <<-LISP.strip_heredoc.strip
+        
+      LISP
+    }
+  end
 
   end
 
