@@ -25,12 +25,15 @@ elsif @0 >= 400 && @0 < 1000
     [:IncludeRuby, "car-feature-443-packer", [:external,true]]
   end
 elsif @0 >= 1000 && @0 < 2000
-  @0 -= 1000
   # spatial scripts
+  functions do
+    [:IncludeRuby, "spatial-functions", [:v2,true], [:keep_instance_scope,true], [:external,true]]
+  end
+  @0 -= 1000
   if @0 == 0
-    [:IncludeRuby, "externals/78/spatial/000-test", [:v2,true], [:external,true]]
-  # elsif @0 == 1
-  #   [:IncludeRuby, "externals/78/spatial/000-test", [:v2,true], [:external,true]]
+    [:IncludeRuby, "externals/78/spatial/000-test", [:v2,true], [:use_instance_scope,true], [:external,true]]
+  elsif @0 == 1
+    [:IncludeRuby, "externals/78/spatial/001-test", [:v2,true], [:use_instance_scope,true], [:external,true]]
   end
 end
 

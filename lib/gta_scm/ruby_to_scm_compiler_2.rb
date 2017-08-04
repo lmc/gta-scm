@@ -127,23 +127,42 @@ class GtaScm::RubyToScmCompiler2
     self.external_id = nil
   end
 
-  def compiler_data
+  def compiler_data(options = {})
+    options.reverse_merge!(keep_instance_scope: false)
     data = {}
     data[:functions] = self.functions.deep_dup
-    data[:functions][nil][:instances] = {}
-    data[:functions][nil][:instance_structs] = {}
-    data[:functions][nil][:instance_arrays] = {}
+    if options[:keep_instance_scope]
+
+    elsif options[:use_instance_scope]
+      data[:functions][nil][:instances] = @original_compiler_data[:functions][nil][:instances]
+      data[:functions][nil][:instance_structs] = @original_compiler_data[:functions][nil][:instance_structs]
+      data[:functions][nil][:instance_arrays] = @original_compiler_data[:functions][nil][:instance_arrays]
+    else
+      data[:functions][nil][:instances] = {}
+      data[:functions][nil][:instance_structs] = {}
+      data[:functions][nil][:instance_arrays] = {}
+    end
     data[:functions][nil][:locals] = {}
     data[:constants] = self.constants.deep_dup
+    if options[:keep_instance_scope]
+      data[:instance_assigns] = [@ivar_lvar_id_counter,@ivar_lvar_ids]
+    elsif options[:use_instance_scope]
+      data[:instance_assigns] = @original_compiler_data[:instance_assigns]
+    end
     data
   end
 
   def compiler_data=(val)
-    # debugger
     val = val.deep_dup
+    @original_compiler_data = val
     if val.present?
       self.functions = val[:functions]
       self.constants = val[:constants]
+      if val[:instance_assigns]
+        debugger
+        @ivar_lvar_id_counter = val[:instance_assigns][0]
+        @ivar_lvar_ids = val[:instance_assigns][1]
+      end
     end
   end
 
@@ -208,7 +227,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :block , [0] => :send , [0,1] => :script , [1] => :args , [2] => [:begin,:block] )
       on_script_block( node )
 
-    when node.match( :block , [0] => :send , [0,1] => :main , [1] => :args , [2] => [:begin,:block] )
+    when node.match( :block , [0] => :send , [0,1] => :main , [1] => :args , [2] => [:begin,:block,:send] )
       on_main_block( node )
 
     # Function declare
@@ -234,7 +253,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :def , [1] => :args , [2] => [:begin,:return,:send,:if] )
       on_function_block( node )
 
-    when node.match( :block , [0] => :send , [0,1] => :functions , [1] => [:args] , [2] => [:begin,:return,:send,:if,:def] )
+    when node.match( :block , [0] => :send , [0,1] => :functions , [1] => [:args] , [2] => [:begin,:return,:send,:if,:def,:array] )
       on_functions_block( node )
 
     # when node.match( :send , [1] => :function )
@@ -1083,7 +1102,8 @@ class GtaScm::RubyToScmCompiler2
     stack_adjust = function_stack_size(function_name)
     if function_name.nil?
       prologue << [ :stack_zero ]
-    elsif stack_adjust != 0
+    end
+    if stack_adjust != 0
       prologue << [ :stack_adjust , stack_adjust ]
     end
     prologue
@@ -1370,11 +1390,15 @@ class GtaScm::RubyToScmCompiler2
   end
 
   def on_dereference_assign(node)
-    
-    # [
-    #   :assign,
-    #   [lhs,]
-    # ]
+    lhs = self.assignment_lhs(node,[:int32,nil])
+    deref_value = node[1][2]
+    if self.functions[deref_value[1]]
+      [
+        [:assign,[lhs,[self.label_type,:"function_#{deref_value[1]}"]]]
+      ]
+    else
+      raise "dunno how to deref #{node.inspect}"
+    end
   end
 
   # Operator Assign
@@ -2284,6 +2308,8 @@ class GtaScm::RubyToScmCompiler2
       tokens[2]
     when :vlstring
       :string8
+    when :label, :mission_label
+      :int
     else
       # return [:unknown] if generating?
       debugger
@@ -2302,6 +2328,8 @@ class GtaScm::RubyToScmCompiler2
     when :float,:float32
       nil
     when :vlstring
+      nil
+    when :label, :mission_label
       nil
     else
       # return [:unknown] if generating?

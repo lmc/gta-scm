@@ -385,7 +385,7 @@ class GtaScm::Assembler::Sexp < GtaScm::Assembler::Base
           # self.touchup_defines.merge!(compiler.)
           if args[:v2]
             self.symbols_data << compiler.export_symbols()
-            self.compiler_data2 = compiler.compiler_data()
+            self.compiler_data2 = compiler.compiler_data(keep_instance_scope: args[:keep_instance_scope], use_instance_scope: args[:use_instance_scope])
           else
             self.constants_to_values.merge!(compiler.constants_to_values)
             self.compiler_data = compiler.compiler_data
