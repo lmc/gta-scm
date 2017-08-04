@@ -20,11 +20,14 @@ def check_spatial_script(terminate_callback)
     if terminate_callback != 0
       log("running callback at ")
       log_int(terminate_callback)
+
       gosub(terminate_callback)
-      terminate_callback = $_stack[$_sc]
-      $spatial_timers[@event_id] = terminate_callback
+      # first return value is on the top of the stack
+      timeout = $_stack[$_sc]
+      $spatial_timers[@event_id] = timeout
+
       log("returned")
-      log_int(terminate_callback)
+      log_int(timeout)
     else
       $spatial_timers[@event_id] = 30
     end

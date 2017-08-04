@@ -282,10 +282,6 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :break )
       on_break(node)
 
-    # Generic block
-    when node.match( :block )
-      transform_node(node[0])
-
     # Operator Assign
     when node.match( [:op_asgn] , [0] => [:lvasgn,:ivasgn,:gvasgn], [1] => [:+,:-,:*,:/] )
       on_operator_assign( node )
@@ -359,6 +355,8 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :masgn , [0] => :mlhs , [1] => :send ) && self.functions[ node[1][1] ]
       on_function_call(node)
 
+    when node.match( :block , [2] => [:begin,:send] ) && self.functions[ node[0][1] ]
+      on_function_call(node,node[2])
 
     # Assignment
     when node.match( [:lvasgn,:ivasgn,:gvasgn] , [1] => [:lvar,:ivar,:gvar,:int,:float,:str,:const] )
@@ -451,6 +449,10 @@ class GtaScm::RubyToScmCompiler2
       else
         [[:unknown_call, node[1] ]]
       end
+
+    # Generic block
+    when node.match( :block )
+      transform_node(node[0])
 
     # raw s-expression output (is this is a good idea or horrible?)
     when node.match( :array , [0] => :sym )
@@ -1408,6 +1410,9 @@ class GtaScm::RubyToScmCompiler2
 
   def on_dereference_use(node)
     deref_value = node[2][1]
+    if scanning?
+      return [self.label_type,:"function_#{deref_value}"]
+    end
     if self.functions[deref_value]
       [self.label_type,:"function_#{deref_value}"]
     else
@@ -1442,7 +1447,7 @@ class GtaScm::RubyToScmCompiler2
   #   s(:send, nil, :my_stack_function,
   #     s(:ivar, :@local_var),
   #     s(:lvar, :temp_var)))
-  def on_function_call(node)
+  def on_function_call(node,block_arg = nil)
     function_name = function_call_name(node)
 
     if scanning?
@@ -1452,7 +1457,20 @@ class GtaScm::RubyToScmCompiler2
       }
     end
 
+    block = []
+    if block_arg
+      debugger
+      post_block_label = generate_label!(:"post_block_#{function_name}")
+      # FIXME: should generate anonymous function for this
+      block = [
+        [:goto,[[self.label_type,post_block_label]]],
+        *transform_node(block_arg),
+        [:labeldef,post_block_label]
+      ]
+    end
+
     [
+      *block,
       *function_call_argument_assignments(node,function_name),
       [:gosub, [[self.functions[function_name][:label_type],:"function_#{function_name}"]]],
       *function_call_return_assignments(node,function_name),
@@ -1466,6 +1484,8 @@ class GtaScm::RubyToScmCompiler2
       node[1][1]
     elsif node.match(:masgn)
       node[1][1]
+    elsif node.match(:block)
+      node[0][1]
     else
       debugger
       raise "unknown function call name #{node.inspect}"
