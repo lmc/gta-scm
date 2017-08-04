@@ -2,9 +2,9 @@ declare do
   int @0 # sub-script id argument from start_new_streamed_script
 end
 
-log("starting script with ")
-log_int(@0)
-log("")
+# log("starting script with ")
+# log_int(@0)
+# log("")
 
 if @0 >= 0 && @0 < 400
   # normal scripts
@@ -26,14 +26,14 @@ elsif @0 >= 400 && @0 < 1000
   end
 elsif @0 >= 1000 && @0 < 2000
   # spatial scripts
-  functions do
+  # functions do
     [:IncludeRuby, "spatial-functions", [:v2,true], [:keep_instance_scope,true], [:external,true]]
-  end
+  # end
   @0 -= 1000
   if @0 == 0
     [:IncludeRuby, "externals/78/spatial/000-test", [:v2,true], [:use_instance_scope,true], [:external,true]]
-  elsif @0 == 1
-    [:IncludeRuby, "externals/78/spatial/001-test", [:v2,true], [:use_instance_scope,true], [:external,true]]
+  # elsif @0 == 1
+  #   [:IncludeRuby, "externals/78/spatial/001-test", [:v2,true], [:use_instance_scope,true], [:external,true]]
   end
 end
 

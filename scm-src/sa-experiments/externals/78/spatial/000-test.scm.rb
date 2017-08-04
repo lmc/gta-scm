@@ -9,8 +9,7 @@ script(name: "xspt000") do
   @pickup = create_pickup_with_ammo(356,PICKUP_TYPE_NO_RESPAWN,60,@event_x,@event_y,@event_z)
 
   main(wait: 0) do
-    # @terminate_callback = &terminate_event_000
-    check_spatial_script()
+    check_spatial_script(&terminate_event_000)
   end
 
   loop do

@@ -159,7 +159,6 @@ class GtaScm::RubyToScmCompiler2
       self.functions = val[:functions]
       self.constants = val[:constants]
       if val[:instance_assigns]
-        debugger
         @ivar_lvar_id_counter = val[:instance_assigns][0]
         @ivar_lvar_ids = val[:instance_assigns][1]
       end
@@ -381,6 +380,8 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:ivasgn,:gvasgn,:lvasgn] , [1] => :send , [1,1] => :block_pass)
       on_dereference_assign( node )
 
+    when node.match( :send, [1] => :block_pass)
+      on_dereference_use(node)
 
 
     # Return results of opcode call
@@ -457,7 +458,7 @@ class GtaScm::RubyToScmCompiler2
         eval(node.source_code)
       ]
 
-    when :const
+    when node.match(:const)
       on_const_use(node)
 
 
@@ -575,6 +576,8 @@ class GtaScm::RubyToScmCompiler2
       resolved_gvar_type(var_or_val[1])
     when :vlstring
       :string8
+    when :label, :mission_label
+      :int
     else
       debugger
       raise "unknown var type #{var_or_val.inspect}"
@@ -795,6 +798,7 @@ class GtaScm::RubyToScmCompiler2
     if value = self.constants[node[1]]
       return value
     else
+      debugger
       raise "unknown constant #{node[1]}"
     end
   end
@@ -1036,7 +1040,8 @@ class GtaScm::RubyToScmCompiler2
         arguments:     {},
         locals:        {},
         local_structs: {},
-        invokes:       []
+        invokes:       [],
+        label_type:    self.label_type
       }
       node[1].each do |arg|
         self.functions[self.current_function][:arguments][ arg[0] ] ||= []
@@ -1401,6 +1406,15 @@ class GtaScm::RubyToScmCompiler2
     end
   end
 
+  def on_dereference_use(node)
+    deref_value = node[2][1]
+    if self.functions[deref_value]
+      [self.label_type,:"function_#{deref_value}"]
+    else
+      raise "dunno how to deref #{node.inspect}"
+    end
+  end
+
   # Operator Assign
   def on_operator_assign(node)
     rhs = assignment_rhs(node)
@@ -1440,7 +1454,7 @@ class GtaScm::RubyToScmCompiler2
 
     [
       *function_call_argument_assignments(node,function_name),
-      [:gosub, [[self.label_type,:"function_#{function_name}"]]],
+      [:gosub, [[self.functions[function_name][:label_type],:"function_#{function_name}"]]],
       *function_call_return_assignments(node,function_name),
     ]
   end
