@@ -72,6 +72,17 @@ routines do
     goto(DEBUG_BREAKPOINT_INNER)
   end
 
+  # repl host script
+  # @0  = code
+  # @24 = code end (100 bytes) (opcode 2 + (16 array args 96) + return 2)
+  # @25 = eval return 1
+  # @26 = eval return 2
+  # @27 = eval return 3
+  # @28 = eval return 4
+  # @29 = eval status ( -1 = ready to eval code once, 0 = eval'd false, 1 = eval'd true )
+  # @30 = script idx
+  # @31 = script offset
+
   # # thread for handling execution requests from the external REPL
   # # simply sets $breakpoint_halt_vm = 0 so the game doesn't lock up during the breakpoint
   # # then hits the breakpoint in a loop so we can execute code in this thread from the REPL

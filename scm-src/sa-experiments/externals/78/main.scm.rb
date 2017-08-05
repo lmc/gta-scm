@@ -36,7 +36,7 @@ loop { wait(0) }
 
 
 [:labeldef,:ext78_test]
-[:IncludeRuby, "helper_v2", [:v2,true], [:external,true]]
+[:IncludeRuby, "externals/78/helper", [:v2,true], [:external,true]]
 
 [:labeldef,:ext78_vehicle_manager]
 [:IncludeRuby, "externals/78/vehicle-manager", [:external,true]]

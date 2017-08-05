@@ -3,7 +3,6 @@
 log("scripts terming")
 
 # kill scripts that will have PCs in undefined code if scm file is uninstalled
-terminate_all_scripts_with_this_name("xextldr")
 terminate_all_scripts_with_this_name("xhelper")
 
 $code_state = 0

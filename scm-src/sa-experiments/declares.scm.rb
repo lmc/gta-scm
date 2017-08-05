@@ -63,6 +63,9 @@ declare do
   $code_state = 0
   $save_in_progress = 0
 
+  CODE_VERSION = 1
+  $save_version = 0
+
   $memory_zero_addr = 0
   $memory_zero_end_addr = 0
 
@@ -94,5 +97,10 @@ functions do
     $_canary1 = STACK_CANARY
     $_canary2 = STACK_CANARY
     $_canary3 = STACK_CANARY
+  end
+
+  def migrate_001()
+    # fade in game initially
+    do_fade(100,1)
   end
 end

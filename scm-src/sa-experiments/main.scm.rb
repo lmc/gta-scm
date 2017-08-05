@@ -94,22 +94,16 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
     [:IncludeRuby,"functions",[:v2,true]]
     [:IncludeRuby,"main-loop-ext",[:v2,true]]
     [:IncludeRuby,"save-script-ext",[:v2,true]]
-    [:IncludeRuby,"external-loader",[:v2,true]]
 
     [:IncludeRuby,"bitpacker"]
     [:IncludeRuby,"corona"]
     [:Include,"carid2gxt"]
-
-
-    [:labeldef,:helper]
-    [:IncludeRuby,"helper"]
   end
 
   # Include missions
   scm.include(194125,3079744)
 
   [:AssignGlobalVariables]
-  # [:AssembleExternal,78,"ext78"]
   [:AssembleExternal,78,"externals/78/main"]
   [:AssembleExternal,79,"ext79"]
 end
