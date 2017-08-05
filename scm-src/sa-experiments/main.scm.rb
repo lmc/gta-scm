@@ -92,6 +92,7 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
   # end of main code
   scm.patch(194125,200000) do
     [:IncludeRuby,"functions",[:v2,true]]
+    [:IncludeRuby,"migrations",[:v2,true]]
     [:IncludeRuby,"main-loop-ext",[:v2,true]]
     [:IncludeRuby,"save-script-ext",[:v2,true]]
 

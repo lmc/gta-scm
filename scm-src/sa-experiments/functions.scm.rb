@@ -1,6 +1,15 @@
 [:nop]
 functions do
-  
+  def init_stack()
+    $_ss = STACK_SIZE
+    $_sc = 0
+    # $_stack = IntegerArray.new(STACK_SIZE)
+    # memory_zero(&$_stack,STACK_SIZE)
+    $_canary1 = STACK_CANARY
+    $_canary2 = STACK_CANARY
+    $_canary3 = STACK_CANARY
+  end
+
   def get_script_idx()
     @30 = generate_random_int_in_range(0,2_000_000_000)
     @31 = generate_random_int_in_range(0,2_000_000_000)

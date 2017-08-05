@@ -5,6 +5,9 @@
 [:UseGlobalVariables, :temp, 57948, 60024, 519]    # crazy?! re-uses bootstrapper code as global vars (after our debug code)
 
 declare do
+  MEMORY_TO_ZERO_OFFSET = 57948
+  MEMORY_TO_ZERO_SIZE = 519
+
   TEST_CONSTANT = 1057
 
   FADE_OUT = 0
@@ -47,9 +50,6 @@ declare do
   PICKUP_TYPE_LONG_RESPAWN = 15
   PICKUP_TYPE_NO_RESPAWN = 3
 
-  MEMORY_TO_ZERO_OFFSET = 57948
-  MEMORY_TO_ZERO_SIZE = 519
-
   STACK_SIZE = 20
   STACK_CANARY = 42069
   $_canary1 = 0
@@ -78,29 +78,8 @@ declare do
   $spatial_timers = IntegerArray.new(SPATIAL_ENTRIES)
   $spatial_index = 0
 
-  # EXT78_DETECT_CARS = 1
-  # EXT78_R1_MENU = 8
-  # EXT78_SMITE = 9
-
   EXT78_TEST = 0
   EXT78_VEHICLE_MANAGER = 1
   EXT78_SPATIAL_MANAGER = 2
   EXT78_SMITE_DRIVER = 3
-end
-
-functions do
-  def init_stack()
-    $_ss = STACK_SIZE
-    $_sc = 0
-    # $_stack = IntegerArray.new(STACK_SIZE)
-    # memory_zero(&$_stack,STACK_SIZE)
-    $_canary1 = STACK_CANARY
-    $_canary2 = STACK_CANARY
-    $_canary3 = STACK_CANARY
-  end
-
-  def migrate_001()
-    # fade in game initially
-    do_fade(100,1)
-  end
 end
