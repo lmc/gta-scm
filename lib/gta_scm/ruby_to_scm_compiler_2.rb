@@ -1663,6 +1663,9 @@ class GtaScm::RubyToScmCompiler2
     when node.match( [:lvasgn,:ivasgn,:gvasgn] )
       if struct_var?(node)
         expand_struct_vars(node)
+      elsif return_types[0].nil?
+        # no return def for opcode - can happen
+        [ assignment_lhs(node,nil) ]
       else
         [ assignment_lhs(node,[return_types[0],nil]) ]
       end
