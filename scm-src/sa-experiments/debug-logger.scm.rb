@@ -5,6 +5,7 @@ declare do
   $_debug_logger_buffer_index = 0
   $_debug_logger_argument = 0
   $_debug_logger_buffer = IntegerArray[DEBUG_LOGGER_BUFFER_SIZE]
+  DEBUG_LOGGER_INITED = 42069
   # @30 = 0
   # @31 = 0
   SCM_OFFSET = 10664568
@@ -20,8 +21,8 @@ end
 functions(bare: true) do
   
   def debug_logger()
-    if $_debug_logger_inited != 1
-      $_debug_logger_inited = 1
+    if $_debug_logger_inited != DEBUG_LOGGER_INITED
+      $_debug_logger_inited = DEBUG_LOGGER_INITED
       $_debug_logger_buffer_size = DEBUG_LOGGER_BUFFER_SIZE
       $_debug_logger_buffer_index = 0
     end

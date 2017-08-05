@@ -37,6 +37,7 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
 
   # 1217 bytes of jumped-over code in init code
   scm.patch(56728,57945) do
+    [:IncludeRuby,"declares",[:v2,true]]
     [:labeldef,:debug_breakpoint]
     [:IncludeRuby, "debug-breakpoint"]
     [:IncludeRuby, "debug-logger", [:v2, true]]
@@ -90,7 +91,6 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
 
   # end of main code
   scm.patch(194125,200000) do
-    [:IncludeRuby,"declares",[:v2,true]]
     [:IncludeRuby,"functions",[:v2,true]]
     [:IncludeRuby,"main-loop-ext",[:v2,true]]
     [:IncludeRuby,"save-script-ext",[:v2,true]]

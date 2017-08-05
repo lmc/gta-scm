@@ -13,19 +13,19 @@ if $13576 > 0 && $_zeroed_temp_vars != 1
   # log("initing stack/temp vars")
 
   # init stacks for further calls
-  # $_sc = 0
-  # init_stack()
+  $_sc = 0
+  init_stack()
 
-  # memory_zero(MEMORY_TO_ZERO_OFFSET,MEMORY_TO_ZERO_SIZE)
+  memory_zero(MEMORY_TO_ZERO_OFFSET,MEMORY_TO_ZERO_SIZE)
 
   # reset stack again after it's been cleared
-  # $_sc = 0
-  # init_stack()
+  $_sc = 0
+  init_stack()
 
   # get_script_idx()
 
   # debug_logger_script_idx()
-  # log("done")
+  log("done")
   $_zeroed_temp_vars = 1
 end
 

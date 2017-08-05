@@ -39,11 +39,12 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
       return
     end
 
+    buffer_check  = process.read_scm_var(:_debug_logger_inited,:int)
     buffer_size  = process.read_scm_var(:_debug_logger_buffer_size,:int)
     buffer_index = process.read_scm_var(:_debug_logger_buffer_index,:int)
     timestamp = Time.now.strftime("%H:%M:%S.%L")
 
-    if buffer_index > 0
+    if buffer_index > 0 && buffer_check == 42069
 
       to_read = buffer_index
       to_read = buffer_size if buffer_index >= buffer_size
