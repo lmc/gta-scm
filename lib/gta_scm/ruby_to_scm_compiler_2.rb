@@ -205,6 +205,9 @@ class GtaScm::RubyToScmCompiler2
   def transform_node(node)
     case
 
+    when node.nil?
+      debugger
+
     # generic block, seperate instructions as children
     when node.match( :begin )
       transforms = []
@@ -578,7 +581,7 @@ class GtaScm::RubyToScmCompiler2
       resolved_gvar_type(var_or_val[1])
     when :vlstring
       :string8
-    when :label, :mission_label
+    when :label, :mission_label, :labelvar
       :int
     else
       debugger
@@ -1399,23 +1402,28 @@ class GtaScm::RubyToScmCompiler2
   def on_dereference_assign(node)
     lhs = self.assignment_lhs(node,[:int32,nil])
     deref_value = node[1][2]
-    if self.functions[deref_value[1]]
+    if deref_value[1] && self.functions[deref_value[1]]
       [
         [:assign,[lhs,[self.label_type,:"function_#{deref_value[1]}"]]]
       ]
+    elsif deref_value.type == :gvar
+      [:labelvar,gvar_name(deref_value[0])]
     else
       raise "dunno how to deref #{node.inspect}"
     end
   end
 
   def on_dereference_use(node)
-    deref_value = node[2][1]
-    if scanning?
-      return [self.label_type,:"function_#{deref_value}"]
-    end
-    if self.functions[deref_value]
-      [self.label_type,:"function_#{deref_value}"]
+    deref_value = node[2]
+    # if scanning?
+    #   return [self.label_type,:"#{deref_value}"]
+    # end
+    if deref_value[1] && self.functions[deref_value[1]]
+      [self.label_type,:"function_#{deref_value[1]}"]
+    elsif deref_value.type == :gvar
+      [:labelvar,gvar_name(node[2][0])]
     else
+      debugger
       raise "dunno how to deref #{node.inspect}"
     end
   end
@@ -2342,7 +2350,7 @@ class GtaScm::RubyToScmCompiler2
       tokens[2]
     when :vlstring
       :string8
-    when :label, :mission_label
+    when :label, :mission_label, :labelvar
       :int
     else
       # return [:unknown] if generating?
@@ -2363,7 +2371,7 @@ class GtaScm::RubyToScmCompiler2
       nil
     when :vlstring
       nil
-    when :label, :mission_label
+    when :label, :mission_label, :labelvar
       nil
     else
       # return [:unknown] if generating?

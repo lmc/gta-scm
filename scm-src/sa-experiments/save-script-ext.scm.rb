@@ -1,6 +1,6 @@
 # called as a gosub before the save menu is shown
 [:labeldef, :save_thread_ext]
-log("exts terming")
+log("scripts terming")
 
 # kill scripts that will have PCs in undefined code if scm file is uninstalled
 terminate_all_scripts_with_this_name("xextldr")

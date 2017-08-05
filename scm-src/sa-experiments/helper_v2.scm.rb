@@ -19,10 +19,10 @@ script(name: "xhelpv2") do
 
   [:gosub,[[:label,:function_get_script_idx]]]
 
-  log("script idx =")
-  log_int(@30)
+  # log("script idx =")
+  # log_int(@30)
 
-  add_one_off_sound(0.0,0.0,0.0,SOUND_BING)
+  # add_one_off_sound(0.0,0.0,0.0,SOUND_BING)
 
   loop { wait(0) }
 end
