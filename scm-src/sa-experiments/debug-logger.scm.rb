@@ -6,8 +6,8 @@ declare do
   $_debug_logger_argument = 0
   $_debug_logger_buffer = IntegerArray[DEBUG_LOGGER_BUFFER_SIZE]
   DEBUG_LOGGER_INITED = 42069
-  # @30 = 0
-  # @31 = 0
+  @30 = 0
+  @31 = 0
   SCM_OFFSET = 10664568
   SCB_OFFSET = 10933576
   SCB_SIZE = 224
@@ -33,18 +33,21 @@ functions(bare: true) do
     $_debug_logger_argument = 0
   end
 
-  # def debug_logger_script_idx()
-  #   min_script_offset = SCB_OFFSET
-  #   min_script_offset /= 4
-  #   max_script_offset = SCB_SIZE
-  #   max_script_offset *= MAX_SCRIPTS
-  #   max_script_offset += SCB_OFFSET
-  #   max_script_offset /= 4
-  #   if @30 >= 0 && @30 < MAX_SCRIPTS && @31 >= min_script_offset && @31 < max_script_offset
-  #     log("valid script id")
-  #   else
-  #     log("invalid")
-  #   end
-  # end
+  def debug_logger_script_idx()
+    # min_script_offset = SCB_OFFSET
+    # min_script_offset /= 4
+    # max_script_offset = SCB_SIZE
+    # max_script_offset *= MAX_SCRIPTS
+    # max_script_offset += SCB_OFFSET
+    # max_script_offset += SCB_SIZE
+    # max_script_offset /= 4
+    if @30 >= 0 && @30 < MAX_SCRIPTS# && @31 >= min_script_offset && @31 < max_script_offset
+      log_int(@30)
+      log( $0[@31 + 2] )
+      log( $0[@31 + 3] )
+    else
+      log("invalid")
+    end
+  end
 
 end

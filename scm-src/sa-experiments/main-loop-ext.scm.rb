@@ -7,24 +7,21 @@ end
 
 # zero out temp vars once, since they're reused bytecode and have non-zero values
 if $13576 > 0 && $_zeroed_temp_vars != 1
-  # get_script_id()
-
   # debug_logger_script_idx()
-  # log("initing stack/temp vars")
+  log("initing stack/temp vars")
+  wait(100)
 
-  # init stacks for further calls
+  # init stack for further calls
   $_sc = 0
   init_stack()
 
+  # zero the block of temp vars
   memory_zero(MEMORY_TO_ZERO_OFFSET,MEMORY_TO_ZERO_SIZE)
 
   # reset stack again after it's been cleared
   $_sc = 0
   init_stack()
 
-  # get_script_idx()
-
-  # debug_logger_script_idx()
   log("done")
   $_zeroed_temp_vars = 1
 end
