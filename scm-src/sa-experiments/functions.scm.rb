@@ -28,8 +28,8 @@ functions do
         @31 = $_get_script_offset
       end
 
-      # check if right-most bit is set (fixme: could be cleaner)
-      if $0[ $_get_script_offset + 49 ] == 16777473 || $0[ $_get_script_offset + 49 ] == 257 || $0[ $_get_script_offset + 49 ] == 16777217 || $0[ $_get_script_offset + 49 ] == 1
+      # check if right-most bit is set == script is active
+      if is_global_var_bit_set_const($0[ $_get_script_offset + 49 ],0)
         $_get_script_active_count += 1
       end
 

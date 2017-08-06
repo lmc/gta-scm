@@ -78,13 +78,13 @@ class GtaScm::Panel::Logger2 < GtaScm::Panel::Base
           when -3
             next_char4_is = :hex32
           else
-            buffer << char4
+            buffer << char4.gsub(/\u0001+/,"")
           end
         end
       end
 
       new_buffer = []
-      buffer.join.split(/\0+/).each do |lines|
+      buffer.join.split(/\u0000+/).each do |lines|
         new_buffer << ["#{timestamp}: #{lines.strip}"]
       end
 

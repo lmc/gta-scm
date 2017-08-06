@@ -4,6 +4,8 @@ require 'gta_scm/ruby_to_scm_compiler'
 # NOTE: can use vlstring for text opcodes, possibly more?
 #   todo: find out if string var assigns will work
 
+# provide compares to var_use for type hinting purposes
+
 # TODO:
 # inline logging `log("var = #{var}")`
 # some way to assign variable allocator assignments (ie. put specific vars in the temp bucket)
@@ -143,6 +145,11 @@ class GtaScm::RubyToScmCompiler2
       data[:functions][nil][:instance_arrays] = {}
     end
     data[:functions][nil][:locals] = {}
+    data[:functions].each_pair do |name,func|
+      if func[:in_script_block]
+        data[:functions].delete(name)
+      end
+    end
     data[:constants] = self.constants.deep_dup
     if options[:keep_instance_scope]
       data[:instance_assigns] = [@ivar_lvar_id_counter,@ivar_lvar_ids]
@@ -1039,6 +1046,12 @@ class GtaScm::RubyToScmCompiler2
   def on_function_block(node)
     self.current_function = self.function_block_name(node)
 
+    start_label,end_label = if self.script_block_hash
+      [generate_label!(:"function_#{self.current_function}"),generate_label!(:"function_end_#{self.current_function}")]
+    else
+      [:"function_#{self.current_function}",:"function_end_#{self.current_function}"]
+    end
+
     if scanning?
       self.functions[self.current_function] ||= {
         returns:       {},
@@ -1046,11 +1059,15 @@ class GtaScm::RubyToScmCompiler2
         locals:        {},
         local_structs: {},
         invokes:       [],
-        label_type:    self.label_type
+        label_type:    self.label_type,
+        label:         start_label,
+        in_script_block: self.script_block_hash,
       }
       node[1].each do |arg|
         self.functions[self.current_function][:arguments][ arg[0] ] ||= []
       end
+    else
+      self.functions[self.current_function][:label] = start_label
     end
 
     body = []
@@ -1067,7 +1084,7 @@ class GtaScm::RubyToScmCompiler2
     end
 
     goto = [
-      [:goto,[[self.label_type,:"function_end_#{self.current_function}"]]]
+      [:goto,[[self.label_type,end_label]]]
     ]
 
     if self.in_functions_block
@@ -1077,11 +1094,11 @@ class GtaScm::RubyToScmCompiler2
 
     [
       *goto,
-      [:labeldef,:"function_#{self.current_function}"],
+      [:labeldef,start_label],
       *prologue,
       *body,
       *epilogue,
-      [:labeldef,:"function_end_#{self.current_function}"],
+      [:labeldef,end_label],
     ]
     
   ensure
@@ -1404,7 +1421,7 @@ class GtaScm::RubyToScmCompiler2
     deref_value = node[1][2]
     if deref_value[1] && self.functions[deref_value[1]]
       [
-        [:assign,[lhs,[self.label_type,:"function_#{deref_value[1]}"]]]
+        [:assign,[lhs,[self.functions[deref_value[1]][:label_type],self.functions[deref_value[1]][:label]]]]
       ]
     elsif deref_value.type == :gvar
       [:labelvar,gvar_name(deref_value[0])]
@@ -1419,7 +1436,7 @@ class GtaScm::RubyToScmCompiler2
     #   return [self.label_type,:"#{deref_value}"]
     # end
     if deref_value[1] && self.functions[deref_value[1]]
-      [self.label_type,:"function_#{deref_value[1]}"]
+      [self.functions[deref_value[1]][:label_type],self.functions[deref_value[1]][:label]]
     elsif deref_value.type == :gvar
       [:labelvar,gvar_name(node[2][0])]
     else
@@ -1477,10 +1494,11 @@ class GtaScm::RubyToScmCompiler2
       ]
     end
 
+    function_label = self.functions[function_name][:label]
     [
       *block,
       *function_call_argument_assignments(node,function_name),
-      [:gosub, [[self.functions[function_name][:label_type],:"function_#{function_name}"]]],
+      [:gosub, [[self.functions[function_name][:label_type],function_label]]],
       *function_call_return_assignments(node,function_name),
     ]
   end
@@ -2120,7 +2138,7 @@ class GtaScm::RubyToScmCompiler2
     else
       if node[2].type == :str
         str = node[2][0] + "\0"
-        groups = str.chars.in_groups_of(4,"\0")
+        groups = str.chars.in_groups_of(4,"\1")
         ints = groups.map do |group|
           group.join.unpack("l<")[0]
         end
