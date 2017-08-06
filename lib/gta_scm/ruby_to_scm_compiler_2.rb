@@ -236,7 +236,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :block , [0] => :send , [0,1] => :script , [1] => :args , [2] => [:begin,:block] )
       on_script_block( node )
 
-    when node.match( :block , [0] => :send , [0,1] => :main , [1] => :args , [2] => [:begin,:block,:send] )
+    when node.match( :block , [0] => :send , [0,1] => :main , [1] => :args , [2] => [:begin,:block,:send,:if] )
       on_main_block( node )
 
     # Function declare
@@ -365,7 +365,7 @@ class GtaScm::RubyToScmCompiler2
     when node.match( :masgn , [0] => :mlhs , [1] => :send ) && self.functions[ node[1][1] ]
       on_function_call(node)
 
-    when node.match( :block , [2] => [:begin,:send] ) && self.functions[ node[0][1] ]
+    when node.match( :block , [2] => [:begin,:send,:if] ) && self.functions[ node[0][1] ]
       on_function_call(node,node[2])
 
     # Assignment
@@ -1044,13 +1044,15 @@ class GtaScm::RubyToScmCompiler2
   #   s(:begin,
   #     [body]
   def on_function_block(node)
-    self.current_function = self.function_block_name(node)
+    function_name = self.function_block_name(node)
 
     start_label,end_label = if self.script_block_hash
-      [generate_label!(:"function_#{self.current_function}"),generate_label!(:"function_end_#{self.current_function}")]
+      [generate_label!(:"function_#{function_name}"),generate_label!(:"function_end_#{function_name}")]
     else
-      [:"function_#{self.current_function}",:"function_end_#{self.current_function}"]
+      [:"function_#{function_name}",:"function_end_#{function_name}"]
     end
+
+    self.current_function = function_name
 
     if scanning?
       self.functions[self.current_function] ||= {

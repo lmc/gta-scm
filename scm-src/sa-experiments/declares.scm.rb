@@ -82,4 +82,12 @@ declare do
   EXT78_VEHICLE_MANAGER = 1
   EXT78_SPATIAL_MANAGER = 2
   EXT78_SMITE_DRIVER = 3
+  EXT78_SELECT_MENU = 4
+
+  int $_get_script_active_count
+  int $_get_script_offset
+  int $_get_script_idx
+  int $memory_zero_addr
+  int $memory_zero_end_addr
+
 end

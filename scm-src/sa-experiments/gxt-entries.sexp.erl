@@ -51,3 +51,10 @@
 
 (DefineGxt "MAIN" "GSCM300" "Health: ~1~")
 (DefineGxt "MAIN" "GSCM301" "Max Health: ~1~")
+
+(DefineGxt "MAIN" "XS2M000" "~k~~GO_FORWARD~+~k~~GO_BACK~: Up/Down~n~~k~~PED_SPRINT~: Select~n~~k~~PED_FIREWEAPON~/~k~~CAMERA_CHANGE_VIEW_ALL_SITUATIONS~/~k~~VEHICLE_ENTER_EXIT~: Exit")
+(DefineGxt "MAIN" "XS2M001" "Select Menu")
+(DefineGxt "MAIN" "XS2M002" "Item 00")
+(DefineGxt "MAIN" "XS2M003" "Item 01")
+(DefineGxt "MAIN" "XS2M004" "Item 02")
+(DefineGxt "MAIN" "XS2M005" "Item 03")

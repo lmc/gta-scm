@@ -1,4 +1,22 @@
 [:nop]
+
+declare do
+  int $3168
+  int $3172
+  int $3176
+  int $5516
+  int $3272
+
+  int $_get_script_active_count
+  int $_get_script_offset
+  int $_get_script_idx
+  int $memory_zero_addr
+  int $memory_zero_end_addr
+  
+  int @30
+  int @31
+end
+
 functions do
   def init_stack()
     $_ss = STACK_SIZE
@@ -38,6 +56,18 @@ functions do
     end
   end
 
+  def available_user_3d_markers()
+    count = 5
+    # these vars are set to 1 if a marker is used, 0 if not
+    count -= $3168
+    count -= $3172
+    count -= $3176
+    # if keycard script started, and not exited
+    if $5516 == 1 && $3272 != 1
+      count -= 2
+    end
+    return count
+  end
 
   # it's safe to use this to zero the stack, as long as
   # stack counter is set to zero first

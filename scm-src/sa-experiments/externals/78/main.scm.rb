@@ -12,6 +12,8 @@ if @0 >= 0 && @0 < 400
     [:goto,[[:mission_label,:ext78_spatial_manager]]]
   elsif @0 == EXT78_SMITE_DRIVER
     [:goto,[[:mission_label,:ext78_vehicle_smite]]]
+  elsif @0 == EXT78_SELECT_MENU
+    [:goto,[[:mission_label,:ext78_select_menu]]]
   end
 elsif @0 >= 400 && @0 < 1000
   # vehicle scripts
@@ -46,6 +48,9 @@ loop { wait(0) }
 
 [:labeldef,:ext78_vehicle_smite]
 [:IncludeRuby, "externals/78/vehicle-smite", [:external,true]]
+
+[:labeldef,:ext78_select_menu]
+[:IncludeRuby, "externals/78/select-menu", [:v2,true], [:external,true]]
 
 
 [:labeldef,:ext78_vehicle_420_taxi]

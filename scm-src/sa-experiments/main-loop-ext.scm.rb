@@ -59,6 +59,7 @@ if $13576 > 0
       start_new_streamed_script(78,EXT78_TEST)
       start_new_streamed_script(78,EXT78_VEHICLE_MANAGER)
       start_new_streamed_script(78,EXT78_SPATIAL_MANAGER)
+      start_new_streamed_script(78,EXT78_SELECT_MENU)
     end
 
     @ext79_count = get_number_of_instances_of_streamed_script(79)

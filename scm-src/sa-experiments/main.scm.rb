@@ -104,4 +104,6 @@ binary("games/san-andreas/data/script/main.scm") do |scm|
   [:AssignGlobalVariables]
   [:AssembleExternal,78,"externals/78/main"]
   [:AssembleExternal,79,"ext79"]
+  
+  # [:Include,"gxt-entries"]
 end
