@@ -90,7 +90,7 @@ declare do
   int $memory_zero_addr
   int $memory_zero_end_addr
 
-  int $menu_id
+  # int $menu_id
   # int $menu
 
   int $cargen_active
@@ -98,7 +98,7 @@ declare do
   int $cargen_int_1
 
   GARAGE_CARS = 20
-  GARAGE_MODDED_CARS = 15
+  GARAGE_MODDED_CARS = 15 # 16 - 1 for nil value
   $garage_cars = IntegerArray[GARAGE_CARS]
   $garage_modded_cars = IntegerArray[GARAGE_MODDED_CARS]
 
