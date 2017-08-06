@@ -90,4 +90,16 @@ declare do
   int $memory_zero_addr
   int $memory_zero_end_addr
 
+  int $menu_id
+  # int $menu
+
+  int $cargen_active
+  int $cargen_int_0
+  int $cargen_int_1
+
+  GARAGE_CARS = 20
+  GARAGE_MODDED_CARS = 15
+  $garage_cars = IntegerArray[GARAGE_CARS]
+  $garage_modded_cars = IntegerArray[GARAGE_MODDED_CARS]
+
 end

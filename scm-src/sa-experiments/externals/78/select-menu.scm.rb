@@ -2,7 +2,27 @@
 declare do
   int @ticks
   int @menu_id
+  int @last_menu_id # before returning to last menu, set @last_menu = @menu * -1, so if it's negative we know where we came from
   int @menu
+
+  # cargen bitpacking
+  # 8 - car id (- 400 = fits in int8)
+  # 7 - colour 1
+  # 7 - colour 2
+  # 3 - variation 1 ( -1 .. +6 )
+  # 3 - variation 2 ( -1 .. +6 )
+
+  # 2 - paintjob
+  # 2 - exhausts
+  # 2 - front bumper
+  # 2 - rear bumper
+  # 2 - roof
+  # 2 - spoilers
+  # 2 - skirts
+  # 2 - nitro
+  # 1 - bass boost
+  # 1 - hydraulics
+  # 4 - wheels
 end
 
 script(name: "xs2menu") do
@@ -37,7 +57,7 @@ script(name: "xs2menu") do
     @menu_id = 0
   end
 
-  def show_menu(menu_id)
+  def show_menu()
     hide_menu() if @menu_id > 0
 
     set_time_scale(0.0)
@@ -54,11 +74,56 @@ script(name: "xs2menu") do
     set_menu_item_with_number(@menu,0,MENU_01_ITEM02,"XS2M004",0)
     set_menu_item_with_number(@menu,0,MENU_01_ITEM03,"XS2M005",0)
 
-    @menu_id = menu_id
+    @menu_id = 1
+  end
+
+  def show_cargen_menu()
+    hide_menu()
+  end
+
+  def get_button_pressed()
+    if is_button_pressed(0,CONTROLLER_SQUARE)
+      return CONTROLLER_SQUARE
+    elsif is_button_pressed(0,CONTROLLER_TRIANGLE)
+      return CONTROLLER_TRIANGLE
+    elsif is_button_pressed(0,CONTROLLER_CROSS)
+      return CONTROLLER_CROSS
+    elsif is_button_pressed(0,CONTROLLER_CIRCLE)
+      return CONTROLLER_CIRCLE
+    end
+    return 0
+  end
+
+  def handle_button_cross(selected)
+    if selected == 0
+      show_cargen_menu()
+    end
+  end
+
+  def handle_button_circle(selected)
+    hide_menu()
+  end
+
+  def handle_menu_button()
+    button = 0
+    button = get_button_pressed()
+    menu_selected = get_menu_item_selected(@menu)
+    if button > 0 && @ticks > DEBOUNCE_TICKS
+      @ticks = 0
+      if button == CONTROLLER_CIRCLE
+        handle_button_circle(menu_selected)
+      elsif button == CONTROLLER_CROSS
+        handle_button_cross(menu_selected)
+      end
+    end
   end
 
   main(wait: 0) do
     @ticks += 1
+
+    if @menu_id > 0
+      handle_menu_button()
+    end
 
     if is_button_pressed(0,CONTROLLER_SELECT) && @ticks > DEBOUNCE_TICKS
       @ticks = 0
@@ -66,7 +131,7 @@ script(name: "xs2menu") do
       if @menu_id > 0
         hide_menu()
       else
-        show_menu(1)
+        show_menu()
       end
     end
 

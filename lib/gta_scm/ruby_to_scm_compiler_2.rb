@@ -253,16 +253,16 @@ class GtaScm::RubyToScmCompiler2
     #     s(:arg, :arg2)),
     #   s(:begin,
     #     [body]
-    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send,:if] )
+    when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send,:if,:def,:array,:lvasgn] )
       on_function_block( node )
     # when node.match( :block , [0] => :send , [0,1] => :function , [1] => :args , [2] => [:begin,:return,:send] )
     #   debugger
     #   on_function_block( node )
 
-    when node.match( :def , [1] => :args , [2] => [:begin,:return,:send,:if] )
+    when node.match( :def , [1] => :args , [2] => [:begin,:return,:send,:if,:def,:array,:lvasgn] )
       on_function_block( node )
 
-    when node.match( :block , [0] => :send , [0,1] => :functions , [1] => [:args] , [2] => [:begin,:return,:send,:if,:def,:array] )
+    when node.match( :block , [0] => :send , [0,1] => :functions , [1] => [:args] , [2] => [:begin,:return,:send,:if,:def,:array,:lvasgn] )
       on_functions_block( node )
 
     # when node.match( :send , [1] => :function )
