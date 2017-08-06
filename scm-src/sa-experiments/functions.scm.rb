@@ -15,6 +15,7 @@ functions do
     @31 = generate_random_int_in_range(0,2_000_000_000)
 
     $_get_script_idx = MAX_SCRIPTS
+    $_get_script_active_count = 0
     loop do
       $_get_script_offset = SCB_SIZE
       $_get_script_offset *= $_get_script_idx
@@ -25,13 +26,18 @@ functions do
       if $0[ $_get_script_offset + 45 ] == @30 && $0[ $_get_script_offset + 46] == @31
         @30 = $_get_script_idx
         @31 = $_get_script_offset
-        return
+      end
+
+      # check if right-most bit is set (fixme: could be cleaner)
+      if $0[ $_get_script_offset + 49 ] == 16777473 || $0[ $_get_script_offset + 49 ] == 257 || $0[ $_get_script_offset + 49 ] == 16777217 || $0[ $_get_script_offset + 49 ] == 1
+        $_get_script_active_count += 1
       end
 
       $_get_script_idx -= 1
       return if $_get_script_idx < 0
     end
   end
+
 
   # it's safe to use this to zero the stack, as long as
   # stack counter is set to zero first

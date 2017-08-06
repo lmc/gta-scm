@@ -1,6 +1,16 @@
 
 declare do
   int @player_car
+
+  int $3168
+  int $3172
+  int $3176
+  int $5516
+  int $3272
+
+  int $_get_script_active_count
+  int @30
+  int @31
 end
 
 script(name: "xhelper") do
@@ -36,6 +46,12 @@ script(name: "xhelper") do
     x = 20.0
     y = 20.0
 
+    display_text_with_number(x,y,"NUMBER",$_0[@31 + 49])
+    y += DEBUG_TEXT_LINE_HEIGHT
+
+    display_text_with_number(x,y,"NUMBER",$_get_script_active_count)
+    y += DEBUG_TEXT_LINE_HEIGHT
+
     display_text_with_number(x,y,"NUMBER",@player_car)
     y += DEBUG_TEXT_LINE_HEIGHT
 
@@ -48,10 +64,23 @@ script(name: "xhelper") do
       temp = get_car_health(@player_car)
       display_text_with_number(x,y,"NUMBER",temp)
       y += DEBUG_TEXT_LINE_HEIGHT
-
     end
 
   end
+
+  def available_user_3d_markers()
+    count = 5
+    # these vars are set to 1 if a marker is used, 0 if not
+    count -= $3168
+    count -= $3172
+    count -= $3176
+    # if keycard script started, and not exited
+    if $5516 == 1 && $3272 != 1
+      count -= 2
+    end
+    return count
+  end
+
 
   main(wait: 0) do
 
@@ -62,7 +91,13 @@ script(name: "xhelper") do
       increment_car_health()
     end
 
+    get_script_idx()
+
     display_debug_text()
+
+    if is_button_pressed(0,CONTROLLER_SELECT)
+      set_camera_zoom(2)
+    end
 
   end
 end

@@ -1,15 +1,11 @@
 # NEXT:
+# boolean type, can pack 32 at a time into one int32 global/local var
 # mem_copy function using arrays
-# rewrite ext78 in v2, reorganise files, use switch statement?
 # rewrite spatial script in v2
-# verify function calls work between files (for spatial terminate function)
-# verify function calls work to both main and external functions
 # specify gvars to use as args/returns for functions (instead of stack)
-# option to retain script context between compiles (ensure instance vars are shared between spatial/vehicle scripts)
 # support $[] / @[] array syntax with gsub
 # var bucket report
 # compiler feature modules - put binary functions in there, w/api to register node patterns
-# detect generic block later on?
 # timer debounce function? no order of evaluation, hard to do properly. can handle in menu helpers
 # menu helpers? - name/position/styles, populate/scroll/button callbacks
 # global var for active menu, manage it that way
@@ -18,10 +14,11 @@
 # hold down L1 to invoke
 # DPAD free if:
 # on foot:
-# up/down - don't act if player is targeting someone
+# up/down - don't act if player is targeting someone - IS_PLAYER_TARGETTING_ANYTHING
 # left/right - don't act if conversation active
 # in vehicle:
-# up/down - lock radio station during
+# up/down - lock radio station during - get/set_radio_channel
+# SET_CAMERA_ZOOM - to override select
 
 # DPAD UP - main menu (like phone in gtav)
 

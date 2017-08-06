@@ -1,6 +1,7 @@
 
 declare do
   int $13576
+  int @31
 end
 
 [:labeldef, :main_loop_ext]
@@ -23,6 +24,9 @@ if $13576 > 0
     # reset stack again after it's been cleared
     $_sc = 0
     init_stack()
+
+    get_script_idx()
+    log_int( $0[@31 + 49] )
 
     log("done")
     $_zeroed_temp_vars = 1
