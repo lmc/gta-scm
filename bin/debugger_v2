@@ -1,5 +1,19 @@
 #!/usr/bin/env ruby
 
+# crash reporter
+# expose logger to other debugger panels
+# make stack inspector use logger panel
+# refactor all panels to use new ui
+# reintegrate console, using accelerated ui for responsiveness
+# output stack frames with disassembly during breakpoint into logger
+# show which script we're executing in (breakpoint or instance-eval'd script)
+# show game/debugger fps
+# drb server panel, handle console in seperate process?
+# could patch RuTui::Screen to draw only one object/redraw only certain lines
+# use control characters to place cursor at correct line for truncated output
+
+# auto complete behaviour
+
 # sudo bundle exec ./bin/debugger
 if ENV["PWD"].split(/\//)[-1] == "gta-scm"
   $: << "./lib"

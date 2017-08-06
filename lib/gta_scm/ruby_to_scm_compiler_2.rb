@@ -1,6 +1,8 @@
 
 require 'gta_scm/ruby_to_scm_compiler'
 
+# fix stack frame output (functions are being duplicated with bad range_offsets)
+
 # NOTE: can use vlstring for text opcodes, possibly more?
 #   todo: find out if string var assigns will work
 
